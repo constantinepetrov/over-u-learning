@@ -1,0 +1,50 @@
+{
+  "frappe_version": "16.51.0",
+  "lms_version": "2.64.0",
+  "installed_apps": [
+    "frappe",
+    "payments",
+    "lms",
+    "over_u"
+  ],
+  "course": "over-u",
+  "chapters": 3,
+  "lessons": 6,
+  "sequential_completion": true,
+  "assignment_requires_pass": true,
+  "quiz_passing_percentage": 75,
+  "administrator_exists": true,
+  "teacher_roles": [
+    "LMS Student",
+    "Course Creator",
+    "All",
+    "Guest"
+  ],
+  "students": [
+    {
+      "user": "student1@over-u.example.com",
+      "progress": 100.0,
+      "locked_lessons": 0
+    },
+    {
+      "user": "student2@over-u.example.com",
+      "progress": 0.0,
+      "locked_lessons": 5
+    }
+  ],
+  "quiz_submissions": [
+    {
+      "name": "ibciq0g70j",
+      "member": "student1@over-u.example.com",
+      "percentage": 75
+    }
+  ],
+  "assignments": [
+    {
+      "name": "ASG-SUB-00015",
+      "member": "student1@over-u.example.com",
+      "status": "Pass",
+      "evaluator": "teacher@over-u.example.com"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+name: over-u
+services:
+  mariadb:
+    image: mariadb:10.8
+    environment:
+      MARIADB_ROOT_PASSWORD: ${OVER_U_DB_PASSWORD:?Set OVER_U_DB_PASSWORD}
+    command: [--character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci]
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'mariadb-admin ping --silent -p$$MARIADB_ROOT_PASSWORD']
+      interval: 5s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+  frappe:
+    image: over-u/dev:local
+    build:
+      context: .
+      secrets:
+        - ca_bundle
+    user: root
+    entrypoint: /bin/bash
+    command: /workspace/over-u/dev/init.sh
+    working_dir: /home/frappe
+    environment:
+      OVER_U_DB_PASSWORD: ${OVER_U_DB_PASSWORD}
+      OVER_U_ADMIN_PASSWORD: ${OVER_U_ADMIN_PASSWORD:?Set OVER_U_ADMIN_PASSWORD}
+      OVER_U_DEMO_PASSWORD: ${OVER_U_DEMO_PASSWORD:?Set OVER_U_DEMO_PASSWORD}
+      REQUESTS_CA_BUNDLE: /run/ca-bundle.pem
+      SSL_CERT_FILE: /run/ca-bundle.pem
+      PIP_CERT: /run/ca-bundle.pem
+      GIT_SSL_CAINFO: /run/ca-bundle.pem
+      NODE_EXTRA_CA_CERTS: /run/ca-bundle.pem
+    volumes:
+      - ../..:/workspace
+      - bench:/home/frappe/frappe-bench
+      - ${OVER_U_CA_BUNDLE:-/etc/ssl/certs/ca-certificates.crt}:/run/ca-bundle.pem:ro
+    ports:
+      - 127.0.0.1:8000:8000
+      - 127.0.0.1:9000:9000
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+volumes:
+  db:
+  bench:
+secrets:
+  ca_bundle:
+    file: ${OVER_U_CA_BUNDLE:-/etc/ssl/certs/ca-certificates.crt}

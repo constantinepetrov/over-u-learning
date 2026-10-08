@@ -19,3 +19,5 @@ test-results
 playwright-report
 blob-report
 playwright/.auth
+over-u/dev/.env
+over-u/dev/.recover-storage

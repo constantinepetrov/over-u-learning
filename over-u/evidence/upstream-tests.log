@@ -1,0 +1,75 @@
+Starting test run with parameters: site=over-u.localhost, app=lms, module=lms.tests.test_lesson_locking, verbose=False, tests=(), force=False, profile=False, failfast=False, skip_before_tests=False, debug=False, selected_categories=[]
+View detailed logs (using --verbose): /home/frappe/frappe-bench/logs/frappe.testing.log
+
+Running 31 integration tests for lms
+
+lms.tests.test_lesson_locking.TestLessonLockingIntegration
+    ✔  test_a_nonexistent_lesson_number_is_still_empty_without_the_gate
+    ✔  test_a_quiz_on_a_locked_lesson_keeps_its_submission
+    ✔  test_a_quiz_orphaned_from_its_lesson_is_refused_under_the_gate
+    ✔  test_a_quiz_orphaned_from_its_lesson_stays_readable_without_the_gate
+    ✔  test_an_orphaned_quiz_reopens_once_the_course_is_finished
+    ✔  test_continue_learning_pointer_by_lock_state
+    ✔  test_course_author_is_exempt
+    ✔  test_course_author_still_gets_a_locked_lesson
+    ✔  test_flag_off_locks_nothing
+    ✔  test_flag_on_locks_everything_past_the_first_lesson
+    ✔  test_get_lesson_refuses_a_locked_lesson
+    ✔  test_get_lesson_refuses_a_locked_scorm_lesson
+    ✔  test_get_lesson_sends_a_nonexistent_lesson_number_back_to_the_current_one
+    ✔  test_get_lesson_serves_the_current_lesson
+    ✔  test_lesson_quiz_readability_follows_its_own_lock_state
+    ✔  test_ordered_lesson_rows_carry_no_lesson_bodies
+    ✔  test_outline_does_not_publish_the_quiz_of_a_locked_lesson
+    ✔  test_outline_stamps_locked_only_when_progress_is_requested
+    ✔  test_outline_still_withholds_the_package_once_the_chapter_is_unlocked
+    ✔  test_outline_withholds_the_package_of_a_locked_scorm_chapter
+    ✔  test_partially_complete_does_not_unlock
+    ✔  test_progress_is_published_to_the_completing_member_alone
+    ✔  test_redirect_target_follows_the_enrollment_pointer
+    ✔  test_redirect_target_is_never_locked_when_the_pointer_is_stale
+    ✔  test_save_progress_cannot_unlock_the_whole_course
+    ✔  test_save_progress_still_completes_the_lesson_the_student_is_on
+    ✔  test_scorm_renderer_refuses_bytes_for_a_locked_chapter
+    ✔  test_scorm_renderer_serves_bytes_once_the_chapter_is_unlocked
+    ✔  test_the_lock_check_does_not_read_the_enrollment_pointer
+    ✔  test_two_placements_in_one_course_compute_the_lock_state_once
+    ✔  test_unenrolled_user_is_not_gated_by_sequencing
+
+
+----------------------------------------------------------------------
+Ran 31 tests in 2.483s
+
+OK
+
+lms.tests.test_lesson_locking.TestComputeLockedLessons
+    ✔  test_a_lesson_completed_out_of_order_stays_open
+    ✔  test_a_repeated_lesson_does_not_lock_its_own_first_occurrence
+    ✔  test_all_complete_locks_nothing
+    ✔  test_completing_the_first_opens_the_second
+    ✔  test_empty_course_locks_nothing
+    ✔  test_malformed_course_argument_locks_nothing
+    ✔  test_nothing_complete_leaves_only_the_first_lesson_open
+----------------------------------------------------------------------
+Ran 7 tests in 0.001s
+
+OK
+
+Running 7 unspecified-category tests for lms
+
+
+Starting test run with parameters: site=over-u.localhost, app=lms, module=lms.tests.security.test_assignment_self_grading, verbose=False, tests=(), force=False, profile=False, failfast=False, skip_before_tests=False, debug=False, selected_categories=[]
+View detailed logs (using --verbose): /home/frappe/frappe-bench/logs/frappe.testing.log
+
+Running 3 integration tests for lms
+
+lms.tests.security.test_assignment_self_grading.TestAssignmentSelfGrading
+    ✔  test_evaluator_can_grade_submission
+    ✔  test_student_cannot_grade_own_submission_on_update
+    ✔  test_student_cannot_pass_own_submission_on_create
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.366s
+
+OK

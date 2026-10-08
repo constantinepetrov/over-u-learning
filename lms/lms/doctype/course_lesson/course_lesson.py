@@ -606,9 +606,12 @@ def get_assignment_progress(lesson):
 		assignments = [value for name, value in macros if name == "Assignment"]
 
 	for assignment in assignments:
+		filters = {"assignment": assignment, "member": frappe.session.user}
+		for handler in frappe.get_hooks("lms_assignment_completion_filters"):
+			filters.update(frappe.get_attr(handler)(lesson, assignment) or {})
 		if not frappe.db.exists(
 			"LMS Assignment Submission",
-			{"assignment": assignment, "member": frappe.session.user},
+			filters,
 		):
 			return False
 	return True

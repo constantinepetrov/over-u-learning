@@ -1,0 +1,90 @@
+{
+  "screens": [
+    {
+      "file": "01-student-catalog.png",
+      "description": "Интерфейс ученика: каталог OVER U",
+      "url": "http://over-u.localhost:8000/lms/courses"
+    },
+    {
+      "file": "02-student-lesson.png",
+      "description": "Прохождение текстового урока и последовательность",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u/learn/1-1"
+    },
+    {
+      "file": "03-video-lesson.png",
+      "description": "Штатный видеоплеер с локальным demo-видео",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u/learn/1-2"
+    },
+    {
+      "file": "04-quiz-question.png",
+      "description": "Тест: 4 вопроса, проходной балл 75%",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u/learn/2-2"
+    },
+    {
+      "file": "05-quiz-result.png",
+      "description": "Тест отправлен через интерфейс: 3 из 4, 75%",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u/learn/2-2"
+    },
+    {
+      "file": "06-assignment-send.png",
+      "description": "Ученик пишет и отправляет домашнюю работу",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u/learn/3-1"
+    },
+    {
+      "file": "07-assignment-pending.png",
+      "description": "Работа отправлена: Not Graded, ожидает преподавателя",
+      "url": "http://over-u.localhost:8000/lms/assignment-submission/ASG-00005/ASG-SUB-00015"
+    },
+    {
+      "file": "08-teacher-dashboard.png",
+      "description": "Интерфейс преподавателя и прогресс учеников",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u#dashboard"
+    },
+    {
+      "file": "09-course-editor.png",
+      "description": "Штатный редактор курса, модулей и урока",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u?editLesson=1-1#editor"
+    },
+    {
+      "file": "10-teacher-submissions.png",
+      "description": "Преподаватель: список присланных работ",
+      "url": "http://over-u.localhost:8000/lms/assignment-submissions"
+    },
+    {
+      "file": "11-teacher-grading.png",
+      "description": "Преподаватель проверяет ответ и выбирает Pass",
+      "url": "http://over-u.localhost:8000/lms/assignment-submission/ASG-00005/ASG-SUB-00015"
+    },
+    {
+      "file": "12-assignment-pass.png",
+      "description": "Сохранённая проверка: Pass и комментарий",
+      "url": "http://over-u.localhost:8000/lms/assignment-submission/ASG-00005/ASG-SUB-00015"
+    },
+    {
+      "file": "13-final-lesson-unlocked.png",
+      "description": "Следующий урок открыт после Pass",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u/learn/3-2"
+    },
+    {
+      "file": "14-course-completed.png",
+      "description": "Прогресс ученика 1: 100%",
+      "url": "http://over-u.localhost:8000/lms/courses"
+    },
+    {
+      "file": "15-administrator.png",
+      "description": "Администратор в штатном LMS",
+      "url": "http://over-u.localhost:8000/lms/courses"
+    }
+  ],
+  "checks": [
+    "The final lesson is locked before required work is completed.",
+    "Browser quiz submission with 3/4 correct scores 75% and unlocks assignment.",
+    "Submitting homework leaves final lesson locked until teacher Pass.",
+    "Teacher Pass unlocks final lesson without a learner resubmission.",
+    "Student 2 remains at 0% with 5 locked lessons; progress is isolated.",
+    "Administrator login works."
+  ],
+  "errors": [],
+  "submission": "ASG-SUB-00015",
+  "status": "passed"
+}
