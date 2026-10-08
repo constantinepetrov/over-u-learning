@@ -40,5 +40,7 @@ fi
 bench --site over-u.localhost install-app over_u
 ln -sfn "$PWD/apps/frappe/ui" /workspace/frontend/node_modules/@framework/ui
 if [ ! -f /workspace/lms/www/_lms.html ] || [ ! -f sites/assets/assets.json ]; then bench build; fi
+# Existing POC volumes already have LMS assets, but need the isolated app link.
+if [ ! -e sites/assets/over_u/school/app.js ]; then bench build --app over_u; fi
 bench --site over-u.localhost execute over_u.school.seed
 exec bench start

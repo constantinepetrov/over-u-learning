@@ -1,0 +1,41 @@
+// The only browser module that knows the server adapter's endpoint names.
+const boot = JSON.parse(document.getElementById('school-boot').textContent)
+const methods = new Set(['home', 'course', 'lesson', 'complete_lesson', 'submit_quiz', 'submit_assignment'])
+export class SchoolError extends Error {
+  constructor(message, status) { super(message); this.status = status }
+}
+async function request(method, args = {}) {
+  if (!methods.has(method)) throw new SchoolError('Неизвестное действие.', 400)
+  let response
+  try {
+    response = await fetch(`/api/method/over_u.student_api.${method}`, {
+      method: 'POST', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': boot.csrf_token},
+      body: JSON.stringify(args),
+    })
+  } catch { throw new SchoolError('Нет соединения. Проверьте интернет и попробуйте ещё раз.', 0) }
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    let message = response.status === 403 ? 'Это действие недоступно. Вернитесь к текущему уроку.' : 'Не получилось сохранить изменения. Попробуйте ещё раз.'
+    try {
+      const messages = JSON.parse(data._server_messages || '[]')
+      const raw = JSON.parse(messages[0] || '{}').message
+      if (raw) {
+        const text = new DOMParser().parseFromString(raw, 'text/html').body.textContent
+        if (/[А-Яа-яЁё]/.test(text) && !/doctype|traceback|sql|DocType/i.test(text)) message = text
+        else if (/maximum number of attempts/i.test(text)) message = 'Попытки закончились. Обратитесь к преподавателю.'
+      }
+    } catch { /* Never show tracebacks or raw exception payloads. */ }
+    if (response.status === 401) message = 'Сессия завершилась. Войдите в школу снова.'
+    throw new SchoolError(message, response.status)
+  }
+  return data.message
+}
+export const api = {
+  home: () => request('home'),
+  course: course => request('course', {course}),
+  lesson: (course, number) => request('lesson', {course, number}),
+  complete: (course, number) => request('complete_lesson', {course, number}),
+  quiz: (course, number, answers) => request('submit_quiz', {course, number, answers}),
+  homework: (course, number, answer) => request('submit_assignment', {course, number, answer}),
+}

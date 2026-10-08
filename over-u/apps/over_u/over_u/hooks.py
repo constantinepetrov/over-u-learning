@@ -18,3 +18,5 @@ doc_events = {
     },
     "LMS Course Progress": {"validate": "over_u.policy.validate_progress"},
 }
+
+website_route_rules = [{"from_route": "/school/<path:app_path>", "to_route": "school"}]

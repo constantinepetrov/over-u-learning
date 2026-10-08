@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#245c46">
+  <title>OVER U — ваша школа</title>
+  <link rel="stylesheet" href="/assets/over_u/school/school.css?v=1">
+</head>
+<body>
+  <a class="skip-link" href="#main">Перейти к содержанию</a>
+  <div id="school"><main id="main" tabindex="-1"><p class="initial-loading" role="status">Открываем вашу школу…</p></main></div>
+  <div id="announcements" class="sr-only" role="status" aria-live="polite"></div>
+  <noscript>Для прохождения обучения включите JavaScript в браузере.</noscript>
+  <script id="school-boot" type="application/json">{{ boot | tojson }}</script>
+  <script type="module" src="/assets/over_u/school/app.js?v=1"></script>
+</body>
+</html>
