@@ -1,0 +1,31 @@
+Starting test run with parameters: site=over-u.localhost, app=over_u, verbose=False, tests=(), force=False, profile=False, failfast=False, skip_before_tests=False, debug=False, selected_categories=[]
+View detailed logs (using --verbose): /home/frappe/frappe-bench/logs/frappe.testing.log
+
+Running 17 integration tests for over_u
+
+over_u.test_policy.TestSchoolPolicy
+    ✔  test_fail_resubmission_and_pass_revocation  (2.59s)
+    ✔  test_generic_progress_write_cannot_bypass_assignment
+    ✔  test_passed_answer_is_frozen
+    ✔  test_policy_is_opt_in
+    ✔  test_progress_endpoint_checks_course_against_lesson
+    ✔  test_sequence_and_failed_quiz_do_not_unlock
+    ✔  test_student_cannot_self_grade_on_update
+    ✔  test_submission_waits_for_teacher_pass
+    ✔  test_unrelated_course_creator_cannot_grade
+
+over_u.test_student_api.TestStudentAPI
+    ✔  test_attempt_limit_and_advanced_quiz_fail_closed
+    ✔  test_homework_pending_then_stock_teacher_pass_unlocks
+    ✔  test_instructor_content_and_unsafe_html_are_not_exposed
+    ✔  test_locked_lesson_withholds_all_content_and_assessments
+    ✔  test_malformed_routes_and_quiz_payloads_are_rejected
+    ✔  test_quiz_server_scoring_failure_retry_and_no_answer_key
+    ✔  test_session_scoping_and_nonmember_denial
+    ✔  test_student_cannot_fetch_another_students_answer
+
+
+----------------------------------------------------------------------
+Ran 17 tests in 9.910s
+
+OK
