@@ -1,0 +1,18 @@
+Starting test run with parameters: site=over-u.localhost, app=over_u, module=over_u.test_localization, verbose=False, tests=(), force=False, profile=False, failfast=False, skip_before_tests=False, debug=False, selected_categories=[]
+View detailed logs (using --verbose): /home/frappe/frappe-bench/logs/frappe.testing.log
+
+Running 6 integration tests for over_u
+
+over_u.test_localization.TestLocalization
+    ✔  test_early_lms_boot_is_scoped_and_script_safe
+    ✔  test_localized_locks_do_not_translate_author_content_or_change_progress
+    ✔  test_merged_native_glossary_and_fallback_language
+    ✔  test_native_catalog_preserves_interpolation_and_technical_values
+    ✔  test_new_user_default_and_explicit_english
+    ✔  test_student_catalog_parity_and_placeholder_preservation
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.239s
+
+OK

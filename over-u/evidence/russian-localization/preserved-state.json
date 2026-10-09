@@ -1,0 +1,31 @@
+{
+  "fixtureRemoved": true,
+  "existingEnrollments": [
+    {
+      "member": "student2@over-u.example.com",
+      "progress": 100.0
+    },
+    {
+      "member": "student1@over-u.example.com",
+      "progress": 100.0
+    }
+  ],
+  "languages": [
+    {
+      "name": "student2@over-u.example.com",
+      "language": "ru"
+    },
+    {
+      "name": "student1@over-u.example.com",
+      "language": "ru"
+    },
+    {
+      "name": "teacher@over-u.example.com",
+      "language": "ru"
+    },
+    {
+      "name": "Administrator",
+      "language": "ru"
+    }
+  ]
+}

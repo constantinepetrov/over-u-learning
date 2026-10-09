@@ -1,0 +1,122 @@
+{
+  "screens": [
+    {
+      "file": "01-home.png",
+      "description": "Главная: реальный курс, прогресс 0%, текущий шаг",
+      "url": "http://over-u.localhost:8000/school"
+    },
+    {
+      "file": "02-course.png",
+      "description": "Программа: три модуля, шесть уроков, последовательность",
+      "url": "http://over-u.localhost:8000/school/courses/over-u"
+    },
+    {
+      "file": "03-text-lesson.png",
+      "description": "Текстовый урок и программа рядом",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/1-1"
+    },
+    {
+      "file": "04-video-lesson.png",
+      "description": "Видео воспроизводится в собственном интерфейсе",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/1-2"
+    },
+    {
+      "file": "05-quiz.png",
+      "description": "Тест: четыре вопроса, порог 75%",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/2-2"
+    },
+    {
+      "file": "06-quiz-failed.png",
+      "description": "50%: тест не пройден, задание остаётся закрытым",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/2-2"
+    },
+    {
+      "file": "07-quiz-passed.png",
+      "description": "75%: тест пройден, открыт следующий шаг",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/2-2"
+    },
+    {
+      "file": "08-homework-pending.png",
+      "description": "Работа отправлена, ожидает проверки, следующий урок закрыт",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/3-1"
+    },
+    {
+      "file": "09-next-locked.png",
+      "description": "Следующий урок закрыт до зачёта, причина показана ученику",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/3-2"
+    },
+    {
+      "file": "10-home-pending.png",
+      "description": "Главная показывает ожидающую проверки работу и 66.7%",
+      "url": "http://over-u.localhost:8000/school"
+    },
+    {
+      "file": "11-stock-lms.png",
+      "description": "Штатный LMS преподавателя сохранён",
+      "url": "http://over-u.localhost:8000/lms/courses"
+    },
+    {
+      "file": "12-stock-editor.png",
+      "description": "Штатный редактор курса сохранён",
+      "url": "http://over-u.localhost:8000/lms/courses/over-u?editLesson=1-1#editor"
+    },
+    {
+      "file": "13-teacher-grading.png",
+      "description": "Преподаватель проверяет существующую работу в штатном LMS",
+      "url": "http://over-u.localhost:8000/lms/assignment-submission/ASG-00005/ASG-SUB-00018"
+    },
+    {
+      "file": "14-homework-pass.png",
+      "description": "Ученик видит зачёт и комментарий преподавателя без повторной отправки",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/3-1"
+    },
+    {
+      "file": "15-next-unlocked.png",
+      "description": "Следующий урок открыт после Pass",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/3-2"
+    },
+    {
+      "file": "16-results.png",
+      "description": "100% прогресса и собственный результат теста 75%",
+      "url": "http://over-u.localhost:8000/school/results"
+    },
+    {
+      "file": "17-responsive-320.png",
+      "description": "Программа курса при ширине 320px",
+      "url": "http://over-u.localhost:8000/school/courses/over-u"
+    },
+    {
+      "file": "17-responsive-390.png",
+      "description": "Программа курса при ширине 390px",
+      "url": "http://over-u.localhost:8000/school/courses/over-u"
+    },
+    {
+      "file": "17-responsive-768.png",
+      "description": "Программа курса при ширине 768px",
+      "url": "http://over-u.localhost:8000/school/courses/over-u"
+    },
+    {
+      "file": "18-zoom-200-layout.png",
+      "description": "Компоновка при эквиваленте 200% desktop zoom",
+      "url": "http://over-u.localhost:8000/school/courses/over-u/lessons/2-2"
+    },
+    {
+      "file": "19-stock-desk.png",
+      "description": "Штатный Desk сохранён; POC открывает исходный setup wizard",
+      "url": "http://over-u.localhost:8000/desk/build/setup-wizard/0"
+    }
+  ],
+  "checks": [
+    "Guest is redirected to stock login.",
+    "Browser-only lesson completion, playable video, quiz 50% stays locked, retry 75% unlocks homework.",
+    "Failed homework request and browser back retain in-memory draft; error is visible.",
+    "Not Graded homework retains 4/6 progress; direct next URL remains locked.",
+    "Stock teacher Pass is observed by student polling, advances progress to 5/6, unlocks final lesson; final completion reaches 100%.",
+    "Existing student retains 100% and never sees localization fixture answer; minimal assignments/results/profile work.",
+    "320/390/768 widths and 720 CSS-pixel zoom-equivalent have no overflow; navigation is keyboard operable; reduced motion is enabled.",
+    "Stock /desk renders its existing setup wizard; full administration requires completing that wizard."
+  ],
+  "errors": [],
+  "english": [],
+  "status": "passed"
+}

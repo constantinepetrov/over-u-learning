@@ -9,6 +9,9 @@ from over_u.school import TEACHER, manifest
 class TestStudentAPI(BaseTestUtils):
     def setUp(self):
         super().setUp()
+        from frappe.translate import print_language
+        self.translation_context = print_language("ru")
+        self.translation_context.__enter__()
         frappe.set_user("Administrator")
         self.school = manifest()
         self.course = self.school["course"]
@@ -19,6 +22,7 @@ class TestStudentAPI(BaseTestUtils):
 
     def tearDown(self):
         frappe.set_user("Administrator")
+        self.translation_context.__exit__(None, None, None)
         super().tearDown()
 
     def reach_quiz(self):

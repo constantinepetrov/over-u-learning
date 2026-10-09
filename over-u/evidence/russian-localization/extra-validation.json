@@ -1,0 +1,24 @@
+{
+  "checks": [
+    "Russian guest login, invalid-credentials error and password recovery; no real password/email action.",
+    "Teacher dashboard/student list, existing and new quiz editors, assignment form/select labels and invalid-draft validation. No authoring save succeeds.",
+    "Student missing/forbidden course displays a Russian safe error."
+  ],
+  "screens": [
+    "20-login.png",
+    "21-login-error.png",
+    "22-password-recovery.png",
+    "23-teacher-dashboard.png",
+    "24-quiz-editor.png",
+    "25-new-quiz.png",
+    "26-assignment-form.png",
+    "27-assignment-validation.png",
+    "28-access-error.png"
+  ],
+  "errors": [],
+  "expectedErrors": [
+    "/api/method/frappe.client.insert MandatoryError"
+  ],
+  "english": [],
+  "status": "passed"
+}

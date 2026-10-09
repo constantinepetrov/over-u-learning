@@ -16,7 +16,7 @@ async function login(user, password, destination = '/school') {
   await page.goto(`${base}/login?redirect-to=${encodeURIComponent(destination)}`)
   await page.locator('#login_email').fill(user)
   await page.locator('#login_password').fill(password)
-  await page.getByRole('button', {name: 'Continue', exact: true}).click()
+  await page.getByRole('button', {name: /^(Continue|Продолжить)$/, exact: true}).click()
   await page.waitForURL(url => !url.pathname.startsWith('/login'))
   await page.goto(base + destination)
   return page
@@ -145,12 +145,12 @@ try {
   await teacher.locator('.ce-block:visible').first().waitFor()
   await shot(teacher, '12-stock-editor', 'Штатный редактор курса сохранён')
   await teacher.goto(`${base}/lms/assignment-submission/ASG-00005/${submission}`)
-  await teacher.getByLabel('Grade').click()
-  await teacher.getByRole('option', {name: 'Pass', exact: true}).click()
+  await teacher.getByLabel(/^(Grade|Оценка)$/).click()
+  await teacher.getByRole('option', {name: /^(Pass|Зачтено)$/, exact: true}).click()
   await teacher.locator('[contenteditable="true"]').last().fill('Зачёт. Цель измерима, срок и первый шаг указаны. Можно переходить к итогам.')
   await shot(teacher, '13-teacher-grading', 'Преподаватель проверяет существующую работу в штатном LMS')
-  await teacher.getByRole('button', {name: 'Save', exact: true}).click()
-  await teacher.getByText('Pass', {exact: true}).first().waitFor()
+  await teacher.getByRole('button', {name: /^(Save|Сохранить)$/, exact: true}).click()
+  await teacher.getByText(/^(Pass|Зачтено)$/, {exact: true}).first().waitFor()
   // The waiting student page must notice stock grading without resubmitting work.
   await student.getByText('Зачтено', {exact: true}).waitFor({timeout: 35000})
   assert.equal((await snapshot()).completed, 5)
@@ -201,7 +201,7 @@ try {
   const admin = await login('Administrator', env.OVER_U_ADMIN_PASSWORD, '/desk')
   // The POC site has not completed the stock Desk setup wizard. Do not change
   // site configuration just to bypass it; validate the real existing entry.
-  await admin.getByRole('button', {name: 'Get Started', exact: true}).waitFor()
+  await admin.getByRole('button', {name: /^(Get Started|Начать настройку)$/, exact: true}).waitFor()
   assert.ok(new URL(admin.url()).pathname.startsWith('/desk/'))
   await shot(admin, '19-stock-desk', 'Штатный Desk сохранён; POC открывает исходный setup wizard')
   evidence.checks.push('Stock /desk renders its existing setup wizard; full administration requires completing that wizard.')
