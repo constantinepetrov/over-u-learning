@@ -2,11 +2,12 @@
 import fs from 'node:fs'
 import assert from 'node:assert/strict'
 import {chromium} from 'playwright'
-const out = new URL('../evidence/russian-localization/', import.meta.url).pathname
+const out = process.env.OVER_U_EVIDENCE_DIR || new URL('../evidence/russian-localization/', import.meta.url).pathname
+fs.mkdirSync(out, {recursive: true})
 const env = Object.fromEntries(fs.readFileSync(process.env.OVER_U_ENV_FILE || '/workspace/over-u-runtime/dev.env', 'utf8').trim().split('\n').map(line => {const i = line.indexOf('='); return [line.slice(0, i), line.slice(i + 1)]}))
 const base = process.env.OVER_U_BASE_URL || 'http://over-u.localhost:8000'
 const evidence = {screens: [], checks: [], errors: [], english: []}
-const browser = await chromium.launch({executablePath: process.env.OVER_U_CHROMIUM || '/usr/bin/chromium', args: ['--no-sandbox', '--host-resolver-rules=MAP over-u.localhost 127.0.0.1']})
+const browser = await chromium.launch({executablePath: process.env.OVER_U_CHROMIUM || '/usr/bin/chromium', args: ['--no-sandbox', '--host-resolver-rules=MAP *.localhost 127.0.0.1']})
 const students = ['student2@over-u.example.com', 'localization-test@over-u.example.com']
 let student
 async function login(user, password, destination = '/school') {
@@ -203,12 +204,15 @@ try {
   assert.equal(await student.evaluate(() => document.activeElement.id), 'main')
   evidence.checks.push('320/390/768 widths and 720 CSS-pixel zoom-equivalent have no overflow; navigation is keyboard operable; reduced motion is enabled.')
   const admin = await login('Administrator', env.OVER_U_ADMIN_PASSWORD, '/desk')
-  // The POC site has not completed the stock Desk setup wizard. Do not change
-  // site configuration just to bypass it; validate the real existing entry.
-  await admin.getByRole('button', {name: 'Начать настройку', exact: true}).waitFor()
-  assert.ok(new URL(admin.url()).pathname.startsWith('/desk/'))
-  await shot(admin, '19-stock-desk', 'Штатный Desk сохранён; POC открывает исходный setup wizard')
-  evidence.checks.push('Stock /desk renders its existing setup wizard; full administration requires completing that wizard.')
+  if (process.env.OVER_U_DESK_SETUP_COMPLETE === '1') {
+    await admin.waitForFunction(() => window.frappe?.boot?.setup_complete)
+    assert.equal(await admin.evaluate(() => frappe.boot.lang), 'ru')
+    evidence.checks.push('Restored Desk site has completed native setup and keeps Russian after login.')
+  } else {
+    await admin.getByRole('button', {name: 'Начать настройку', exact: true}).waitFor()
+    await shot(admin, '19-stock-desk', 'Штатный Desk: мастер первоначальной настройки')
+    evidence.checks.push('Unconfigured POC preserves its native setup wizard.')
+  }
   assert.deepEqual(evidence.errors, [], 'No uncaught browser JS errors')
   assert.deepEqual(evidence.english, [], 'No English UI words in the captured primary workflow')
   evidence.status = 'passed'

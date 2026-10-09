@@ -56,12 +56,18 @@ class TestLocalization(BaseTestUtils):
                                    "first_name": "Locale", "send_welcome_email": 0, "language": language}).insert()
             self.assertEqual(user.language, language or "ru")
         localization.configure_defaults()
+        self.assertEqual(frappe.db.get_value("Language", "ru", "enabled"), 1)
         self.assertEqual(frappe.db.get_value("User", "ru-ui-english@example.com", "language"), "en")
 
     def test_merged_native_glossary_and_fallback_language(self):
         with print_language("ru"):
             for english, russian in [("Pass", "Зачтено"), ("Fail", "Не зачтено"),
                                      ("Not Graded", "Ожидает проверки"), ("Assignments", "Домашние задания"),
+                                     ("Begin typing for results.", "Начните вводить текст для поиска."),
+                                     ("Framework", "Платформа"),
+                                     ("ID", "Идентификатор"),
+                                     ("Please fill the following mandatory fields before saving:", "Перед сохранением заполните обязательные поля:"),
+                                     ("{0} is required.", "Поле «{0}» обязательно."),
                                      ("Welcome! Please sign in to continue.", "Добро пожаловать! Войдите, чтобы продолжить.")]:
                 self.assertEqual(frappe._(english), russian)
         user = self._create_user("ru-ui-no-language@example.com", "Locale", "Fallback", ["LMS Student"])

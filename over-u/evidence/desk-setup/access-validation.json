@@ -1,0 +1,17 @@
+{
+  "admin": {
+    "route": "/desk/users",
+    "language": "ru",
+    "nativeWizardComplete": true,
+    "overUEntry": true
+  },
+  "student": {
+    "overUEntry": false,
+    "adminUserReadDenied": true
+  },
+  "teacher": {
+    "overUEntry": false,
+    "adminUserReadDenied": true
+  },
+  "status": "passed"
+}

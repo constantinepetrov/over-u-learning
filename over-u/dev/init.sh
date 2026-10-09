@@ -9,6 +9,10 @@ if [ ! -f frappe-bench/sites/apps.txt ]; then
   bench init --ignore-exist --frappe-branch v16.51.0 --skip-redis-config-generation --skip-assets frappe-bench
 fi
 cd frappe-bench
+# Serve the original POC and isolated Desk clone by their own hostnames.
+bench config dns_multitenant on
+# A default_site forces bench serve to one site even in DNS mode.
+bench config remove-common-config default_site
 bench set-mariadb-host mariadb
 bench set-redis-cache-host redis://redis:6379
 bench set-redis-queue-host redis://redis:6379
@@ -35,7 +39,6 @@ if [ ! -f sites/over-u.localhost/site_config.json ]; then
   bench --site over-u.localhost install-app lms
   bench --site over-u.localhost set-config developer_mode 1
   bench --site over-u.localhost set-config allow_tests true
-  bench use over-u.localhost
 fi
 bench --site over-u.localhost install-app over_u
 ln -sfn "$PWD/apps/frappe/ui" /workspace/frontend/node_modules/@framework/ui

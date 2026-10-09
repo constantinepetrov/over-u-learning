@@ -313,7 +313,7 @@ Keep editing,Продолжить редактирование
 LMS Assignment,Домашнее задание
 LMS Assignment Submission,Сданная домашняя работа
 LMS Course,Курс
-LMS Enrollment,Участие в курсе
+LMS Enrollment,Записи на курсы
 LMS Quiz,Тест
 LMS Quiz Submission,Результат теста
 LMS Settings,Настройки обучения
@@ -745,3 +745,55 @@ violations,нарушения
 {0} rows selected,Выбрано строк: {0}
 {0} until {1} on {2},"С {0} до {1}, {2}"
 {0}s,{0} с
+Begin typing for results.,Начните вводить текст для поиска.
+Profiles,Профили
+Clear Cache,Очистить кэш
+Last Edited By You,Вы изменили запись
+Last Edited By {0},Запись изменил(а) {0}
+{0} more not shown,Ещё {0} разделов
+Website User,Пользователь сайта
+System User,Системный пользователь
+Create User Email,Создать почтовый аккаунт пользователя
+Float Precision,Точность дробных чисел
+Number Format,Формат чисел
+Time Zone,Часовой пояс
+Enable Onboarding,Показывать подсказки для начала работы
+Write,Редактирование
+Search,Поиск
+Notification,Уведомления
+Desk,Рабочее пространство
+Custom,Пользовательская настройка
+Dashboard Chart,Диаграмма
+Dashboards and Views,Панели и представления
+Scripting,Скрипты
+Persona Captured,Профиль обучения заполнен
+Demo Data Present,Есть демонстрационные данные
+Default Home,Использовать обучение как главную страницу
+LiveCode URL,Адрес LiveCode
+Payment Settings,Настройки оплаты
+Email Templates,Шаблоны писем
+LMS Course Progress,Прогресс обучения
+LMS Course Review,Отзывы о курсах
+LMS Course Interest,Интерес к курсам
+LMS Mentor Course Mapping,Преподаватели курсов
+LMS Certificate,Сертификат
+Course Creator,Автор курсов
+LMS Student,Ученик
+Moderator,Модератор
+Batch Evaluator,Проверяющий в группе
+System Manager,Администратор системы
+Website Manager,Администратор сайта
+Add Roles,Добавить роли
+Remove Roles,Удалить роли
+Add to {0} Users,Добавить {0} пользователям
+Remove from {0} Users,Удалить у {0} пользователей
+Select records to update roles,Выберите пользователей для изменения ролей
+Please set a valid Email ID.,Укажите корректный адрес электронной почты.
+Default Workspace,Рабочее пространство по умолчанию
+Default App,Приложение по умолчанию
+{0} is required,Поле «{0}» обязательно
+{0} is required.,Поле «{0}» обязательно.
+Please fill the following mandatory fields before saving:,Перед сохранением заполните обязательные поля:
+Missing Fields,Не заполнены обязательные поля
+Framework,Платформа
+ID,Идентификатор

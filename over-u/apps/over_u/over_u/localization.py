@@ -16,6 +16,10 @@ def get_translations():
 
 
 def configure_defaults():
+    # The wizard and language selectors list only enabled languages.
+    # A site default alone does not enable Russian in Framework 16.
+    if frappe.db.exists("Language", "ru"):
+        frappe.db.set_value("Language", "ru", "enabled", 1, update_modified=False)
     frappe.db.set_single_value("System Settings", "language", "ru")
     frappe.clear_cache()
 

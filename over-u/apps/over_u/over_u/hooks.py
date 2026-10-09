@@ -26,3 +26,14 @@ before_request = ["over_u.localization.guest_language"]
 after_request = ["over_u.localization.preload_lms_translations"]
 after_build = "over_u.build.after_build"
 app_include_js = ["/assets/over_u/localization/desk.js"]
+# Native extension point for the one stock list column that skips __().
+doctype_list_js = {"User": "public/localization/user-list.js"}
+
+# Send administrators directly to the native Users workspace after login.
+app_home = "/desk/users"
+add_to_apps_screen = [{
+    "name": "over_u",
+    "title": "OVER U",
+    "route": "/desk/users",
+    "has_permission": "over_u.desk.can_access_desk",
+}]

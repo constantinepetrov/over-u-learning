@@ -1,0 +1,59 @@
+{
+  "site": "over-u-desk.localhost",
+  "language": "ru",
+  "setupComplete": true,
+  "screens": [
+    {
+      "file": "00-app-launcher.png",
+      "route": "http://over-u-desk.localhost:8000/desk"
+    },
+    {
+      "file": "01-admin-home.png",
+      "route": "http://over-u-desk.localhost:8000/desk/users"
+    },
+    {
+      "file": "02-users.png",
+      "route": "http://over-u-desk.localhost:8000/desk/users/user?enabled=1"
+    },
+    {
+      "file": "03-roles.png",
+      "route": "http://over-u-desk.localhost:8000/desk/users/role"
+    },
+    {
+      "file": "04-permissions.png",
+      "route": "http://over-u-desk.localhost:8000/desk/users/permission-manager"
+    },
+    {
+      "file": "05-courses.png",
+      "route": "http://over-u-desk.localhost:8000/desk/lms/lms-course"
+    },
+    {
+      "file": "06-enrollments.png",
+      "route": "http://over-u-desk.localhost:8000/desk/lms/lms-enrollment"
+    },
+    {
+      "file": "07-learning-settings.png",
+      "route": "http://over-u-desk.localhost:8000/desk/lms/lms-settings#general_tab"
+    },
+    {
+      "file": "08-school-settings.png",
+      "route": "http://over-u-desk.localhost:8000/desk/website/website-settings#home_tab"
+    },
+    {
+      "file": "09-language-settings.png",
+      "route": "http://over-u-desk.localhost:8000/desk/system/system-settings"
+    },
+    {
+      "file": "10-user-form.png",
+      "route": "http://over-u-desk.localhost:8000/desk/users/user/student1%40over-u.example.com#user_details_tab"
+    },
+    {
+      "file": "11-user-roles.png",
+      "route": "http://over-u-desk.localhost:8000/desk/users/user/student1%40over-u.example.com#roles_permissions_tab"
+    },
+    {
+      "file": "13-admin-profile-settings.png",
+      "route": "http://over-u-desk.localhost:8000/desk/users/user/Administrator#settings_tab"
+    }
+  ]
+}

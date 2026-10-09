@@ -1,0 +1,7 @@
+{
+  "checks": [
+    "English User.language works for /school and /lms; authored Russian course content is unchanged."
+  ],
+  "status": "passed",
+  "restoredRussian": true
+}

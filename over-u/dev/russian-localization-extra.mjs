@@ -2,10 +2,11 @@
 import fs from 'node:fs'
 import assert from 'node:assert/strict'
 import {chromium} from 'playwright'
-const out = new URL('../evidence/russian-localization/', import.meta.url).pathname
+const out = process.env.OVER_U_EVIDENCE_DIR || new URL('../evidence/russian-localization/', import.meta.url).pathname
+fs.mkdirSync(out, {recursive: true})
 const env = Object.fromEntries(fs.readFileSync(process.env.OVER_U_ENV_FILE || '/workspace/over-u-runtime/dev.env','utf8').trim().split('\n').map(s => {const i=s.indexOf('=');return [s.slice(0,i),s.slice(i+1)]}))
 const base = process.env.OVER_U_BASE_URL || 'http://over-u.localhost:8000'
-const browser = await chromium.launch({executablePath:'/usr/bin/chromium', args:['--no-sandbox','--host-resolver-rules=MAP over-u.localhost 127.0.0.1']})
+const browser = await chromium.launch({executablePath:'/usr/bin/chromium', args:['--no-sandbox','--host-resolver-rules=MAP *.localhost 127.0.0.1']})
 const result = {checks:[], screens:[], errors:[], expectedErrors:[], english:[]}
 let invalidDraft = false
 async function page() {

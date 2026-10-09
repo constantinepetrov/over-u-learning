@@ -4,15 +4,16 @@ import assert from 'node:assert/strict'
 import {chromium} from 'playwright'
 const env=Object.fromEntries(fs.readFileSync(process.env.OVER_U_ENV_FILE || '/workspace/over-u-runtime/dev.env','utf8').trim().split('\n').map(s=>{const i=s.indexOf('=');return[s.slice(0,i),s.slice(i+1)]}))
 const base=process.env.OVER_U_BASE_URL || 'http://over-u.localhost:8000'
-const out=new URL('../evidence/russian-localization/language-validation.json',import.meta.url).pathname
+const out=process.env.OVER_U_EVIDENCE_DIR ? process.env.OVER_U_EVIDENCE_DIR+'language-validation.json' : new URL('../evidence/russian-localization/language-validation.json',import.meta.url).pathname
+fs.mkdirSync(new URL('.',`file://${out}`).pathname,{recursive:true})
 const fixture='localization-test@over-u.example.com'
-const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox','--host-resolver-rules=MAP over-u.localhost 127.0.0.1']})
+const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox','--host-resolver-rules=MAP *.localhost 127.0.0.1']})
 let admin, changed=false
 const result={checks:[]}
 async function login(user,password) {
  const context=await b.newContext();const p=await context.newPage()
  await p.goto(base+'/login');await p.locator('#login_email').fill(user);await p.locator('#login_password').fill(password)
- await p.getByRole('button',{name:'Продолжить',exact:true}).click();await p.waitForURL(u=>!u.pathname.startsWith('/login'));return p
+ await p.getByRole('button',{name:'Продолжить',exact:true}).click();await p.waitForURL(u=>!u.pathname.startsWith('/login'),{waitUntil:'domcontentloaded',timeout:45000});return p
 }
 async function language(value) {
  return admin.evaluate(async({fixture,value})=>{

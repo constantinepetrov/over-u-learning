@@ -2,7 +2,7 @@
 FROM python:3.14-slim-bookworm
 RUN --mount=type=secret,id=ca_bundle,required=true \
     apt-get update && apt-get install -y --no-install-recommends \
-    git curl build-essential pkg-config libmariadb-dev mariadb-client \
+    git curl file build-essential pkg-config libmariadb-dev mariadb-client \
     libcairo2 libmagic1 libpango-1.0-0 libpangocairo-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=secret,id=ca_bundle,required=true \
