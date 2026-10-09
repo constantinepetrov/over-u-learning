@@ -1,0 +1,744 @@
+(opens in a new tab),(откроется в новой вкладке)
+1 mark,1 балл
+1 result loaded,Загружен 1 результат
+1 row selected,Выбрана 1 строка
+"<p>Dear {{ member_name }},</p>
+
+<p>You have been enrolled in our upcoming batch {{ batch_name }}.</p>
+
+<p>Thanks,</p>
+<p>Frappe Learning</p>","<p>Здравствуйте, {{ member_name }}!</p>
+
+<p>Вы записаны в группу {{ batch_name }}, обучение в которой скоро начнётся.</p>
+
+<p>С уважением,</p>
+<p>Frappe Learning</p>"
+A condition here was written for an older version and can no longer be applied. Remove it and add the condition you want.,Это условие создано для старой версии и больше не работает. Удалите его и добавьте новое.
+A passed assignment is frozen. Change its grade before revising the answer.,Зачтённую работу нельзя изменить. Сначала преподаватель должен отменить зачёт.
+A quiz cannot mix Open Ended questions with other question types.,В одном тесте нельзя сочетать вопросы с развёрнутым ответом и другие типы вопросов.
+A reviewed submission cannot be moved to another learner or assignment.,Проверенную работу нельзя перенести другому ученику или в другое задание.
+"AI assistant (ChatGPT, etc.)",ИИ-помощник (ChatGPT и другие)
+API Key is required,Укажите ключ API
+API Secret is required,Укажите секрет API
+Accepted answer {0},Допустимый ответ {0}
+Account name,Название учётной записи
+Account name is required,Укажите название учётной записи
+Actions for {0},Действия: {0}
+Add Chapter,Добавить модуль
+Add Condition,Добавить условие
+Add Condition Group,Добавить группу условий
+Add Lesson,Добавить урок
+Add a condition,Добавить условие
+Add a {0} before saving.,Перед сохранением добавьте: {0}.
+Add accepted answer,Добавить допустимый ответ
+Add at least one {0} before saving.,Перед сохранением добавьте хотя бы один элемент: {0}.
+Add chapter,Добавить модуль
+Add members?,Добавить учеников?
+Add one to get started,"Добавьте первый элемент, чтобы начать"
+Add one to give this workspace its first members.,"Добавьте правило, чтобы включить первых участников в рабочее пространство."
+Add option,Добавить вариант ответа
+Add pricing and go live.,Укажите стоимость и откройте доступ.
+Add questions,Добавить вопросы
+"Add your first question and edit it right here. Choices, correct answers and explanations all in one card.","Добавьте первый вопрос и отредактируйте его здесь. Варианты, правильные ответы и пояснения — в одной карточке."
+Add {0} members,Добавить участников: {0}
+"Add {0}, remove {1}",Добавить: {0}; удалить: {1}
+Added by rules,Добавлены по правилам
+"Address Title, Address Line 1, City and Country are required.","Укажите название адреса, первую строку адреса, город и страну."
+Address created successfully,Адрес добавлен
+Advanced,Почти завершили
+Advanced (60-99%),Почти завершили (60–99%)
+"After {0} {1}, the quiz will be automatically submitted.",Через {0} {1} тест будет отправлен автоматически.
+Align center,По центру
+Align left,По левому краю
+Align right,По правому краю
+All Payments,Все платежи
+All channels,Все каналы
+All members,Все участники
+All questions have been attempted.,Вы ответили на все вопросы.
+All times in {0},Время указано в часовом поясе {0}
+All types,Все типы
+Already using Frappe / ERPNext,Уже использую Frappe / ERPNext
+Amount must be a positive number for {0}.,Сумма для {0} должна быть больше нуля.
+"An open-ended question can't be mixed with other types, and live answer-reveal is turned off for this quiz.",Вопрос с развёрнутым ответом нельзя сочетать с другими типами. Показ правильных ответов во время этого теста отключён.
+Answer all questions before you submit. You can navigate freely between them.,Перед отправкой ответьте на все вопросы. Между вопросами можно свободно переключаться.
+Answer every question.,Ответьте на каждый вопрос.
+Answer:,Ответ:
+"Anyone matching these is kept in this channel, and in its workspace.","Все, кто соответствует этим условиям, остаются в канале и его рабочем пространстве."
+Applies to this device only.,Применяется только на этом устройстве.
+Apply,Применить
+"Are you sure you want to clear the demo data? This would delete the course ""A guide  to Frappe Learning"" along with all its associated data. This action cannot be undone.",Удалить демонстрационные данные? Курс «A guide  to Frappe Learning» и все связанные с ним данные будут удалены. Отменить это действие нельзя.
+Assignment,Домашнее задание
+Assignment Submissions,Сданные домашние работы
+Assignment submitted successfully,Работа отправлена на проверку
+Assignments,Домашние задания
+Auto-graded,Автоматическая проверка
+Auto-graded by fuzzy match > 85% · up to 10,Автоматическая проверка по совпадению более 85% · до 10 вариантов
+Average Completion Rate,Средний прогресс
+Awarded For,За что выдано
+Back to Login,Вернуться ко входу
+Back to sign in,Вернуться ко входу
+Back to topics,К темам
+Background Color,Цвет фона
+Badge assignment deleted successfully,Выданный значок удалён
+Batch options,Действия с группой
+Bring your learners into a batch.,Объедините учеников в группу.
+Camera Setup,Настройка камеры
+Camera access was denied. Please allow camera access and reload.,Нет доступа к камере. Разрешите доступ и обновите страницу.
+Camera at {0},Камера: {0}
+Camera disconnected,Камера отключена
+Cell color,Цвет ячейки
+Certificates are not enabled for this batch.,Для этой группы выдача сертификатов отключена.
+Certification available,Можно получить сертификат
+Change who is a member?,Изменить состав участников?
+Changes saved successfully,Изменения сохранены
+Channel created,Канал создан
+Channel mapping deleted,Связь с каналом удалена
+Channel saved,Канал сохранён
+Channels,Каналы
+Chapter,Модуль
+Chapters,Модули
+Check,Проверить
+Choices · multiple answers,Выбор нескольких ответов
+Choices · single answer,Выбор одного ответа
+Choose one of the available answers.,Выберите один из предложенных ответов.
+Classes,Занятия
+Clear color,Убрать цвет
+Close preview,Закрыть предпросмотр
+Close question bank,Закрыть банк вопросов
+Closes,Закрывается
+Closing or refreshing the page will submit your quiz automatically.,"Если закрыть или обновить страницу, тест будет отправлен автоматически."
+Code Block,Блок кода
+Colour mode,Цветовая тема
+Command palette,Быстрые команды
+Comments,Комментарий
+Comments by Evaluator,Комментарий преподавателя
+Complete assignment lessons only after teacher review with Pass.,Завершать урок с домашним заданием только после зачёта преподавателем.
+Complete the previous lesson before submitting this assignment.,"Сначала завершите предыдущий урок, затем отправьте работу."
+Complete the previous lesson first.,Сначала завершите предыдущий урок.
+Complete the previous lesson to unlock this one,"Завершите предыдущий урок, чтобы открыть этот"
+Complete the previous lesson's requirements first.,Сначала выполните требования предыдущего урока.
+Complete the previous lessons to unlock this one,"Завершите предыдущие уроки, чтобы открыть этот"
+Complete the quiz to continue the video.,"Пройдите тест, чтобы продолжить видео."
+Completed,Завершили
+Completed (100%),Завершили (100%)
+Condition actions,Действия с условием
+Condition types could not be loaded. Reload the page and try again.,Не удалось загрузить типы условий. Обновите страницу и попробуйте ещё раз.
+Condition types could not be loaded. Reload the page to try again.,Не удалось загрузить типы условий. Обновите страницу и попробуйте ещё раз.
+Configure certification for a course.,Настройте выдачу сертификатов за курс.
+Continue,Продолжить
+Continue Learning,Продолжить обучение
+Continue learning,Продолжить обучение
+Copy,Копировать
+Copy link,Скопировать ссылку
+Correct,Верно
+Could not change the visibility,Не удалось изменить видимость
+Could not check who this change affects,"Не удалось проверить, кого затронет это изменение"
+Could not count the list,Не удалось подсчитать элементы списка
+Could not create the channel,Не удалось создать канал
+Could not create the workspace,Не удалось создать рабочее пространство
+Could not enable the integration,Не удалось включить интеграцию
+Could not link channel,Не удалось связать канал
+Could not link workspace,Не удалось связать рабочее пространство
+Could not load the members,Не удалось загрузить участников
+Could not load the question,Не удалось загрузить вопрос
+Could not load the workspace,Не удалось загрузить рабочее пространство
+Could not load this certification.,Не удалось загрузить настройки сертификата.
+Could not load this channel,Не удалось загрузить этот канал
+Could not load this workspace,Не удалось загрузить это рабочее пространство
+Could not load your saved progress,Не удалось загрузить сохранённый прогресс
+Could not recreate the Raven channel,Не удалось заново создать канал Raven
+Could not recreate the Raven workspace,Не удалось заново создать рабочее пространство Raven
+Could not rename the workspace,Не удалось переименовать рабочее пространство
+Could not save the channel,Не удалось сохранить канал
+Could not search just now. Try again.,Поиск сейчас недоступен. Попробуйте ещё раз.
+Could not start the payment. Please contact the administrator.,Не удалось начать оплату. Обратитесь к администратору.
+Could not update channel,Не удалось обновить канал
+Could not update the channel,Не удалось обновить канал
+Could not update workspace,Не удалось обновить рабочее пространство
+Course,Курс
+Course Chapter,Модуль
+Course Editor,Редактор курса
+Course Lesson,Урок
+Course List,Список курсов
+Course Progress,Прогресс обучения
+Course options,Действия с курсом
+Courses,Курсы
+Cover image option,Действия с обложкой
+Create Course,Создать курс
+Currency is required for {0}.,Укажите валюту для {0}.
+Custom…,Другое значение…
+Dashboard,Главная
+"Dear {{ member_name }},
+
+You have been enrolled in our upcoming batch {{ batch_name }}.
+
+Thanks,
+Frappe Learning","Здравствуйте, {{ member_name }}!
+
+Вы записаны в группу {{ batch_name }}, обучение в которой скоро начнётся.
+
+С уважением,
+Frappe Learning"
+Delete batch,Удалить группу
+Delete exercise,Удалить упражнение
+Delete mapping,Удалить связь
+Delete program,Удалить программу
+Delete selected courses,Удалить выбранные курсы
+Delete slot,Удалить время встречи
+Delete this category?,Удалить эту категорию?
+Deleting questions…,Удаляем вопросы…
+Deleting quizzes…,Удаляем тесты…
+Deleting…,Удаляем…
+Description,Описание
+Discard changes,Отменить изменения
+Disconnecting your camera counts as a violation.,Отключение камеры считается нарушением.
+Document,Документ
+Edit,Редактировать
+Edit Embed,Изменить вставку
+Edit category,Редактировать категорию
+Edit link,Изменить ссылку
+Edit question,Редактировать вопрос
+Edit question {0},Редактировать вопрос {0}
+Editor,Редактор
+Editor View,Режим редактора
+Email,Электронная почта
+Email ID is required,Укажите электронную почту
+Email address,Электронная почта
+Email provider,Почтовый сервис
+Embed,Встроенный материал
+Embed {0},Вставить {0}
+Embedded content,Встроенный материал
+Enable JavaScript to continue learning.,Для прохождения обучения включите JavaScript в браузере.
+Enable Proctoring,Включить контроль прохождения
+Enable Raven Integration,Включить интеграцию с Raven
+Enable Scheduling,Ограничить время доступа
+Enable {0},Включить {0}
+Enforce Lesson Completion,Последовательное прохождение уроков
+English,Английский
+Enroll students to track their progress here,"Добавьте учеников на курс, чтобы видеть их прогресс"
+Enrolled On,Дата зачисления
+Enrollment is required to record progress.,"Чтобы сохранять прогресс, нужен доступ к курсу."
+Enrollment is required to submit this assignment.,"Чтобы отправить работу, нужен доступ к курсу."
+Enter a URL,Укажите ссылку
+Error creating Address,Не удалось добавить адрес
+Error creating quiz,Не удалось создать тест
+Error deleting channel mapping,Не удалось удалить связь с каналом
+Error deleting question: {0},Не удалось удалить вопрос: {0}
+Error deleting questions: {0},Не удалось удалить вопросы: {0}
+Error deleting quiz: {0},Не удалось удалить тест: {0}
+Error deleting quizzes: {0},Не удалось удалить тесты: {0}
+Error deleting workspace mapping,Не удалось удалить связь с рабочим пространством
+Error loading question,Не удалось загрузить вопрос
+Error saving question,Не удалось сохранить вопрос
+Every member of this workspace was added by a rule.,Все участники этого рабочего пространства добавлены по правилу.
+Every member of {0} was added by a rule.,Все участники {0} добавлены по правилу.
+Every time,Каждый раз
+Explanation for option {0},Пояснение к варианту {0}
+"Explanation for option {0}, shown as feedback (optional)","Пояснение к варианту {0}, которое ученик увидит после ответа (необязательно)"
+Export failed,Не удалось выгрузить данные
+Face must be visible,Лицо должно быть видно
+Face not visible,Лицо не видно
+Fail,Не зачтено
+Failed,Не зачтено
+Failed to insert embed. Please check the URL and try again.,Не удалось вставить материал. Проверьте ссылку и попробуйте ещё раз.
+Failed to load face detection models. Please reload.,Не удалось загрузить распознавание лица. Обновите страницу.
+Feel free to make edits to your submission if needed.,При необходимости вы можете изменить ответ.
+"Fill in the title on the right. The quiz is created then, and questions can go in.",Укажите название справа. После создания теста можно добавить вопросы.
+Filter by Course,Выбрать курс
+Filter by Quiz,Выбрать тест
+Filter by added by rules,Отобрать добавленных по правилам
+Filter by channel,Выбрать канал
+Filter by payment type,Выбрать тип платежа
+Filter by role,Выбрать роль
+Filter by state,Выбрать статус
+Filter by type,Выбрать тип
+Finish every condition before saving.,Перед сохранением заполните все условия.
+Finish the lessons before it to unlock this one.,"Завершите предыдущие уроки, чтобы открыть этот."
+Fix the problems listed under the conditions first,Сначала исправьте ошибки под условиями
+Font Color,Цвет текста
+For Certificate,За сертификат
+For Course,За курс
+Forgot Password?,Забыли пароль?
+Forgot password?,Забыли пароль?
+Frappe Mail site,Сайт Frappe Mail
+Friend or colleague,Друг или коллега
+Full Name,Имя и фамилия
+Generic,встроенный материал
+Get Started,Начать настройку
+Give this channel a name before saving,Перед сохранением укажите название канала
+Go now,Перейти
+Google Meet account deleted successfully,Учётная запись Google Meet удалена
+Grade,Оценка
+Grade submissions,Проверить работы
+Grading,Проверка работы
+Grant,Предоставить доступ
+Header,Заголовок
+Heading,Заголовок
+Heading 1,Заголовок 1
+Heading 2,Заголовок 2
+Heading 3,Заголовок 3
+Heading 4,Заголовок 4
+Heading 5,Заголовок 5
+Heading 6,Заголовок 6
+Hello,Здравствуйте
+Horizontal Rule,Разделитель
+How did you hear about Frappe Learning?,Как вы узнали о Frappe Learning?
+"If enabled, all outgoing emails will be sent from this account. Note: Only one account can be default outgoing.",Все исходящие письма будут отправляться с этой учётной записи. Основной исходящей может быть только одна учётная запись.
+"If enabled, all replies to your company (eg: replies@yourcompany.com) will come to this account. Note: Only one account can be default incoming.","Все ответы на письма вашей компании (например, replies@yourcompany.com) будут приходить в эту учётную запись. Основной входящей может быть только одна учётная запись."
+"If enabled, emails will be pulled from this account.",Письма будут загружаться из этой учётной записи.
+"If enabled, outgoing emails can be sent from this account.",Эту учётную запись можно использовать для отправки писем.
+Image,Изображение
+Image / Gallery,Изображение / галерея
+"Image search is unavailable. Add an Unsplash access key in Settings, or upload your own image.",Поиск изображений недоступен. Добавьте ключ Unsplash в настройках или загрузите своё изображение.
+Import Course from ZIP,Импортировать курс из ZIP
+In Progress,В процессе
+In Progress (30-60%),В процессе (30–60%)
+Incorrect,Неверно
+Insert Embed,Вставить материал
+Insert table,Вставить таблицу
+Install the {0} app to enable this integration.,Для этой интеграции установите приложение {0}.
+Instructor,Преподаватель
+Instructors,Преподаватели
+Invalid Login,Не удалось войти
+"Invalid credentials, try again.",Неверная почта или пароль. Попробуйте ещё раз.
+Invalid email ID,Неверный адрес электронной почты
+Invalid login credentials,Неверная почта или пароль
+Invalid login credentials. Please try again.,Неверная почта или пароль. Попробуйте ещё раз.
+"It may have been deleted, or the request did not get through.","Возможно, запись удалена или запрос не дошёл до сервера."
+"Its content is stored in a form we cannot read. Reload the page, and tell your instructor if it keeps happening.","Не удалось прочитать сохранённый материал. Обновите страницу. Если проблема повторится, сообщите преподавателю."
+Just Started,Начали обучение
+Just Started (0-30%),Начали обучение (0–30%)
+Keep camera connected,Не отключайте камеру
+Keep editing,Продолжить редактирование
+LMS Assignment,Домашнее задание
+LMS Assignment Submission,Сданная домашняя работа
+LMS Course,Курс
+LMS Enrollment,Участие в курсе
+LMS Quiz,Тест
+LMS Quiz Submission,Результат теста
+LMS Settings,Настройки обучения
+Language,Язык
+Leave,Выйти
+Leave without saving?,Выйти без сохранения?
+Lesson,Урок
+Lesson and course must be valid document names.,Не удалось определить курс или урок.
+Lesson content,Содержимое урока
+Lesson content could not be read,Не удалось прочитать содержимое урока
+Lesson details,Настройки урока
+Lesson material,Материал урока
+Lesson not found,Урок не найден
+Lesson not found.,Урок не найден.
+Lesson not found. Taking you to your current lesson in {0} seconds.,Урок не найден. Через {0} сек. вы вернётесь к текущему уроку.
+Lessons,Уроки
+Let's get your workspace ready. It only takes a few minutes.,Настроим рабочее пространство. Это займёт несколько минут.
+Loading camera…,Подключаем камеру…
+Loading…,Загружаем…
+Locked,Закрыт
+Log in,Войти
+Log in to see your account.,"Войдите, чтобы открыть свой кабинет."
+Login,Вход
+Looking away for too long counts as a violation.,Долгое отсутствие взгляда на экран считается нарушением.
+Make an Announcement,Создать объявление
+Managed by {0},Управляется приложением {0}
+Manual grading,Проверка преподавателем
+Manually graded,Проверяет преподаватель
+Mark at least two correct answers,Отметьте хотя бы два правильных ответа
+Mark the correct answer,Отметьте правильный ответ
+Marks:,Баллы:
+Max Violations,Допустимое число нарушений
+Maximum violations reached,Достигнут предел нарушений
+Member,Ученик
+Members,Ученики
+Membership conditions,Условия участия
+Minimise camera,Свернуть камеру
+More actions,Другие действия
+More actions for question {0},Другие действия с вопросом {0}
+More options,Другие варианты
+Multiple choice,Выбор нескольких ответов
+Multiple faces,Несколько лиц
+Multiple faces detected — only one person allowed,Обнаружено несколько лиц — в кадре должен быть один человек
+Multiple faces in the frame will be flagged.,Несколько лиц в кадре считаются нарушением.
+Mute,Выключить звук
+My Learning,Моё обучение
+Name the quiz first,Сначала назовите тест
+New Badge,Новый значок
+New Channel,Новый канал
+New Chapter,Новый модуль
+New Course,Новый курс
+New Lesson,Новый урок
+New Quiz,Новый тест
+New question,Новый вопрос
+Next,Далее
+Next lesson,Следующий урок
+No event details were recorded for this attempt.,Для этой попытки нет записанных событий.
+No face detected,Лицо не обнаружено
+No face detected — look at the camera,Лицо не обнаружено — посмотрите в камеру
+"No images found for ""{0}"".",По запросу «{0}» изображения не найдены.
+No member of this workspace was added by a rule.,Ни один участник этого рабочего пространства не добавлен по правилу.
+No member of {0} was added by a rule.,Ни один участник {0} не добавлен по правилу.
+No options,Нет вариантов
+No questions found.,Вопросы не найдены.
+No questions were attempted in this submission.,В этой работе нет ответов на вопросы.
+No questions yet,Вопросов пока нет
+No results,Ничего не найдено
+No workspace to create this channel in. Go back and start again from a workspace's Channels tab.,Нет рабочего пространства для этого канала. Вернитесь и откройте вкладку «Каналы» нужного рабочего пространства.
+No {0} match this filter,По этому фильтру не найдены: {0}
+No {0} match {1},По запросу {1} не найдены: {0}
+Nobody is in a channel of this workspace yet.,В каналах этого рабочего пространства пока нет участников.
+Nobody is in {0} anymore.,В {0} больше нет участников.
+Not Applicable,Без оценки
+Not Graded,Ожидает проверки
+Not Permitted,Нет доступа
+Not Saved,Не сохранено
+Not added by rules,Добавлены вручную
+Not installed,Не установлено
+Not linked,Не связано
+Not saved,Не сохранено
+Not saved yet,Пока не сохранено
+OVER U: Require Assignment Pass,OVER U: открывать следующий урок после зачёта
+Once,Один раз
+One person only,Только один человек
+Only image file is allowed.,Можно загрузить только изображение.
+Only the course instructor can review this assignment.,Проверять эту работу может только преподаватель курса.
+Only the learner can submit their own work.,Ученик может отправить только свою работу.
+Open ended,Развёрнутый ответ
+Open in Raven,Открыть в Raven
+Opening your school…,Открываем вашу школу…
+Opens,Открывается
+Option {0},Вариант {0}
+Option {0} is a correct answer,Вариант {0} — один из правильных ответов
+Option {0} is the correct answer,Вариант {0} — правильный ответ
+Optional. Leave empty to keep the assignment open after it starts.,"Необязательно. Оставьте пустым, чтобы работа принималась без срока окончания."
+Optional. Leave empty to keep the quiz open after it starts.,"Необязательно. Оставьте пустым, чтобы тест оставался открытым без срока окончания."
+PDF document,Документ PDF
+Paid,Оплачено
+Pass,Зачтено
+Pass all required assessments before completing this lesson.,Для завершения урока пройдите обязательные тесты и получите зачёт за домашние задания.
+Passed,Зачтено
+Passing Percentage,"Проходной балл, %"
+Passing percentage,"Проходной балл, %"
+Passing score: {0}%,Проходной балл: {0}%
+Password,Пароль
+Password is required,Укажите пароль
+Pause,Пауза
+Paused,Приостановлено
+Payment gateway deleted successfully,Платёжный сервис удалён
+Pending Review,Ожидает проверки
+Percentage/Status,Процент / статус
+Permission Denied,Нет доступа
+Play,Воспроизвести
+Play video,Воспроизвести видео
+Please enter a supported URL or iframe embed code,Введите подходящую ссылку или код iframe для вставки
+"Please enter your email, we'll send you password reset link",Введите электронную почту — мы отправим ссылку для восстановления пароля
+Please log in to enroll in this program.,"Войдите, чтобы записаться на эту программу."
+Please login to access this page.,"Войдите, чтобы открыть эту страницу."
+Please provide an answer or upload a file before submitting.,Напишите ответ или прикрепите файл перед отправкой.
+Please select your state from the list.,Выберите регион из списка.
+Please select your state.,Выберите регион.
+"Please upload an MP4, WebM, or OGG video. Formats like .MOV can't be played in the browser.","Загрузите видео MP4, WebM или OGG. Форматы вроде MOV браузер не воспроизводит."
+Please upload your resume,Прикрепите резюме
+Poke around a sample course.,Посмотрите демонстрационный курс.
+Position your face in the camera to enable the start button.,"Посмотрите в камеру, чтобы стала доступна кнопка начала теста."
+Position your face in the frame,Расположите лицо в кадре
+Previous,Назад
+Previous lesson,Предыдущий урок
+Price must be a positive number for {0}.,Стоимость для {0} должна быть больше нуля.
+Proctored,С контролем прохождения
+Proctoring Log,Журнал контроля прохождения
+Proctoring Rules,Правила контроля прохождения
+Proctoring violation,Нарушение правил прохождения
+Profile updated successfully,Профиль обновлён
+Progress Summary,Прогресс обучения
+Progress course must match the lesson course.,Этот урок относится к другому курсу.
+Publish,Опубликовать
+Publish batch,Опубликовать группу
+Publish course,Опубликовать курс
+Published,Опубликован
+Question,Вопрос
+Question bank,Банк вопросов
+Question created successfully,Вопрос создан
+Question deleted successfully,Вопрос удалён
+Question duplicated,Вопрос скопирован
+Question navigation,Переход между вопросами
+Questions,Вопросы
+Quiz,Тест
+Quiz Submissions,Результаты тестов
+Quiz auto-submits when this many violations are recorded.,Тест отправится автоматически при достижении этого числа нарушений.
+Quiz failed,Тест не пройден
+Quiz passed,Тест пройден
+Quizzes,Тесты
+Q{0}:,Вопрос {0}:
+Raven channel recreated,Канал Raven создан заново
+Raven workspace recreated,Рабочее пространство Raven создано заново
+Reach the quiz passing score first.,Сначала пройдите тест с проходным баллом.
+Ready,Готово
+Recreate channel,Создать канал заново
+Recreate workspace,Создать рабочее пространство заново
+Redeemed,Использовано
+Refresh session,Обновить сессию
+Remaining: {0},Осталось: {0}
+Remove answer {0},Удалить ответ {0}
+Remove coupon,Удалить промокод
+Remove file,Удалить файл
+Remove image,Удалить изображение
+Remove link,Удалить ссылку
+Remove members?,Удалить участников?
+Remove option {0},Удалить вариант {0}
+Remove quiz,Убрать тест
+Remove submission,Удалить ответ
+Remove tag,Удалить метку
+Remove video,Удалить видео
+Remove {0} members,Удалить участников: {0}
+Reply actions,Действия с ответом
+Require camera access and monitor for violations during the quiz.,Требовать доступ к камере и отслеживать нарушения во время теста.
+Reset Password,Восстановить пароль
+Restrict when learners can start and submit this quiz.,"Ограничить период, когда ученики могут начать и отправить тест."
+Restrict when learners can submit this assignment.,"Ограничить период, когда ученики могут отправить работу."
+Results,Результаты
+Retry,Попробовать снова
+Revise the homework and receive a pass first.,Сначала исправьте домашнее задание и получите зачёт.
+Role,Роль
+Role Permissions Manager,Управление правами доступа
+Roles,Роли
+Row actions,Действия со строкой
+Russian,Русский
+Save,Сохранить
+Save anyway,Всё равно сохранить
+Save question,Сохранить вопрос
+Save this workspace before adding channels to it.,Сохраните рабочее пространство перед добавлением каналов.
+Save without checking who this affects?,"Сохранить, не проверяя, кого затронет изменение?"
+Saved,Сохранено
+Saved. This format can't be previewed here.,Сохранено. Этот формат здесь нельзя просмотреть.
+Saving,Сохраняем
+Schedule End,Окончание доступа
+Schedule End must be after Schedule Start.,Окончание доступа должно быть позже начала.
+Schedule Start,Начало доступа
+Schedule Start is required when scheduling is enabled.,"Укажите начало доступа, если включено ограничение по времени."
+Search Template,Найти шаблон
+Search accounts,Найти учётную запись
+Search applications,Найти заявку
+Search badges,Найти значок
+Search by keyword,Поиск по словам
+Search categories,Найти категорию
+Search coupons,Найти промокод
+"Search engine (Google, etc.)",Поисковик (Google и другие)
+Search gateways,Найти платёжный сервис
+Search images by keyword,Поиск изображений по словам
+Search jobs,Найти вакансию
+Search members,Найти участника
+Search questions,Найти вопрос
+Search students,Найти ученика
+Search the question bank,Поиск в банке вопросов
+Search workspaces,Найти рабочее пространство
+Seek,Перемотать
+Select a state,Выберите регион
+Select all,Выбрать всё
+Select option,Выберите вариант
+Select video,Выбрать видео
+Selected rows,Выбранные строки
+Send Link,Отправить ссылку
+Send Login Link,Отправить ссылку для входа
+Send password reset link,Отправить ссылку для восстановления
+Sending & Inbox,Отправка и входящие письма
+Set up your first course and lessons.,Создайте первый курс и уроки.
+Settings,Настройки
+Settings is only available on a larger screen.,Настройки доступны только на большом экране.
+Short Introduction,Краткое описание
+Show camera,Показать камеру
+Show more instructors,Показать остальных преподавателей
+Sign In,Войти
+Sign Up,Зарегистрироваться
+Sign in,Войти
+Sign in to school to continue.,"Войдите в школу, чтобы продолжить."
+Sign up,Регистрация
+Sign up disabled,Регистрация отключена
+Signups have been disabled for this website.,Регистрация на этом сайте отключена.
+Single / Multiple choice,Выбор одного / нескольких ответов
+Single choice,Выбор одного ответа
+Skip to content,Перейти к содержанию
+Skip to main content,Перейти к содержанию
+Snapshot,Снимок
+Social media,Социальные сети
+Something went wrong. Please try again.,Что-то пошло не так. Попробуйте ещё раз.
+Stale,Требует обновления
+Start Quiz,Начать тест
+Status,Статус
+Stay on this tab,Не переключайте вкладку
+Strike,Зачёркнутый
+Strikethrough,Зачёркнутый
+Student,Ученик
+Student View,Режим ученика
+Students,Ученики
+Students answer in a rich-text editor (image embeds allowed).,Ученики пишут ответ в текстовом редакторе; можно вставлять изображения.
+Students must complete each lesson before the next one opens.,Следующий урок открывается только после завершения предыдущего.
+Submission,Сданная работа
+Submission Type,Формат ответа
+Submission by,Работа ученика:
+Submissions,Сданные работы
+Submit,Отправить
+Submitted,Отправлено
+Submitted On,Дата отправки
+Support / Sales,Поддержка / отдел продаж
+Switching tabs or minimizing the window is flagged immediately.,Переключение вкладки или сворачивание окна сразу считается нарушением.
+Sync members into channels by rule.,Добавляйте участников в каналы по правилам.
+Sync members of {0},Обновить участников {0}
+System Settings,Настройки системы
+Tab switch,Переключение вкладки
+Tab switched,Вкладка переключена
+Table of Contents,Содержание
+"Table size, {0} rows by {1} columns","Размер таблицы: {0} строк, {1} столбцов"
+Task List,Список задач
+Template Name,Название шаблона
+Text,Текст
+Text Color,Цвет текста
+Text and background color,Цвет текста и фона
+"The conditions on {0} could not be worked out, so there is no telling who this change adds or removes. It usually means the app that supplies a condition type is no longer installed. Saving applies the change anyway.","Не удалось применить условия {0}, поэтому неизвестно, кого добавит или удалит изменение. Возможно, приложение, задающее тип условия, больше не установлено. При сохранении изменение всё равно будет применено."
+The list did not come through. Try again in a moment.,Не удалось получить список. Попробуйте через некоторое время.
+The page you are looking for does not exist or has moved,Эта страница не существует или перемещена
+"The questions you have added, removed or reordered are not saved yet. Leaving this page discards them.","Добавленные, удалённые и переставленные вопросы ещё не сохранены. При выходе изменения потеряются."
+The quiz will be submitted automatically when the timer runs out.,По окончании времени тест отправится автоматически.
+The schedule for this assignment has ended.,Срок отправки этого задания закончился.
+The schedule for this quiz has ended.,Срок прохождения этого теста закончился.
+"The stored {0} of this lesson could not be read, so the editor is showing it as empty. It is left untouched and will not be overwritten; anything else you edit still saves. Reload the page; if it still fails, restore the lesson from its version history in Desk.","Не удалось прочитать сохранённое содержимое «{0}», поэтому редактор показывает пустое поле. Исходные данные не изменены и не будут перезаписаны; остальные изменения сохраняются. Обновите страницу. Если проблема повторится, восстановите урок из истории версий в административной панели."
+There is no lesson at this address in this course.,В этом курсе нет урока по такому адресу.
+"These conditions were saved joining some rows with and and others with or. This screen shows one joiner per group, so it cannot draw that. They are written back as they are until you move a joiner or change the rows, either of which sets one joiner for the whole group.","В сохранённых условиях внутри одной группы смешаны «и» и «или». Этот экран поддерживает один способ объединения на группу и не может отобразить их вместе. Условия сохранятся в исходном виде, пока вы не измените строки или способ объединения."
+This assignment format currently opens in the original learning interface.,Этот формат задания пока доступен в основном учебном интерфейсе.
+This assignment opens on {0}.,Это задание откроется {0}.
+This batch has no students to certify.,В этой группе нет учеников для выдачи сертификатов.
+"This channel is missing in Raven, so its conditions cannot be changed.",Канал отсутствует в Raven; изменить его условия нельзя.
+This chapter has no lesson to play yet.,В этом модуле пока нет урока для просмотра.
+This course is unavailable for your account.,Этот курс недоступен для вашего аккаунта.
+"This deletes the channel mapping and its conditions, and removes everyone those conditions added to the channel. Anyone added by hand in Raven stays. This action cannot be undone.","Связь с каналом и её условия будут удалены вместе с участниками, добавленными по этим условиям. Участники, добавленные вручную в Raven, останутся. Отменить это действие нельзя."
+"This deletes the workspace mapping and every channel mapping under it, with their conditions, and removes everyone those conditions added to its channels. Anyone added by hand in Raven stays. This action cannot be undone.","Связь с рабочим пространством, все его связи с каналами и их условия будут удалены. Участники, добавленные по этим условиям в каналы, будут удалены; добавленные вручную в Raven останутся. Отменить это действие нельзя."
+"This deletes the {0} mapping and its membership rules, and stops syncing members. This cannot be undone.",Связь с {0} и правила участия будут удалены; обновление участников остановится. Отменить это действие нельзя.
+This helps us personalise your learning experience.,Это поможет подобрать обучение для вас.
+This lesson could not be displayed,Не удалось показать урок
+This lesson format currently opens in the original learning interface.,Этот формат урока пока доступен в основном учебном интерфейсе.
+This lesson has no content to play yet.,В этом уроке пока нет материалов для просмотра.
+This lesson is locked. Taking you to your current lesson in {0} seconds.,Урок закрыт. Через {0} сек. вы вернётесь к текущему уроку.
+This lesson is unavailable for your account.,Этот урок недоступен для вашего аккаунта.
+This lesson will start from the beginning. Reload the page to try resuming where you left off.,"Урок начнётся с начала. Обновите страницу, чтобы попробовать продолжить с сохранённого места."
+This quiz format currently opens in the original learning interface.,Этот формат теста пока доступен в основном учебном интерфейсе.
+This quiz opens on {0}.,Этот тест откроется {0}.
+This quiz was submitted automatically because you reached the maximum of {0} {1}. Reach out to your instructor if you need to try again.,"Тест отправлен автоматически: достигнут предел {0} {1}. Если нужна ещё одна попытка, обратитесь к преподавателю."
+This site is in read-only mode.,Сейчас сайт доступен только для просмотра.
+This will add {0} members to {1} and remove {2}. The removals cannot be undone. Cancel to keep the current membership.,"Изменение добавит участников: {0} в {1}, и удалит: {2}. Удаление нельзя отменить. Чтобы сохранить текущий состав, отмените изменение."
+This will add {0} members to {1}. Cancel to keep the current membership.,"Изменение добавит участников: {0} в {1}. Чтобы сохранить текущий состав, отмените изменение."
+This will remove {0} members from {1}. This cannot be undone.,Будут удалены участники: {0} из {1}. Отменить это действие нельзя.
+"This will unlink this category from all courses and batches using it, and then delete it. This cannot be undone.","Категория будет удалена из всех использующих её курсов и групп, а затем удалена полностью. Отменить это действие нельзя."
+Times are in {0},Время указано в часовом поясе {0}
+Title,Название
+Toggle discussions,Показать / скрыть обсуждения
+Toggle fullscreen,На весь экран / свернуть
+Try a different name,Попробуйте другое название
+Type your question here,Напишите вопрос здесь
+URL,Ссылка
+URL or Embed Code,Ссылка или код для вставки
+Unable to generate certificate,Не удалось создать сертификат
+Underline,Подчёркнутый
+Unmute,Включить звук
+Unpaid,Не оплачено
+Unpublish batch,Снять группу с публикации
+Unpublish course,Снять курс с публикации
+Unpublished,Не опубликован
+Unsplash photo,Фото с Unsplash
+Untitled question,Вопрос без названия
+Update Embed,Обновить вставку
+Upload Assignment,Прикрепить работу
+Upload File,Прикрепить файл
+"Upload a 750×422 image (.jpg, .jpeg, .gif, or .png). Shown on the catalog card and lesson hero.","Загрузите изображение 750×422 (.jpg, .jpeg, .gif или .png). Оно появится в каталоге и в начале урока."
+Upload a ZIP file,Загрузить файл ZIP
+Upload a course thumbnail image,Загрузить обложку курса
+Upload an image,Загрузить изображение
+Upload your resume,Прикрепите резюме
+Uploaded image preview,Предпросмотр загруженного изображения
+Uploaded video. Students see it on the course page. Remove it to use a YouTube link instead.,"Загруженное видео отображается на странице курса. Удалите его, если хотите использовать ссылку YouTube."
+"Use ""Mark for Review"" to flag questions you want to revisit before submitting.","Помечайте вопросы кнопкой «Вернуться позже», чтобы проверить их перед отправкой."
+Used in {0} quizzes,Используется в тестах: {0}
+User,Пользователь
+User input,Короткий ответ
+Users,Пользователи
+Valid {0} URL,Ссылка на {0} подходит
+Video failed to load. This lesson will still be marked complete after you spend some time on it.,Не удалось загрузить видео. Урок всё равно будет завершён после некоторого времени на странице.
+Video preview,Предпросмотр видео
+Video {0},Видео {0}
+View all {0},Показать все: {0}
+View learning streak: {0} days,Посмотреть серию дней обучения: {0}
+View profile,Посмотреть профиль
+Violation,Нарушение
+Violations,Нарушения
+Wait for your teacher to review the homework first.,Сначала дождитесь проверки домашнего задания.
+Website Settings,Настройки сайта
+Welcome,Добро пожаловать
+Welcome! Please sign in to continue.,"Добро пожаловать! Войдите, чтобы продолжить."
+Where do you want to start?,С чего хотите начать?
+Window focus lost,Окно потеряло фокус
+Workspace created,Рабочее пространство создано
+Workspace mapping deleted,Связь с рабочим пространством удалена
+"Write an answer between 1 and 20,000 characters.",Напишите ответ длиной от 1 до 20 000 символов.
+Write your answer here,Напишите свой ответ
+Wrong answers deduct {0} {1}.,За неправильные ответы снимается {0} {1}.
+You,Вы
+You are not authorized to enroll in this program.,У вас нет доступа к записи на эту программу.
+You are not permitted to create a batch.,У вас нет доступа к созданию группы.
+You are not permitted to create a course.,У вас нет доступа к созданию курса.
+You are not permitted to create a live class for this batch.,У вас нет доступа к созданию онлайн-занятия для этой группы.
+You are not permitted to generate certificates for this batch.,У вас нет доступа к выдаче сертификатов этой группе.
+You are not permitted to make an announcement for this batch.,У вас нет доступа к объявлениям для этой группы.
+You are not permitted to manage assignments.,У вас нет доступа к управлению домашними заданиями.
+You are not permitted to manage chapters.,У вас нет доступа к управлению модулями.
+You are not permitted to manage members.,У вас нет доступа к управлению участниками.
+You are not permitted to manage programming exercises.,У вас нет доступа к управлению упражнениями по программированию.
+You are not permitted to manage programs.,У вас нет доступа к управлению программами.
+You can only edit your own profile.,Вы можете изменить только свой профиль.
+You cannot grade your own submission.,Вы не можете оценить свою работу.
+You do not have permission to add assessments to this batch.,У вас нет доступа к добавлению проверочных работ в эту группу.
+You do not have permission to add courses to this batch.,У вас нет доступа к добавлению курсов в эту группу.
+You do not have permission to create email templates.,У вас нет доступа к созданию шаблонов писем.
+You do not have permission to enroll students in this batch.,У вас нет доступа к добавлению учеников в эту группу.
+You do not have permission to enroll students in this course.,У вас нет доступа к добавлению учеников на этот курс.
+You have no attempts left. Contact your teacher.,Попытки закончились. Обратитесь к преподавателю.
+"You have unsaved changes, leave anyway?",Изменения не сохранены. Всё равно выйти?
+You have {0} unattempted {1}. They will be marked incorrect if you submit.,Без ответа осталось {0} {1}. При отправке они будут засчитаны как неправильные.
+You need the System Manager role to manage the Raven integration.,Для управления интеграцией Raven нужна роль администратора системы.
+You've successfully submitted the assignment.,Вы отправили работу на проверку.
+You've used all {0} {1} for this quiz. Reach out to your instructor if you need to try again.,"Вы использовали все {0} {1} для этого теста. Если нужна ещё одна попытка, обратитесь к преподавателю."
+YouTube link,Ссылка YouTube
+YouTube link added. Students see it embedded on the course page. Clear the field to upload a file instead.,"Ссылка YouTube добавлена. Видео появится на странице курса. Очистите поле, если хотите загрузить файл."
+Your application has been submitted successfully,Заявка отправлена
+Your session has expired. Please log in again.,Сессия завершилась. Войдите снова.
+Your workspace is ready,Ваше рабочее пространство готово
+and {0} more: {1},и ещё {0}: {1}
+attempt,попытка
+attempted,с ответом
+attempts,попытки
+esc,Esc
+event,событие
+events,события
+https://youtube.com/watch?v=… or <iframe src=…>,https://youtube.com/watch?v=… или <iframe src=…>
+mark,балл
+marks,баллы
+min,мин.
+paid batches,платные группы
+paid certificates,платные сертификаты
+paid courses,платные курсы
+private,только преподавателю
+question,вопрос
+questions,вопросы
+required,обязательно
+search by keyword,поиск по словам
+unattempted,без ответа
+violation,нарушение
+violations,нарушения
+{0} Your changes are not saved. Do not close this tab until they are.,{0} Изменения не сохранены. Не закрывайте вкладку до сохранения.
+{0} icon,Значок {0}
+{0} marks,Баллы: {0}
+{0} of {1} questions deleted; the rest remain selected: {2},Удалены вопросы: {0} из {1}; остальные остаются выбранными: {2}
+{0} of {1} quizzes deleted; the rest remain selected: {2},Удалены тесты: {0} из {1}; остальные остаются выбранными: {2}
+{0} of {1} submissions could not be deleted: {2},Не удалось удалить работы: {0} из {1}: {2}
+{0} questions deleted successfully,Вопросы удалены: {0}
+{0} quizzes deleted successfully,Тесты удалены: {0}
+{0} results loaded,Загружено результатов: {0}
+{0} rows selected,Выбрано строк: {0}
+{0} until {1} on {2},"С {0} до {1}, {2}"
+{0}s,{0} с

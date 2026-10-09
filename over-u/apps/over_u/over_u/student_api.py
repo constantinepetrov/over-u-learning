@@ -9,6 +9,7 @@ import re
 from urllib.parse import quote, urlsplit
 
 import frappe
+from frappe import _
 from bs4 import BeautifulSoup
 
 from lms.lms import utils as lms
@@ -22,18 +23,18 @@ KINDS = {"icon-youtube": "video", "icon-quiz": "quiz", "icon-assignment": "assig
 def _member():
     user = frappe.session.user
     if not user or user == "Guest":
-        frappe.throw("Войдите в школу, чтобы продолжить.", frappe.AuthenticationError)
+        frappe.throw(_("Sign in to school to continue."), frappe.AuthenticationError)
     return user
 
 
 def _access(course):
     member = _member()
     if not isinstance(course, str) or not lms.get_membership(course, member):
-        frappe.throw("Этот курс недоступен для вашего аккаунта.", frappe.PermissionError)
+        frappe.throw(_("This course is unavailable for your account."), frappe.PermissionError)
     # Student portal access is the LMS utility's course rule + own enrollment.
     # LMS Student deliberately has no generic LMS Course DocPerm (authoring Desk).
     if not lms.can_view_course(course):
-        frappe.throw("Этот курс недоступен для вашего аккаунта.", frappe.PermissionError)
+        frappe.throw(_("This course is unavailable for your account."), frappe.PermissionError)
     return frappe.get_doc("LMS Course", course)
 
 
@@ -68,7 +69,7 @@ def _blocks(doc):
 def _assessment_id(doc, kind):
     ids = [(b.get("data") or {}).get(kind) for b in _blocks(doc) if b.get("type") == kind]
     if len(ids) != 1 or not ids[0]:
-        frappe.throw("Этот формат урока пока доступен в основном учебном интерфейсе.")
+        frappe.throw(_("This lesson format currently opens in the original learning interface."))
     return ids[0]
 
 
@@ -144,22 +145,22 @@ def course(course: str):
 def _lesson(course, number):
     doc = _access(course)
     if not isinstance(number, str) or not re.fullmatch(r"[1-9][0-9]*-[1-9][0-9]*", number):
-        frappe.throw("Урок не найден.", frappe.DoesNotExistError)
+        frappe.throw(_("Lesson not found."), frappe.DoesNotExistError)
     chapter, index = [int(part) for part in number.split("-")]
     result = lms.get_lesson(doc.name, chapter, index)
     if not result or result.get("not_found"):
-        frappe.throw("Урок не найден.", frappe.DoesNotExistError)
+        frappe.throw(_("Lesson not found."), frappe.DoesNotExistError)
     if result.get("locked"):
         return result
     if result.get("no_preview") or result.get("course") != doc.name or not result.get("name"):
-        frappe.throw("Этот урок недоступен для вашего аккаунта.", frappe.PermissionError)
+        frappe.throw(_("This lesson is unavailable for your account."), frappe.PermissionError)
     return result
 
 
 def _open_lesson(course, number):
     result = _lesson(course, number)
     if result.get("locked"):
-        frappe.throw("Сначала выполните требования предыдущего урока.", frappe.PermissionError)
+        frappe.throw(_("Complete the previous lesson's requirements first."), frappe.PermissionError)
     return result
 
 
@@ -197,15 +198,15 @@ def lesson(course: str, number: str):
     flat = [item for chapter in snapshot["chapters"] for item in chapter["lessons"]]
     item = next((item for item in flat if item["number"] == number), None)
     if not item:
-        frappe.throw("Урок не найден.", frappe.DoesNotExistError)
+        frappe.throw(_("Lesson not found."), frappe.DoesNotExistError)
     response = {"course": snapshot, "lesson": item, "blocks": [], "locked": bool(doc.get("locked"))}
     if response["locked"]:
         current = snapshot["current"] or {}
         submission = current.get("assignment") or {}
-        response["lock_reason"] = ("Сначала дождитесь проверки домашнего задания." if submission.get("status") == "Not Graded"
-                                   else "Сначала исправьте домашнее задание и получите зачёт." if submission.get("status") == "Fail"
-                                   else "Сначала пройдите тест с проходным баллом." if current.get("kind") == "quiz"
-                                   else "Сначала завершите предыдущий урок.")
+        response["lock_reason"] = (_("Wait for your teacher to review the homework first.") if submission.get("status") == "Not Graded"
+                                   else _("Revise the homework and receive a pass first.") if submission.get("status") == "Fail"
+                                   else _("Reach the quiz passing score first.") if current.get("kind") == "quiz"
+                                   else _("Complete the previous lesson first."))
         return response
     for block in _blocks(doc):
         data = block.get("data") or {}
@@ -217,7 +218,7 @@ def lesson(course: str, number: str):
             url = _url(data.get("file_url"))
             if url:
                 media = "video" if (data.get("file_type") or "").lower() in ("mp4", "webm", "ogg", "mov") else "material"
-                response["blocks"].append({"type": media, "url": url, "title": _text(data.get("file_name") or "Материал урока")})
+                response["blocks"].append({"type": media, "url": url, "title": _text(data.get("file_name") or _("Lesson material"))})
         elif kind == "quiz":
             response["quiz"] = _quiz(doc)
         elif kind == "assignment":
@@ -246,15 +247,15 @@ def submit_quiz(course: str, number: str, answers: list):
     doc = _open_lesson(course, number)
     quiz = _quiz(doc)
     if quiz["unsupported"]:
-        frappe.throw("Этот формат теста пока доступен в основном учебном интерфейсе.")
+        frappe.throw(_("This quiz format currently opens in the original learning interface."))
     if not quiz["can_retry"]:
-        frappe.throw("Попытки закончились. Обратитесь к преподавателю.")
+        frappe.throw(_("You have no attempts left. Contact your teacher."))
     if not isinstance(answers, list) or len(answers) != len(quiz["questions"]):
-        frappe.throw("Ответьте на каждый вопрос.")
+        frappe.throw(_("Answer every question."))
     results = []
     for question, answer in zip(quiz["questions"], answers, strict=True):
         if not isinstance(answer, str) or answer not in question["options"]:
-            frappe.throw("Выберите один из предложенных ответов.")
+            frappe.throw(_("Choose one of the available answers."))
         results.append({"question_name": question["id"], "answer": [answer]})
     result = upstream_submit(_assessment_id(doc, "quiz"), json.dumps(results))
     # Keep core progression semantics, including all assessments on a lesson.
@@ -268,9 +269,9 @@ def submit_assignment(course: str, number: str, answer: str):
     doc = _open_lesson(course, number)
     details = _assignment(doc)
     if details["type"] != "Text":
-        frappe.throw("Этот формат задания пока доступен в основном учебном интерфейсе.")
+        frappe.throw(_("This assignment format currently opens in the original learning interface."))
     if not isinstance(answer, str) or not answer.strip() or len(answer) > 20_000:
-        frappe.throw("Напишите ответ длиной от 1 до 20 000 символов.")
+        frappe.throw(_("Write an answer between 1 and 20,000 characters."))
     assignment = _assessment_id(doc, "assignment")
     existing = frappe.db.get_value("LMS Assignment Submission", {"assignment": assignment, "member": _member()}, "name")
     # Accept text only. Never accept status, evaluator, member, attachment or a document id.

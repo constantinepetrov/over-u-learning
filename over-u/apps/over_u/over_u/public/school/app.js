@@ -1,3 +1,4 @@
+import {t} from './i18n.js'
 import {api} from './api.js'
 import {shell, homeView, learningView, courseView, lessonView, assignmentsView, resultsView, profileView, loadingView, errorView} from './views.js'
 const root = document.getElementById('school')
@@ -10,7 +11,7 @@ function parseRoute() {
   if (parts[0] === 'courses' && parts[1] && parts.length === 2) return {view: 'course', course: parts[1]}
   if (parts[0] === 'courses' && parts[1] && parts[2] === 'lessons' && parts[3] && parts.length === 4) return {view: 'lesson', course: parts[1], number: parts[3]}
   if (parts.length === 1 && ['learning', 'assignments', 'results', 'profile'].includes(parts[0])) return {view: parts[0]}
-  throw new Error('Такой страницы нет. Вернитесь в раздел «Обучение».')
+  throw new Error(t('ui_127'))
 }
 function section() { return ['course', 'lesson'].includes(route?.view) ? 'learning' : route?.view || 'home' }
 function paint(content, focus = false) {
@@ -24,7 +25,7 @@ function showData(focus = false) {
   const views = {home: homeView, learning: learningView, assignments: assignmentsView, results: resultsView, profile: profileView}
   const content = route.view === 'lesson' ? lessonView(data, drafts) : route.view === 'course' ? courseView(data) : views[route.view](home)
   paint(content, focus)
-  const title = route.view === 'lesson' ? data.lesson.title : route.view === 'course' ? data.title : {home: 'Главная', learning: 'Обучение', assignments: 'Задания', results: 'Результаты', profile: 'Профиль'}[route.view]
+  const title = route.view === 'lesson' ? data.lesson.title : route.view === 'course' ? data.title : {home: t('ui_001'), learning: t('ui_002'), assignments: t('ui_003'), results: t('ui_004'), profile: t('ui_005')}[route.view]
   document.title = `${title} — OVER U`
 }
 async function loadRoute({refresh = false} = {}) {
@@ -62,14 +63,14 @@ root.addEventListener('click', async event => {
   if (action === 'homework-edit') { drafts.homeworkEditing.add(key); showData(); document.getElementById('homework-answer')?.focus(); return }
   if (action === 'complete') {
     const path = location.pathname
-    busy = true; control.disabled = true; control.textContent = 'Сохраняем прогресс…'
+    busy = true; control.disabled = true; control.textContent = t('ui_128')
     try {
       const updated = await api.complete(route.course, route.number)
-      if (path === location.pathname) { data = updated; showData(); announce(updated.lesson.complete ? 'Урок выполнен. Прогресс сохранён.' : 'Сначала выполните требования урока.') }
+      if (path === location.pathname) { data = updated; showData(); announce(updated.lesson.complete ? t('ui_129') : t('ui_130')) }
     } catch (error) {
       const feedback = document.getElementById('action-feedback')
       if (feedback) feedback.textContent = error.message
-    } finally { busy = false; if (control.isConnected) { control.disabled = false; control.textContent = 'Завершить урок' } }
+    } finally { busy = false; if (control.isConnected) { control.disabled = false; control.textContent = t('ui_131') } }
   }
 })
 root.addEventListener('input', event => {
@@ -90,7 +91,7 @@ root.addEventListener('submit', async event => {
   const current = {...route}, path = location.pathname, key = `${current.course}/${current.number}`
   const submit = form.querySelector('button[type=submit]'), original = submit.innerHTML
   const feedback = form.querySelector('#form-feedback')
-  feedback.textContent = ''; busy = true; submit.disabled = true; submit.textContent = 'Сохраняем…'
+  feedback.textContent = ''; busy = true; submit.disabled = true; submit.textContent = t('ui_132')
   try {
     let updated
     if (form.id === 'quiz-form') {
@@ -106,7 +107,7 @@ root.addEventListener('submit', async event => {
       data = updated; showData()
       const target = document.querySelector('.quiz-result h2, .homework-status strong')
       if (target) { target.tabIndex = -1; target.focus({preventScroll: true}) }
-      announce(form.id === 'quiz-form' ? 'Результат теста сохранён.' : 'Домашняя работа отправлена на проверку.')
+      announce(form.id === 'quiz-form' ? t('ui_133') : t('ui_134'))
     }
   } catch (error) {
     if (form.isConnected) { feedback.textContent = error.message; feedback.tabIndex = -1; feedback.focus() }
@@ -121,7 +122,7 @@ async function checkGrade() {
   try {
     const updated = await api.lesson(route.course, route.number)
     if (path === location.pathname && path === lastPath && updated.assignment?.submission?.status !== data.assignment.submission.status) {
-      data = updated; showData(); announce('Статус домашнего задания обновлён.')
+      data = updated; showData(); announce(t('ui_135'))
     }
   } catch { /* Keep the last saved answer visible; explicit refresh exposes errors. */ }
 }

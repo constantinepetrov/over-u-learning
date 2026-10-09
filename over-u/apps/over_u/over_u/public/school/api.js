@@ -1,3 +1,4 @@
+import {t, language} from './i18n.js'
 // The only browser module that knows the server adapter's endpoint names.
 const boot = JSON.parse(document.getElementById('school-boot').textContent)
 const methods = new Set(['home', 'course', 'lesson', 'complete_lesson', 'submit_quiz', 'submit_assignment'])
@@ -5,7 +6,7 @@ export class SchoolError extends Error {
   constructor(message, status) { super(message); this.status = status }
 }
 async function request(method, args = {}) {
-  if (!methods.has(method)) throw new SchoolError('Неизвестное действие.', 400)
+  if (!methods.has(method)) throw new SchoolError(t('ui_136'), 400)
   let response
   try {
     response = await fetch(`/api/method/over_u.student_api.${method}`, {
@@ -13,20 +14,20 @@ async function request(method, args = {}) {
       headers: {'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': boot.csrf_token},
       body: JSON.stringify(args),
     })
-  } catch { throw new SchoolError('Нет соединения. Проверьте интернет и попробуйте ещё раз.', 0) }
+  } catch { throw new SchoolError(t('ui_137'), 0) }
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    let message = response.status === 403 ? 'Это действие недоступно. Вернитесь к текущему уроку.' : 'Не получилось сохранить изменения. Попробуйте ещё раз.'
+    let message = response.status === 403 ? t('ui_138') : t('ui_139')
     try {
       const messages = JSON.parse(data._server_messages || '[]')
       const raw = JSON.parse(messages[0] || '{}').message
       if (raw) {
         const text = new DOMParser().parseFromString(raw, 'text/html').body.textContent
-        if (/[А-Яа-яЁё]/.test(text) && !/doctype|traceback|sql|DocType/i.test(text)) message = text
-        else if (/maximum number of attempts/i.test(text)) message = 'Попытки закончились. Обратитесь к преподавателю.'
+        if ((language === 'en' || /[А-Яа-яЁё]/.test(text)) && !/doctype|traceback|sql|DocType/i.test(text)) message = text
+        else if (/maximum number of attempts/i.test(text)) message = t('ui_140')
       }
     } catch { /* Never show tracebacks or raw exception payloads. */ }
-    if (response.status === 401) message = 'Сессия завершилась. Войдите в школу снова.'
+    if (response.status === 401) message = t('ui_141')
     throw new SchoolError(message, response.status)
   }
   return data.message

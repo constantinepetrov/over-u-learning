@@ -1,0 +1,13 @@
+{
+  "restart": "С начала", "rewind": "Назад на {seektime} сек.", "play": "Воспроизвести",
+  "pause": "Пауза", "fastForward": "Вперёд на {seektime} сек.", "seek": "Перемотать",
+  "seekLabel": "{currentTime} из {duration}", "played": "Просмотрено", "buffered": "Загружено",
+  "currentTime": "Текущее время", "duration": "Продолжительность", "volume": "Громкость",
+  "mute": "Выключить звук", "unmute": "Включить звук", "enableCaptions": "Включить субтитры",
+  "disableCaptions": "Выключить субтитры", "download": "Скачать", "enterFullscreen": "На весь экран",
+  "exitFullscreen": "Свернуть", "frameTitle": "Видео: {title}", "captions": "Субтитры",
+  "settings": "Настройки", "pip": "Картинка в картинке", "menuBack": "Назад",
+  "speed": "Скорость", "normal": "Обычная", "quality": "Качество", "loop": "Повторять",
+  "start": "Начало", "end": "Конец", "all": "Все", "reset": "Сбросить",
+  "disabled": "Выключено", "enabled": "Включено", "advertisement": "Реклама"
+}

@@ -1,1 +1,3 @@
-# No data migrations required for student UI v1.
+# OVER U one-time localization migrations.
+over_u.patches.russian_default
+over_u.patches.russian_demo_labels

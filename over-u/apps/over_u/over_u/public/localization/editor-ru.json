@@ -1,0 +1,91 @@
+{
+  "ui": {
+    "blockTunes": {
+      "toggler": {
+        "Click to tune": "Настроить блок",
+        "or drag to move": "или перетащите"
+      }
+    },
+    "inlineToolbar": {
+      "converter": {
+        "Convert to": "Изменить формат"
+      }
+    },
+    "toolbar": {
+      "toolbox": {
+        "Add": "Добавить блок"
+      }
+    },
+    "popover": {
+      "Filter": "Найти",
+      "Nothing found": "Ничего не найдено",
+      "Convert to": "Изменить формат"
+    }
+  },
+  "toolNames": {
+    "Text": "Текст",
+    "Heading": "Заголовок",
+    "List": "Список",
+    "Table": "Таблица",
+    "Link": "Ссылка",
+    "Bold": "Жирный",
+    "Italic": "Курсив",
+    "Underline": "Подчёркнутый",
+    "InlineCode": "Код в строке",
+    "Inline Code": "Код в строке",
+    "Image": "Изображение",
+    "Quote": "Цитата",
+    "Delimiter": "Разделитель",
+    "Code": "Код",
+    "Checklist": "Список задач",
+    "Marker": "Выделение",
+    "Quiz": "Тест",
+    "Assignment": "Домашнее задание",
+    "Upload": "Файл",
+    "Paragraph": "Текст",
+    "Markdown": "Текст",
+    "Strikethrough": "Зачёркнутый",
+    "Embed": "Встроенное видео"
+  },
+  "tools": {
+    "link": {
+      "Add a link": "Добавить ссылку"
+    },
+    "header": {
+      "Heading 1": "Заголовок 1",
+      "Heading 2": "Заголовок 2",
+      "Heading 3": "Заголовок 3",
+      "Heading 4": "Заголовок 4",
+      "Heading 5": "Заголовок 5",
+      "Heading 6": "Заголовок 6",
+      "Header": "Заголовок"
+    },
+    "list": {
+      "Ordered": "Нумерованный",
+      "Unordered": "Маркированный",
+      "Checklist": "Список задач"
+    },
+    "table": {
+      "Add row above": "Добавить строку выше",
+      "Add row below": "Добавить строку ниже",
+      "Delete row": "Удалить строку",
+      "Add column to left": "Добавить столбец слева",
+      "Add column to right": "Добавить столбец справа",
+      "Delete column": "Удалить столбец",
+      "With headings": "С заголовками",
+      "Without headings": "Без заголовков"
+    }
+  },
+  "blockTunes": {
+    "delete": {
+      "Delete": "Удалить",
+      "Click to delete": "Нажмите для удаления"
+    },
+    "moveUp": {
+      "Move up": "Переместить выше"
+    },
+    "moveDown": {
+      "Move down": "Переместить ниже"
+    }
+  }
+}
