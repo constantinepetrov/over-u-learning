@@ -730,6 +730,9 @@ search by keyword,поиск по словам
 unattempted,без ответа
 violation,нарушение
 violations,нарушения
+{0} Assignments,Всего заданий: {0}
+{0} Exercises,Всего упражнений: {0}
+{0} Quizzes,Всего тестов: {0}
 {0} Your changes are not saved. Do not close this tab until they are.,{0} Изменения не сохранены. Не закрывайте вкладку до сохранения.
 {0} icon,Значок {0}
 {0} marks,Баллы: {0}
