@@ -36,7 +36,7 @@ RUN --mount=type=secret,id=apps_json,target=/opt/frappe/apps.json,uid=1000,gid=0
 COPY --chown=frappe:frappe over-u/apps/over_u /home/frappe/frappe-bench/apps/over_u
 COPY --chown=frappe:frappe over-u/dev/build-localized-frontend.mjs over-u/dev/localization-plugin.mjs /home/frappe/over-u/dev/
 RUN cd /home/frappe/frappe-bench && \
-  uv pip install -e apps/over_u --python env/bin/python && \
+  uv pip install -e apps/payments -e apps/lms -e apps/over_u --python env/bin/python && \
   ln -sfn /home/frappe/frappe-bench/apps/lms/frontend /home/frappe/frontend && \
   ln -sfn /home/frappe/frappe-bench/apps/lms /home/frappe/lms && \
   mkdir -p /home/frappe/frontend/node_modules/@framework && \
