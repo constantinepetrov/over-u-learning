@@ -1,0 +1,77 @@
+services:
+  configurator:
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+
+  db:
+    image: mariadb:10.11
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+    environment:
+      MYSQL_ROOT_PASSWORD: !reset null
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_password
+      MARIADB_AUTO_UPGRADE: 1
+    secrets:
+      - db_password
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+
+  redis-cache:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis-queue:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-queue-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.frontend.loadbalancer.server.port=8080
+      - traefik.http.routers.frontend-http.entrypoints=websecure
+      - traefik.http.routers.frontend-http.tls.certresolver=main-resolver
+      - traefik.http.routers.frontend-http.rule=${SITES_RULE:?SITES_RULE not set}
+      - traefik.http.middlewares.overu-limit.ratelimit.average=15
+      - traefik.http.middlewares.overu-limit.ratelimit.burst=40
+      - traefik.http.routers.frontend-http.middlewares=overu-limit
+
+volumes:
+  db-data:
+  redis-queue-data:
+
+secrets:
+  db_password:
+    file: ${DB_PASSWORD_SECRETS_FILE:?DB_PASSWORD_SECRETS_FILE not set}
