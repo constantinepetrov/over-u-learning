@@ -1,16 +1,45 @@
 import {boot, t} from './i18n.js'
 import {escape as e, icon, link, button, progress, outline, allLessons, kinds, richText} from './components.js'
 export function shell(content, home, section = 'home') {
-  const nav = [['home', '/school', t('ui_001')], ['book', '/school/learning', t('ui_002')], ['task', '/school/assignments', t('ui_003')], ...(boot.teacher_tools ? [['task', '/school/teacher', t('ui_151')]] : []), ['results', '/school/results', t('ui_004')], ['user', '/school/profile', t('ui_005')]]
-  const keys = ['home', 'learning', 'assignments', ...(boot.teacher_tools ? ['teacher'] : []), 'results', 'profile']
-  const name = home?.user.name || t('ui_006')
-  const navItems = nav.map(([key, href, label], i) => {
-    const cls = section === keys[i] ? 'nav-item active' : 'nav-item'
-    const current = section === keys[i] ? 'aria-current="page"' : ''
-    const body = `${icon(key)}<span>${label}</span>`
-    return link(href, body, cls, current)
+  // The real Frappe data/lesson screens stay unchanged; only the approved branded shell is new.
+  const tabs = [
+    ['home', '/school', t('ui_001'), 'home'],
+    ['book', '/school/learning', t('ui_002'), 'learning'],
+    ['task', '/school/assignments', t('ui_003'), 'assignments'],
+    ...(boot.teacher_tools ? [['task', '/school/teacher', t('ui_151'), 'teacher']] : []),
+    ['results', '/school/results', t('ui_004'), 'results'],
+    ['user', '/school/profile', t('ui_005'), 'profile']
+  ]
+  const name = home?.user?.name || t('ui_006')
+  const navLinks = tabs.map(([iconName, href, label, key]) => {
+    const active = section === key
+    return link(href, `${icon(iconName)}<span>${label}</span>`, `ou-nav-item${active ? ' active' : ''}`, active ? 'aria-current="page"' : '')
   }).join('')
-  return `<aside class="navigation ${boot.teacher_tools ? 'teacher-nav' : ''}"><a class="brand-lockup" href="/school" data-nav aria-label="OVER U - ${t('ui_007')}"><img src="/assets/over_u/school/assets/logo-orange.png" alt=""><span><strong>OVER U</strong><small>ОНЛАЙН-ШКОЛА</small></span></a><nav aria-label="${t('ui_009')}">${navItems}</nav><div class="nav-bottom"><span class="tiny-label">${t('ui_010')}</span><div class="account"><span class="avatar">${e(name.slice(0, 1).toUpperCase())}</span><span><strong>${e(name)}</strong><small>${t('ui_011')}</small></span></div></div></aside><div class="workspace"><header class="topbar"><span>${t('ui_012')}</span><span class="topbar-note">${t('ui_013')}</span></header><main id="main" tabindex="-1">${content}</main><footer class="site-footer"><span>OVER U</span><span>${t('ui_014')}</span></footer></div>`
+  // True course authoring is performed by Frappe Learning, never by mocked /school forms.
+  const authorLink = boot.author_tools
+    ? '<a class="ou-nav-item" href="/lms" title="Открыть редактор Frappe Learning">Студия курсов</a>'
+    : ''
+  const mobileNav = tabs.filter(([, , , key]) => key !== 'teacher').map(([iconName, href, label, key]) => {
+    const active = section === key
+    return link(href, `${icon(iconName)}<span>${label}</span>`, active ? 'active' : '', active ? 'aria-current="page"' : '')
+  }).join('')
+  return `<div class="ou-shell">
+    <header class="ou-header"><div class="ou-header-inner">
+      <a class="ou-brand" href="/school" data-nav aria-label="OVER U — ${t('ui_007')}">
+        <img src="/assets/over_u/school/assets/logo-orange.png" alt="" width="55" height="75">
+        <span class="ou-brand-word"><strong>OVER U</strong><small>LIFELONG ENERGY</small></span>
+      </a>
+      <nav class="ou-header-nav" aria-label="${t('ui_009')}">${navLinks}${authorLink}</nav>
+      <div class="ou-header-account"><span class="ou-profile-name">${e(name)}<small>${boot.author_tools ? 'Автор / преподаватель' : t('ui_011')}</small></span>
+        ${link('/school/profile', e(name.slice(0,1).toUpperCase()), 'ou-account-avatar', 'aria-label="Профиль"')}
+      </div>
+    </div></header>
+    <div class="ou-workspace">
+      <main id="main" tabindex="-1">${content}</main>
+      <footer class="ou-footer"><span>OVER U · Энерголетие / LIFELONG ENERGY</span><span>${t('ui_014')}</span></footer>
+    </div>
+    <nav class="ou-mobile-nav" aria-label="Мобильная навигация">${mobileNav}</nav>
+  </div>`
 }
 function courseFeature(course) {
   const current = course.current
@@ -20,9 +49,26 @@ function courseFeature(course) {
 function summaryCard(title, value, detail, href, iconName, tone = '') {
   return `<a class="summary-card ${tone}" href="${e(href)}" data-nav><span class="summary-icon">${icon(iconName)}</span><span class="summary-label">${title}</span><strong>${value}</strong><span class="summary-detail">${detail}</span></a>`
 }
+function brandHero() {
+  // Hero artwork is branding; course progress below always comes from the Frappe API.
+  return `<section class="ou-brand-hero" aria-labelledby="ou-hero-title">
+    <div class="ou-brand-hero-copy">
+      <span class="ou-eyebrow">Онлайн-школа OVER U</span>
+      <h1 id="ou-hero-title">Энерголетие</h1>
+      <span class="ou-tagline">LIFELONG ENERGY · BUSINESS HAPPINESS</span>
+      <p>Пространство для развития, энергии и обучения на протяжении всей жизни.</p>
+      ${link('/school/learning', `Перейти к обучению ${icon('arrow')}`, 'ou-brand-cta')}
+    </div>
+    <div class="ou-brand-hero-image">
+      <img src="/assets/over_u/school/assets/course-cover.jpg" alt="Горный пейзаж на закате" width="720" height="480">
+      <div class="ou-hero-note"><strong>Учитесь в своём ритме</strong></div>
+    </div>
+  </section>`
+}
+
 export function homeView(home) {
   const courses = home.courses
-  if (!courses.length) return `<div class="page-heading"><span class="eyebrow">${t('ui_006')}</span><h1>${t('ui_027')}</h1></div><section class="empty"><h2>${t('ui_028')}</h2><p>${t('ui_029')}</p></section>`
+  if (!courses.length) return `${brandHero()}<div class="page-heading"><span class="eyebrow">${t('ui_006')}</span><h1>${t('ui_027')}</h1></div><section class="empty"><h2>${t('ui_028')}</h2><p>${t('ui_029')}</p></section>`
   const course = courses.find(c => c.current) || courses[0]
   const pending = courses.flatMap(c => c.pending)
   const lessons = courses.flatMap(allLessons)
@@ -30,7 +76,7 @@ export function homeView(home) {
   const activeCourses = courses.filter(c => c.total > 0 && c.completed < c.total)
   const openAssignments = lessons.filter(l => l.kind === 'assignment' && !l.locked && !l.complete && l.assignment?.status !== 'Not Graded')
   const cards = `<section class="learning-summary" aria-label="${t('ui_142')}">${summaryCard(t('ui_143'), activeCourses.length, t('ui_144'), '/school/learning', 'book', 'summary-active')}${summaryCard(t('ui_145'), openAssignments.length, t('ui_146'), openAssignments[0]?.href || '/school/assignments', 'clock', 'summary-upcoming')}${summaryCard(t('ui_147'), completed.length, t('ui_148'), '/school/results', 'check', 'summary-complete')}</section>`
-  return `<div class="page-heading"><div class="program-identity"><strong>${t('ui_150')}</strong><span>LIFELONG ENERGY · BUSINESS HAPPINESS</span></div><span class="eyebrow">${t('ui_040')}</span><h1>${t('ui_041')}${e(home.user.first_name)}.</h1><p>${t('ui_042')}</p></div>${courseFeature(course)}${cards}<div class="home-details"><section><div class="section-heading"><h2>${t('ui_043')}</h2>${link('/school/assignments', t('ui_030'), 'text-link')}</div>${pending.length ? pending.map(l => `<article class="task-note"><span class="note-symbol">${icon('clock')}</span><div><span class="eyebrow">${t('ui_032')}</span><h3>${e(l.title)}</h3><p>${t('ui_033')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : openAssignments.length ? openAssignments.slice(0, 2).map(l => `<article class="task-note task-open"><span class="note-symbol">${icon('task')}</span><div><span class="eyebrow">${t('ui_145')}</span><h3>${e(l.title)}</h3><p>${t('ui_146')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : `<article class="task-note"><span class="note-symbol">${icon(course.current ? 'book' : 'check')}</span><div><span class="eyebrow">${course.current ? t('ui_034') : t('ui_035')}</span><h3>${course.current ? e(course.current.title) : t('ui_036')}</h3><p>${course.current ? t('ui_037') : t('ui_038')}</p></div></article>`}</section><section><div class="section-heading"><h2>${t('ui_044')}</h2><span class="tiny-label">${completed.length} ${t('ui_045')}${courses.reduce((n, c) => n + c.total, 0)}</span></div>${completed.length ? `<ul class="completed-list">${completed.slice(-3).reverse().map(l => `<li>${icon('check')} ${link(l.href, e(l.title))}</li>`).join('')}</ul>` : t('ui_039')}</section></div>`
+  return `${brandHero()}<div class="page-heading"><div class="program-identity"><strong>${t('ui_150')}</strong><span>LIFELONG ENERGY · BUSINESS HAPPINESS</span></div><span class="eyebrow">${t('ui_040')}</span><h1>${t('ui_041')}${e(home.user.first_name)}.</h1><p>${t('ui_042')}</p></div>${courseFeature(course)}${cards}<div class="home-details"><section><div class="section-heading"><h2>${t('ui_043')}</h2>${link('/school/assignments', t('ui_030'), 'text-link')}</div>${pending.length ? pending.map(l => `<article class="task-note"><span class="note-symbol">${icon('clock')}</span><div><span class="eyebrow">${t('ui_032')}</span><h3>${e(l.title)}</h3><p>${t('ui_033')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : openAssignments.length ? openAssignments.slice(0, 2).map(l => `<article class="task-note task-open"><span class="note-symbol">${icon('task')}</span><div><span class="eyebrow">${t('ui_145')}</span><h3>${e(l.title)}</h3><p>${t('ui_146')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : `<article class="task-note"><span class="note-symbol">${icon(course.current ? 'book' : 'check')}</span><div><span class="eyebrow">${course.current ? t('ui_034') : t('ui_035')}</span><h3>${course.current ? e(course.current.title) : t('ui_036')}</h3><p>${course.current ? t('ui_037') : t('ui_038')}</p></div></article>`}</section><section><div class="section-heading"><h2>${t('ui_044')}</h2><span class="tiny-label">${completed.length} ${t('ui_045')}${courses.reduce((n, c) => n + c.total, 0)}</span></div>${completed.length ? `<ul class="completed-list">${completed.slice(-3).reverse().map(l => `<li>${icon('check')} ${link(l.href, e(l.title))}</li>`).join('')}</ul>` : t('ui_039')}</section></div>`
 }
 export function learningView(home) {
   return `<div class="page-heading"><span class="eyebrow">${t('ui_047')}</span><h1>${t('ui_048')}</h1><p>${t('ui_049')}</p></div>${home.courses.map(courseFeature).join('') || t('ui_046')}`
