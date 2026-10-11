@@ -10,21 +10,23 @@ STUDENTS = ["student1@over-u.example.com", "student2@over-u.example.com"]
 
 
 def _user(email, first_name, roles):
-	if not frappe.db.exists("User", email):
-		doc = frappe.get_doc(
-			{
-				"doctype": "User",
-				"email": email,
-				"first_name": first_name,
-				"enabled": 1,
-				"send_welcome_email": 0,
-				"user_type": "Website User",
-				"roles": [{"role": role} for role in roles],
-			}
-		)
+	doc = frappe.get_doc(
+		{
+			"doctype": "User",
+			"email": email,
+			"first_name": first_name,
+			"enabled": 1,
+			"send_welcome_email": 0,
+			"user_type": "Website User",
+			"roles": [{"role": role} for role in roles],
+		}
+	)
+	try:
 		doc.insert()
-		update_password(email, os.environ["OVER_U_DEMO_PASSWORD"])
-	return frappe.get_doc("User", email)
+	except frappe.DuplicateEntryError:
+		return frappe.get_doc("User", email)
+	update_password(email, os.environ["OVER_U_DEMO_PASSWORD"])
+	return doc
 
 
 def _content(*blocks):
@@ -232,14 +234,14 @@ def ensure_authoring_assessments():
 		quiz.title = AUTHORING_QUIZ_TITLE
 		quiz.course = None
 		quiz.lesson = None
-		quiz.insert(ignore_permissions=True)
+		quiz.insert()
 
 	source_assignment = frappe.db.exists("LMS Assignment", {"title": "OVER U — Мой план обучения"})
 	if source_assignment and not frappe.db.exists("LMS Assignment", {"title": AUTHORING_ASSIGNMENT_TITLE}):
 		assignment = frappe.copy_doc(frappe.get_doc("LMS Assignment", source_assignment))
 		assignment.title = AUTHORING_ASSIGNMENT_TITLE
 		assignment.course = None
-		assignment.insert(ignore_permissions=True)
+		assignment.insert()
 
 
 def repair_demo_video(course=None):
