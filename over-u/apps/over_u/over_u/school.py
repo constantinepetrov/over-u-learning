@@ -34,6 +34,7 @@ def seed():
     if existing:
         repair_demo_video(existing)
         repair_demo_quiz_link(existing)
+        ensure_authoring_assessments()
         return manifest(existing)
     course = frappe.get_doc({"doctype": "LMS Course", "title": COURSE_TITLE,
                             "short_introduction": "Демо: уроки, тест 75%, домашнее задание и зачёт преподавателя.",
@@ -87,6 +88,7 @@ def seed():
             chapter.append("lessons", {"lesson": lesson.name})
             chapter.save()
     repair_demo_quiz_link(course.name)
+    ensure_authoring_assessments()
     for email in STUDENTS:
         frappe.get_doc({"doctype": "LMS Enrollment", "course": course.name, "member": email}).insert()
     for field in ("enforce_quiz_completion", "enforce_assignment_completion", "persona_captured"):
@@ -111,6 +113,27 @@ def repair_demo_quiz_link(course=None):
     if course and lesson and quiz:
         # Keep existing demo sites compatible with the LMS quiz access check.
         frappe.db.set_value("LMS Quiz", quiz, {"course": course, "lesson": lesson}, update_modified=False)
+
+
+AUTHORING_QUIZ_TITLE = "OVER U CI — Черновой тест автора"
+AUTHORING_ASSIGNMENT_TITLE = "OVER U CI — Черновое задание автора"
+
+
+def ensure_authoring_assessments():
+    source_quiz = frappe.db.exists("LMS Quiz", {"title": "OVER U — Проверка основ"})
+    if source_quiz and not frappe.db.exists("LMS Quiz", {"title": AUTHORING_QUIZ_TITLE}):
+        quiz = frappe.copy_doc(frappe.get_doc("LMS Quiz", source_quiz))
+        quiz.title = AUTHORING_QUIZ_TITLE
+        quiz.course = None
+        quiz.lesson = None
+        quiz.insert(ignore_permissions=True)
+
+    source_assignment = frappe.db.exists("LMS Assignment", {"title": "OVER U — Мой план обучения"})
+    if source_assignment and not frappe.db.exists("LMS Assignment", {"title": AUTHORING_ASSIGNMENT_TITLE}):
+        assignment = frappe.copy_doc(frappe.get_doc("LMS Assignment", source_assignment))
+        assignment.title = AUTHORING_ASSIGNMENT_TITLE
+        assignment.course = None
+        assignment.insert(ignore_permissions=True)
 
 
 def repair_demo_video(course=None):
