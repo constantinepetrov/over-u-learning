@@ -387,12 +387,18 @@ jobs:
               if (response.status() !== 200 || body.exc) throw new Error('Cannot verify persisted ' + doctype + ' through the author session')
               return body.message
             }
-            const persistedCourse = await getDoc('LMS Course', courseName)
+            const getCourseDetails = async () => {
+              const response = await desktop.request.post(base + '/api/method/lms.lms.utils.get_course_details', {form: {course: courseName}})
+              const body = await response.json().catch(() => ({}))
+              if (response.status() !== 200 || body.exc || !body.message?.name) throw new Error('The native course-details API did not return the author draft')
+              return body.message
+            }
+            const persistedCourse = await getCourseDetails()
             if (Number(persistedCourse.published) !== 0 || !persistedCourse.title.includes('OVER U CI draft')) {
               throw new Error('Course was not persisted as an unpublished draft')
             }
             const instructorRows = persistedCourse.instructors || []
-            if (!instructorRows.some(row => row.instructor === user)) throw new Error('The Course Creator was not saved as the course instructor')
+            if (!instructorRows.some(row => (row.instructor || row.value || row) === user)) throw new Error('The Course Creator was not saved as the course instructor')
 
             const courseEditor = page.getByRole('button').or(page.getByRole('tab')).filter({hasText: 'Course editor'})
             await courseEditor.click()
@@ -427,7 +433,7 @@ jobs:
             if (!(persistedLesson.content || '').includes('Synthetic lesson body saved by the native EditorJS interface')) {
               throw new Error('Lesson body did not persist through the native editor')
             }
-            if (Number((await getDoc('LMS Course', courseName)).published) !== 0) throw new Error('Authoring flow published the course unexpectedly')
+            if (Number((await getCourseDetails()).published) !== 0) throw new Error('Authoring flow published the course unexpectedly')
             await page.screenshot({path: output + '/author-draft-editor-desktop-1440.png', fullPage: true})
 
             await page.reload({waitUntil: 'networkidle'})
