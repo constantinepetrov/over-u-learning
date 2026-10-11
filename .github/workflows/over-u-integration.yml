@@ -402,7 +402,7 @@ jobs:
               throw new Error('Course was not persisted as an unpublished draft')
             }
             const instructorRows = persistedCourse.instructors || []
-            if (!instructorRows.some(row => (row.instructor || row.value || row) === user)) throw new Error('The Course Creator was not saved as the course instructor')
+            if (!instructorRows.some(row => (row.instructor || row.value || row.name || row.email || row) === user)) throw new Error('The Course Creator was not saved as the course instructor')
 
             const courseEditor = page.getByRole('button').or(page.getByRole('tab')).filter({hasText: 'Course editor'})
             await courseEditor.click()
