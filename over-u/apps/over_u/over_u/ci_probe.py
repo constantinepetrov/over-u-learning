@@ -32,3 +32,22 @@ def create_private_assignment_file_probe():
 	).insert()
 	file_doc.reload()
 	return {"file_url": file_doc.file_url, "owner": STUDENTS[0]}
+
+
+def cleanup_private_assignment_file_probe():
+	"""Remove the temporary attachment and submission after the URL checks."""
+	from over_u.school import STUDENTS
+
+	frappe.set_user("Administrator")
+	file_url = "/private/files/over-u-ci-private-attachment.txt"
+	submission = frappe.db.get_value(
+		"LMS Assignment Submission",
+		{"assignment_attachment": file_url, "member": STUDENTS[0]},
+		"name",
+	)
+	if submission:
+		frappe.delete_doc("LMS Assignment Submission", submission, force=True, ignore_permissions=True)
+	file_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+	if file_name:
+		frappe.delete_doc("File", file_name, force=True, ignore_permissions=True)
+	return {"removed_submission": bool(submission), "removed_file": bool(file_name)}

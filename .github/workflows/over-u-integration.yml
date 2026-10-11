@@ -227,6 +227,7 @@ jobs:
           assert teacher_status == 200 and SENTINEL in teacher_body, f"Course teacher could not review the attachment (HTTP {teacher_status})"
           print("Direct attachment URL denied to Guest and another student, allowed to owner and course teacher")
           PY
+          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.cleanup_private_assignment_file_probe'
       - name: Run synthetic Frappe integration and privacy tests
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'
