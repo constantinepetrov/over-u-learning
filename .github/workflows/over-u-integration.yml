@@ -83,6 +83,8 @@ jobs:
           cp /etc/ssl/certs/ca-certificates.crt over-u/dev/.ci-ca-bundle.pem
       - name: Build isolated Frappe test image
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml build frappe
+      - name: Grant the isolated Frappe user access to its bind mount
+        run: sudo chown -R 1000:1000 "$GITHUB_WORKSPACE"
       - name: Start disposable test site
         env:
           GIT_TRACE: 0
