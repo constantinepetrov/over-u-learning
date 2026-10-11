@@ -2,18 +2,30 @@ name: Semantic Pull Request
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request: {}
 
+permissions:
+  contents: read
+
 jobs:
-  # This workflow contains a single job called "build"
   semantic:
     name: Validate PR title
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Validate Conventional Commit title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
 
-      - uses: zeke/semantic-pull-requests@main
+          title = os.environ["PR_TITLE"]
+          pattern = r"(feat|fix|docs|refactor|test|chore|ci|build|perf|style|revert)(\([a-zA-Z0-9_.-]+\))?!?: .+"
+          if not re.fullmatch(pattern, title):
+              raise SystemExit(
+                  "PR title must follow Conventional Commits, e.g. 'feat: improve school navigation'."
+              )
+          print("Conventional Commit PR title verified")
+          PY
