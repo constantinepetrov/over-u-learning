@@ -269,16 +269,16 @@ jobs:
           const user = 'teacher@over-u.example.com'
           const password = process.env.OVER_U_DEMO_PASSWORD
 
-          async function authenticatedContext(width, height) {
+          async function authenticatedContext(width, height, loginUser = user) {
             const context = await browser.newContext({viewport: {width, height}, deviceScaleFactor: 1})
-            const login = await context.request.post(base + '/api/method/login', {form: {usr: user, pwd: password}})
+            const login = await context.request.post(base + '/api/method/login', {form: {usr: loginUser, pwd: password}})
             const auth = await login.json().catch(() => ({}))
             if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
               throw new Error('Synthetic Course Creator login failed, HTTP ' + login.status())
             }
             const identity = await context.request.get(base + '/api/method/frappe.auth.get_logged_user')
-            if (identity.status() !== 200 || (await identity.json()).message !== user) {
-              throw new Error('Course Creator session identity mismatch')
+            if (identity.status() !== 200 || (await identity.json()).message !== loginUser) {
+              throw new Error('Synthetic session identity mismatch')
             }
             return context
           }
@@ -365,7 +365,7 @@ jobs:
 
             const fields = page.getByTestId('new-course-fields')
             const title = 'OVER U CI draft ' + Date.now()
-            await fields.locator('label').filter({hasText: 'Title'}).locator('xpath=..').locator('input').fill(title)
+            await fields.locator('input:visible').first().fill(title)
             const instructors = fields.locator('label').filter({hasText: 'Instructors'}).locator('xpath=..').locator('button').first()
             await instructors.click()
             const picker = page.locator('[data-slot="content-body"] [data-slot="input"]')
@@ -374,8 +374,8 @@ jobs:
             await ownOption.waitFor({state: 'visible', timeout: 20000})
             await ownOption.click()
             await page.keyboard.press('Escape')
-            await fields.locator('label').filter({hasText: 'Short introduction'}).locator('xpath=..').locator('textarea').fill('Synthetic unpublished authoring round-trip.')
-            await fields.locator('div.ProseMirror').evaluate(el => { el.textContent = 'Synthetic course description for isolated CI.'; el.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: ' CI'})) })
+            await fields.locator('textarea:visible').first().fill('Synthetic unpublished authoring round-trip.')
+            await fields.locator('div.ProseMirror[contenteditable="true"]').fill('Synthetic course description for isolated CI.')
             await page.getByTestId('new-course-save').click()
             await page.waitForURL(new RegExp('/lms/courses/(?!new(?:$|[/#]))[^/]+$'), {timeout: 30000})
             const courseName = new URL(page.url()).pathname.split('/').pop()
@@ -446,17 +446,16 @@ jobs:
             if (!(await mobilePage.locator('.bn-editor').innerText()).includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Fresh authenticated mobile context lost lesson body')
             await mobilePage.screenshot({path: output + '/author-draft-editor-mobile-390.png', fullPage: true})
 
-            const outsider = await authenticatedContext(390, 844)
+            const outsider = await authenticatedContext(390, 844, 'student2@over-u.example.com')
             const denied = await outsider.request.post(base + '/api/method/frappe.client.get', {form: {doctype: 'LMS Course', name: courseName}})
             const deniedBody = await denied.json().catch(() => ({}))
             if (denied.status() === 200 && !deniedBody.exc && deniedBody.message) throw new Error('Another author read a private draft they do not own')
             await outsider.close()
-            await mobileShell.waitFor({state: 'visible'})
-            await mobilePage.close()
+                        await mobilePage.close()
             await reopened.close()
             await desktop.close()
             if (errors.length) throw new Error('Author browser console errors: ' + errors.join('; ').slice(0, 1000))
-            console.log('Course Creator created an unpublished course in the native UI, assigned self as instructor, persisted a chapter and lesson body, reopened in a fresh authenticated session at desktop and mobile, and an unrelated author was denied.')
+            console.log('Course Creator created an unpublished course in the native UI, assigned self as instructor, persisted a chapter and lesson body, reopened in a fresh authenticated session at desktop and mobile, and an unrelated student was denied.')
           } finally {
             await browser.close()
           }
@@ -523,6 +522,7 @@ jobs:
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_desk_users'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_author_workspace'
+          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module lms.tests.security.test_course_authoring_scope'
           # The single upstream same-transaction upload test passes its assertions but
           # Frappe's rollback callback then tries to move a file already removed by its
           # earlier insert callback. The HTTP probe above exercises the same access matrix

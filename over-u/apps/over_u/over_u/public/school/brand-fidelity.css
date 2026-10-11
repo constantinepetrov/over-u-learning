@@ -151,7 +151,7 @@ body { background:var(--canvas); color:var(--ink); font-size:15px; line-height:1
  .ou-workspace main { padding:17px 16px 100px; }
  .ou-footer { padding:0 16px 90px; flex-wrap:wrap; }
  .ou-mobile-nav { position:fixed; z-index:40; bottom:0; left:0; right:0; display:flex; align-items:stretch; gap:2px; padding:7px 7px calc(7px + env(safe-area-inset-bottom)); background:rgba(255,254,250,.97); backdrop-filter:blur(14px); border-top:1px solid var(--line); }
- .ou-mobile-nav a { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 2px; min-height:53px; border-radius:10px; text-decoration:none; color:var(--muted); text-align:center; font-size:9px; line-height:1.2; }
+ .ou-mobile-nav a { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 2px; min-height:53px; border-radius:10px; text-decoration:none; color:var(--muted); text-align:center; white-space:nowrap; font-size:8px; line-height:1.2; }
  .ou-mobile-nav a .icon { width:20px; height:20px; }
  .ou-mobile-nav a.active { background:var(--pale); color:var(--green); font-weight:750; }
  .ou-brand-hero { grid-template-columns:1fr; border-radius:23px; margin:0 0 30px; }
