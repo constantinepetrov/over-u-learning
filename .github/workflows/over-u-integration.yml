@@ -453,7 +453,7 @@ jobs:
             await page.reload({waitUntil: 'networkidle'})
             await page.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
             if (await page.locator('textarea.lesson-title').inputValue() !== lessonTitle) throw new Error('Lesson title did not survive page reload')
-            const editorText = await page.locator('.bn-editor').innerText()
+            const editorText = await page.locator('.bn-editor:visible').last().innerText()
             if (!editorText.includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Lesson body did not survive page reload')
 
             const reopened = await authenticatedContext(390, 844)
@@ -465,7 +465,7 @@ jobs:
             await mobilePage.goto(base + '/lms/courses/' + courseName + '?editLesson=1-1#editor', {waitUntil: 'networkidle', timeout: 60000})
             await mobilePage.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
             if (await mobilePage.locator('textarea.lesson-title').inputValue() !== lessonTitle) throw new Error('Fresh authenticated mobile context did not reopen the persisted lesson')
-            if (!(await mobilePage.locator('.bn-editor').innerText()).includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Fresh authenticated mobile context lost lesson body')
+            if (!(await mobilePage.locator('.bn-editor:visible').last().innerText()).includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Fresh authenticated mobile context lost lesson body')
             await mobilePage.screenshot({path: output + '/author-draft-editor-mobile-390.png', fullPage: true})
 
             const outsider = await authenticatedContext(390, 844, 'student2@over-u.example.com')
