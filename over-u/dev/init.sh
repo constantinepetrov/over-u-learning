@@ -6,7 +6,7 @@ if [ "$(id -u)" -eq 0 ]; then
   exec /usr/sbin/runuser -u frappe -- /bin/bash /workspace/over-u/dev/init.sh
 fi
 if [ ! -f frappe-bench/sites/apps.txt ]; then
-  bench init --ignore-exist --frappe-branch v16.36.1 --skip-redis-config-generation --skip-assets frappe-bench
+  bench --verbose init --ignore-exist --frappe-branch v16.36.1 --skip-redis-config-generation --skip-assets frappe-bench
 fi
 cd frappe-bench
 # Serve the original POC and isolated Desk clone by their own hostnames.

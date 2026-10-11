@@ -32,6 +32,8 @@ services:
       PIP_CERT: /run/ca-bundle.pem
       GIT_SSL_CAINFO: /run/ca-bundle.pem
       NODE_EXTRA_CA_CERTS: /run/ca-bundle.pem
+      GIT_TRACE: ${GIT_TRACE:-0}
+      GIT_TERMINAL_PROMPT: ${GIT_TERMINAL_PROMPT:-0}
     volumes:
       - ../..:/workspace
       - bench:/home/frappe/frappe-bench

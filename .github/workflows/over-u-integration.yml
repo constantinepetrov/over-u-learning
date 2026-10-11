@@ -84,6 +84,9 @@ jobs:
       - name: Build isolated Frappe test image
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml build frappe
       - name: Start disposable test site
+        env:
+          GIT_TRACE: 1
+          GIT_TERMINAL_PROMPT: 0
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml up -d
       - name: Wait for Frappe and verify /lms assets
         timeout-minutes: 35
@@ -94,6 +97,12 @@ jobs:
             if curl --silent --fail --header 'Host: over-u.localhost' http://127.0.0.1:8000/api/method/ping >/dev/null; then
               ready=1
               break
+            fi
+            container_id=$(docker compose -p over-u-ci -f over-u/dev/compose.yml ps --all -q frappe)
+            if [ -n "$container_id" ] && [ "$(docker inspect -f '{{.State.Status}}' "$container_id")" = "exited" ]; then
+              docker compose -p over-u-ci -f over-u/dev/compose.yml ps --all
+              docker compose -p over-u-ci -f over-u/dev/compose.yml logs --no-color --tail 250 frappe mariadb
+              exit 1
             fi
             sleep 10
           done
