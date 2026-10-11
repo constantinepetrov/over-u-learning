@@ -1,23 +1,42 @@
 <template>
-	<section class="author-workspace mt-8 rounded-2xl border border-outline-gray-2 bg-surface-base p-5 md:p-7">
+	<section
+		class="author-workspace mt-8 rounded-2xl border border-outline-gray-2 bg-surface-base p-5 md:p-7"
+	>
 		<div class="author-hero" aria-labelledby="author-hero-title">
 			<div class="author-hero-content">
-				<span class="author-hero-eyebrow">OVER U · LIFELONG ENERGY · BUSINESS HAPPINESS</span>
+				<span class="author-hero-eyebrow"
+					>OVER U · LIFELONG ENERGY · BUSINESS HAPPINESS</span
+				>
 				<h1 id="author-hero-title">Студия курсов</h1>
-				<p>Здесь вы создаёте программу обучения: курсы, модули, уроки, задания и тесты. Новые материалы сначала сохраняются как черновики.</p>
+				<p>
+					Здесь вы создаёте программу обучения: курсы, модули, уроки, задания и
+					тесты. Новые материалы сначала сохраняются как черновики.
+				</p>
 				<div class="author-hero-actions">
 					<router-link :to="{ name: 'NewCourse' }" class="author-hero-create">
 						<span class="lucide-plus size-4" /> Создать курс
 					</router-link>
-					<a href="/school" class="author-hero-secondary">В школу OVER U <span class="lucide-arrow-up-right size-4" /></a>
+					<a href="/school" class="author-hero-secondary"
+						>В школу OVER U <span class="lucide-arrow-up-right size-4"
+					/></a>
 				</div>
 			</div>
 			<div class="author-hero-art" aria-hidden="true">
-				<img :src="'/assets/over_u/school/assets/brand-hero.jpg'" alt="" width="900" height="600" loading="lazy" />
-				<div class="author-hero-note">Знания, которые становятся действиями</div>
+				<img
+					:src="'/assets/over_u/school/assets/brand-hero.jpg'"
+					alt=""
+					width="900"
+					height="600"
+					loading="lazy"
+				/>
+				<div class="author-hero-note">
+					Знания, которые становятся действиями
+				</div>
 			</div>
 		</div>
-		<div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+		<div
+			class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between"
+		>
 			<div class="max-w-2xl">
 				<div
 					class="studio-eyebrow mb-2 flex items-center gap-2 text-p-xs font-semibold uppercase tracking-[0.12em]"
@@ -68,7 +87,9 @@
 
 		<div class="mt-7">
 			<div class="mb-3 flex items-center justify-between gap-3">
-				<h3 class="m-0 text-lg font-semibold text-ink-gray-9">{{ __('Continue editing') }}</h3>
+				<h3 class="m-0 text-lg font-semibold text-ink-gray-9">
+					{{ __('Continue editing') }}
+				</h3>
 				<router-link
 					:to="{ name: 'Courses', query: { tab: 'created' } }"
 					class="author-text-link"
@@ -90,30 +111,46 @@
 					class="author-course"
 				>
 					<div class="flex min-w-0 items-start gap-3">
-						<div class="author-course-icon"><span class="lucide-book-open size-5" /></div>
+						<div class="author-course-icon">
+							<span class="lucide-book-open size-5" />
+						</div>
 						<div class="min-w-0 flex-1">
 							<div class="flex flex-wrap items-center gap-2">
-								<h4 class="m-0 truncate text-base font-semibold text-ink-gray-9">{{ course.title }}</h4>
-								<span
-									class="author-status"
-									:class="courseStatusClass(course)"
+								<h4
+									class="m-0 truncate text-base font-semibold text-ink-gray-9"
 								>
+									{{ course.title }}
+								</h4>
+								<span class="author-status" :class="courseStatusClass(course)">
 									{{ courseStatusLabel(course) }}
 								</span>
 							</div>
 							<p class="mb-0 mt-1 line-clamp-2 text-p-sm text-ink-gray-6">
-								{{ course.short_introduction || __('Add a short course introduction in course settings.') }}
+								{{
+									course.short_introduction ||
+									__('Add a short course introduction in course settings.')
+								}}
 							</p>
-							<div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-p-xs text-ink-gray-5">
+							<div
+								class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-p-xs text-ink-gray-5"
+							>
 								<span>{{ __('{0} lessons').format(course.lessons || 0) }}</span>
-								<span>{{ __('{0} learners').format(course.enrollments || 0) }}</span>
+								<span>{{
+									__('{0} learners').format(course.enrollments || 0)
+								}}</span>
 							</div>
 							<p v-if="course.enrollments" class="author-course-warning">
-								{{ __('Deleting a lesson also deletes learner progress for that lesson.') }}
+								{{
+									__(
+										'Deleting a lesson also deletes learner progress for that lesson.'
+									)
+								}}
 							</p>
 						</div>
 					</div>
-					<div class="mt-4 flex flex-wrap gap-2 border-t border-outline-gray-1 pt-3">
+					<div
+						class="mt-4 flex flex-wrap gap-2 border-t border-outline-gray-1 pt-3"
+					>
 						<router-link
 							:to="editorRoute(course.name)"
 							class="author-course-action"
@@ -122,7 +159,10 @@
 							{{ __('Edit course') }}
 						</router-link>
 						<router-link
-							:to="{ name: 'CourseDetail', params: { courseName: course.name } }"
+							:to="{
+								name: 'CourseDetail',
+								params: { courseName: course.name },
+							}"
 							class="author-course-action"
 						>
 							<span class="lucide-eye size-4" />
@@ -132,7 +172,9 @@
 				</article>
 			</div>
 			<div v-else class="author-empty">
-				<div class="author-empty-icon"><span class="lucide-book-open-check size-6" /></div>
+				<div class="author-empty-icon">
+					<span class="lucide-book-open-check size-6" />
+				</div>
 				<div>
 					<h4 class="mb-1 mt-0 text-base font-semibold text-ink-gray-9">
 						{{ __('Your course list is empty') }}
@@ -145,7 +187,10 @@
 						}}
 					</p>
 				</div>
-				<router-link :to="{ name: 'NewCourse' }" class="author-secondary shrink-0">
+				<router-link
+					:to="{ name: 'NewCourse' }"
+					class="author-secondary shrink-0"
+				>
 					{{ __('Create course') }}
 				</router-link>
 			</div>
@@ -155,7 +200,9 @@
 			<h3 class="mb-3 mt-0 text-base font-semibold text-ink-gray-9">
 				{{ __('How course authoring works') }}
 			</h3>
-			<div class="grid grid-cols-1 gap-3 text-p-sm text-ink-gray-6 md:grid-cols-3">
+			<div
+				class="grid grid-cols-1 gap-3 text-p-sm text-ink-gray-6 md:grid-cols-3"
+			>
 				<p class="m-0">
 					<strong class="text-ink-gray-8">1.</strong>
 					{{ __('Create the course draft and add the instructors.') }}
@@ -190,7 +237,15 @@ const courses = createListResource({
 	doctype: 'LMS Course',
 	url: 'lms.lms.utils.get_courses',
 	filters: ownCoursesFilter,
-	fields: ['name', 'title', 'short_introduction', 'published', 'status', 'lessons', 'enrollments'],
+	fields: [
+		'name',
+		'title',
+		'short_introduction',
+		'published',
+		'status',
+		'lessons',
+		'enrollments',
+	],
 	pageLength: 120,
 	auto: true,
 })
@@ -228,30 +283,167 @@ function editorRoute(courseName: string) {
 </script>
 
 <style scoped>
-.author-workspace { --ou-paper: #f6f4ee; --ou-surface:#fffefa; --ou-forest:#214d3c; --ou-orange:#e94e15; --ou-line:#deded4; background:var(--ou-paper); border-color:var(--ou-line); border-radius:24px; color:#202722; }
-.author-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.92fr); min-height:315px; overflow:hidden; background:var(--ou-surface); border-radius:22px; border:1px solid var(--ou-line); margin-bottom:30px; }
-.author-hero-content { padding:clamp(24px,4vw,48px); display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:16px; min-width:0; }
-.author-hero-eyebrow { display:block; font-size:10px; letter-spacing:.14em; font-weight:750; color:var(--ou-orange); text-transform:uppercase; }
-.author-hero h1 { font:400 clamp(35px,4vw,56px)/1.05 Georgia,serif; letter-spacing:-.035em; margin:0; color:#202722; }
-.author-hero p { color:#68736b; font-size:14px; line-height:1.7; max-width:52ch; margin:0; }
-.author-hero-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:5px; }
-.author-hero-create,.author-hero-secondary { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:43px; border-radius:999px; padding:10px 16px; font-weight:700; text-decoration:none; font-size:12px; }
-.author-hero-create { background:var(--ou-orange); color:white; }
-.author-hero-create:hover { background:#cb4212; color:white; }
-.author-hero-secondary { border:1px solid var(--ou-line); color:var(--ou-forest); background:white; }
-.author-hero-secondary:hover { border-color:var(--ou-forest); }
-.author-hero-art { min-height:315px; position:relative; overflow:hidden; background:#c8d0c0; }
-.author-hero-art img { width:100%; height:100%; position:absolute; inset:0; display:block; object-fit:cover; object-position:58% 50%; }
-.author-hero-note { position:absolute; right:17px; bottom:18px; background:rgba(255,254,250,.94); border-radius:12px; color:#214d3c; font:400 13px/1.3 Georgia,serif; padding:12px 15px; box-shadow:0 8px 20px #172f242a; }
-.author-stat { border-color:var(--ou-line)!important; background:var(--ou-surface)!important; }
-.author-stat strong { color:var(--ou-forest)!important; }
-.author-course { border-color:var(--ou-line)!important; background:var(--ou-surface)!important; }
-.author-primary { background:var(--ou-orange)!important; border-radius:999px!important; }
-.author-secondary,.author-course-action { border-radius:999px!important; }
-.author-text-link { color:var(--ou-forest)!important; }
-@media (max-width: 800px) { .author-hero { grid-template-columns:1fr; } .author-hero-art { min-height:215px; } }
-@media (max-width: 640px) { .author-workspace { padding:14px!important; border-radius:18px; } .author-hero-content { padding:24px 20px; } .author-hero h1 { font-size:41px; } .author-hero-art { min-height:180px; } }
-.studio-eyebrow { color: #d94a20; }
+.author-workspace {
+	--ou-paper: #f6f4ee;
+	--ou-surface: #fffefa;
+	--ou-forest: #214d3c;
+	--ou-orange: #e94e15;
+	--ou-line: #deded4;
+	background: var(--ou-paper);
+	border-color: var(--ou-line);
+	border-radius: 24px;
+	color: #202722;
+}
+.author-hero {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+	min-height: 315px;
+	overflow: hidden;
+	background: var(--ou-surface);
+	border-radius: 22px;
+	border: 1px solid var(--ou-line);
+	margin-bottom: 30px;
+}
+.author-hero-content {
+	padding: clamp(24px, 4vw, 48px);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	gap: 16px;
+	min-width: 0;
+}
+.author-hero-eyebrow {
+	display: block;
+	font-size: 10px;
+	letter-spacing: 0.14em;
+	font-weight: 750;
+	color: var(--ou-orange);
+	text-transform: uppercase;
+}
+.author-hero h1 {
+	font: 400 clamp(35px, 4vw, 56px) / 1.05 Georgia, serif;
+	letter-spacing: -0.035em;
+	margin: 0;
+	color: #202722;
+}
+.author-hero p {
+	color: #68736b;
+	font-size: 14px;
+	line-height: 1.7;
+	max-width: 52ch;
+	margin: 0;
+}
+.author-hero-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-top: 5px;
+}
+.author-hero-create,
+.author-hero-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
+	min-height: 43px;
+	border-radius: 999px;
+	padding: 10px 16px;
+	font-weight: 700;
+	text-decoration: none;
+	font-size: 12px;
+}
+.author-hero-create {
+	background: var(--ou-orange);
+	color: white;
+}
+.author-hero-create:hover {
+	background: #cb4212;
+	color: white;
+}
+.author-hero-secondary {
+	border: 1px solid var(--ou-line);
+	color: var(--ou-forest);
+	background: white;
+}
+.author-hero-secondary:hover {
+	border-color: var(--ou-forest);
+}
+.author-hero-art {
+	min-height: 315px;
+	position: relative;
+	overflow: hidden;
+	background: #c8d0c0;
+}
+.author-hero-art img {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	inset: 0;
+	display: block;
+	object-fit: cover;
+	object-position: 58% 50%;
+}
+.author-hero-note {
+	position: absolute;
+	right: 17px;
+	bottom: 18px;
+	background: rgba(255, 254, 250, 0.94);
+	border-radius: 12px;
+	color: #214d3c;
+	font: 400 13px/1.3 Georgia, serif;
+	padding: 12px 15px;
+	box-shadow: 0 8px 20px #172f242a;
+}
+.author-stat {
+	border-color: var(--ou-line) !important;
+	background: var(--ou-surface) !important;
+}
+.author-stat strong {
+	color: var(--ou-forest) !important;
+}
+.author-course {
+	border-color: var(--ou-line) !important;
+	background: var(--ou-surface) !important;
+}
+.author-primary {
+	background: var(--ou-orange) !important;
+	border-radius: 999px !important;
+}
+.author-secondary,
+.author-course-action {
+	border-radius: 999px !important;
+}
+.author-text-link {
+	color: var(--ou-forest) !important;
+}
+@media (max-width: 800px) {
+	.author-hero {
+		grid-template-columns: 1fr;
+	}
+	.author-hero-art {
+		min-height: 215px;
+	}
+}
+@media (max-width: 640px) {
+	.author-workspace {
+		padding: 14px !important;
+		border-radius: 18px;
+	}
+	.author-hero-content {
+		padding: 24px 20px;
+	}
+	.author-hero h1 {
+		font-size: 41px;
+	}
+	.author-hero-art {
+		min-height: 180px;
+	}
+}
+.studio-eyebrow {
+	color: #d94a20;
+}
 .author-primary,
 .author-secondary,
 .author-course-action {
@@ -266,28 +458,119 @@ function editorRoute(courseName: string) {
 	font-weight: 600;
 	text-decoration: none;
 }
-.author-primary { background: #e94f24; color: white; }
-.author-primary:hover { background: #cf3f18; color: white; }
-.author-secondary { border: 1px solid #d8ddd7; background: white; color: #35433a; }
+.author-primary {
+	background: #e94f24;
+	color: white;
+}
+.author-primary:hover {
+	background: #cf3f18;
+	color: white;
+}
+.author-secondary {
+	border: 1px solid #d8ddd7;
+	background: white;
+	color: #35433a;
+}
 .author-secondary:hover,
-.author-course-action:hover { border-color: #e94f24; color: #bd3c1a; }
-.author-stat { display: flex; min-height: 5rem; flex-direction: column; justify-content: space-between; border: 1px solid #e7e9e4; border-radius: 0.85rem; background: white; padding: 0.9rem 1rem; }
-.author-stat span { color: #6b746d; font-size: 0.8rem; }
-.author-stat strong { color: #263d31; font-size: 1.55rem; line-height: 1; }
-.author-course { min-width: 0; border: 1px solid #e7e9e4; border-radius: 0.9rem; background: white; padding: 1rem; }
+.author-course-action:hover {
+	border-color: #e94f24;
+	color: #bd3c1a;
+}
+.author-stat {
+	display: flex;
+	min-height: 5rem;
+	flex-direction: column;
+	justify-content: space-between;
+	border: 1px solid #e7e9e4;
+	border-radius: 0.85rem;
+	background: white;
+	padding: 0.9rem 1rem;
+}
+.author-stat span {
+	color: #6b746d;
+	font-size: 0.8rem;
+}
+.author-stat strong {
+	color: #263d31;
+	font-size: 1.55rem;
+	line-height: 1;
+}
+.author-course {
+	min-width: 0;
+	border: 1px solid #e7e9e4;
+	border-radius: 0.9rem;
+	background: white;
+	padding: 1rem;
+}
 .author-course-icon,
-.author-empty-icon { display: grid; flex: none; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 0.8rem; background: #fff0e9; color: #e94f24; }
-.author-status { border-radius: 999px; padding: 0.18rem 0.55rem; font-size: 0.7rem; font-weight: 600; }
-.author-status.is-published { background: #e8f2eb; color: #286043; }
-.author-status.is-draft { background: #fff0e9; color: #aa391b; }
-.author-status.is-review { background: #fff4d9; color: #805c12; }
-.author-course-warning { margin: 0.6rem 0 0; border-left: 2px solid #db9a26; padding-left: 0.6rem; color: #805c12; font-size: 0.75rem; line-height: 1.4; }
-.author-course-action { min-height: 2rem; border: 1px solid transparent; padding: 0.3rem 0.55rem; color: #445148; font-size: 0.8rem; }
-.author-empty { display: flex; min-height: 7rem; align-items: center; gap: 1rem; border: 1px dashed #d4dbd4; border-radius: 0.9rem; background: #fff; padding: 1.25rem; }
-.author-text-link { color: #a83c20; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
-.author-text-link:hover { text-decoration: underline; }
+.author-empty-icon {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 2.6rem;
+	height: 2.6rem;
+	border-radius: 0.8rem;
+	background: #fff0e9;
+	color: #e94f24;
+}
+.author-status {
+	border-radius: 999px;
+	padding: 0.18rem 0.55rem;
+	font-size: 0.7rem;
+	font-weight: 600;
+}
+.author-status.is-published {
+	background: #e8f2eb;
+	color: #286043;
+}
+.author-status.is-draft {
+	background: #fff0e9;
+	color: #aa391b;
+}
+.author-status.is-review {
+	background: #fff4d9;
+	color: #805c12;
+}
+.author-course-warning {
+	margin: 0.6rem 0 0;
+	border-left: 2px solid #db9a26;
+	padding-left: 0.6rem;
+	color: #805c12;
+	font-size: 0.75rem;
+	line-height: 1.4;
+}
+.author-course-action {
+	min-height: 2rem;
+	border: 1px solid transparent;
+	padding: 0.3rem 0.55rem;
+	color: #445148;
+	font-size: 0.8rem;
+}
+.author-empty {
+	display: flex;
+	min-height: 7rem;
+	align-items: center;
+	gap: 1rem;
+	border: 1px dashed #d4dbd4;
+	border-radius: 0.9rem;
+	background: #fff;
+	padding: 1.25rem;
+}
+.author-text-link {
+	color: #a83c20;
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+.author-text-link:hover {
+	text-decoration: underline;
+}
 @media (max-width: 640px) {
-	.author-empty { flex-wrap: wrap; }
-	.author-empty .author-secondary { width: 100%; }
+	.author-empty {
+		flex-wrap: wrap;
+	}
+	.author-empty .author-secondary {
+		width: 100%;
+	}
 }
 </style>
