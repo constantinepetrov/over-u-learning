@@ -255,6 +255,61 @@ jobs:
             await browser.close()
           }
           JS
+      - name: Browser-check Course Creator workspace and native course form
+        run: |
+          node --input-type=module <<'JS'
+          import { pathToFileURL } from 'node:url'
+          import { mkdir } from 'node:fs/promises'
+          const { chromium } = await import(pathToFileURL(`${process.env.RUNNER_TEMP}/over-u-playwright/node_modules/playwright/index.mjs`))
+          const output = `${process.env.RUNNER_TEMP}/over-u-brand-screenshots`
+          await mkdir(output, {recursive: true})
+          const browser = await chromium.launch({headless: true})
+          try {
+            for (const [name, width, height] of [['desktop', 1440, 900], ['mobile', 390, 844]]) {
+              const context = await browser.newContext({viewport: {width, height}, deviceScaleFactor: 1})
+              try {
+                const user = 'teacher@over-u.example.com'
+                const login = await context.request.post('http://over-u.localhost:8000/api/method/login', {
+                  form: {usr: user, pwd: process.env.OVER_U_DEMO_PASSWORD}
+                })
+                const auth = await login.json().catch(() => ({}))
+                if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
+                  throw new Error(`Course Creator login failed: HTTP ${login.status()}, ${String(auth.exc_type || auth.message || 'unexpected response').slice(0, 80)}`)
+                }
+                const identity = await context.request.get('http://over-u.localhost:8000/api/method/frappe.auth.get_logged_user')
+                if (identity.status() !== 200 || (await identity.json()).message !== user) {
+                  throw new Error('Course Creator session identity mismatch')
+                }
+                const page = await context.newPage()
+                const errors = []
+                page.on('pageerror', error => errors.push(error.message))
+                const response = await page.goto('http://over-u.localhost:8000/lms', {
+                  waitUntil: 'networkidle', timeout: 60000
+                })
+                if (response?.status() !== 200) throw new Error(`Author /lms HTTP ${response?.status()}`)
+                await page.locator('.author-hero h1').waitFor({timeout: 30000})
+                if (!(await page.locator('.author-hero h1').innerText()).includes('Студия курсов')) {
+                  throw new Error('Branded author workspace is missing')
+                }
+                await page.screenshot({path: `${output}/author-${name}-${width}.png`, fullPage: true})
+                // The seeded demo is an actual course of this author. A missing
+                // card also catches author API filters that silently fail.
+                await page.locator('.author-course').first().waitFor({timeout: 25000})
+                const create = page.locator('.author-hero-create')
+                if (await create.count() !== 1) throw new Error('Native create-course link missing')
+                await create.click()
+                await page.locator('[data-testid="new-course-fields"]').waitFor({timeout: 25000})
+                await page.screenshot({path: `${output}/author-new-course-${name}-${width}.png`, fullPage: true})
+                if (errors.length) throw new Error(`Author page JS errors: ${errors.join('; ')}`)
+                console.log(`Course Creator ${width}px: workspace, own course and native creation form OK`)
+              } finally {
+                await context.close()
+              }
+            }
+          } finally {
+            await browser.close()
+          }
+          JS
       - name: Save synthetic design proof screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -316,6 +371,7 @@ jobs:
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_desk_users'
+          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_author_workspace'
           # The single upstream same-transaction upload test passes its assertions but
           # Frappe's rollback callback then tries to move a file already removed by its
           # earlier insert callback. The HTTP probe above exercises the same access matrix
