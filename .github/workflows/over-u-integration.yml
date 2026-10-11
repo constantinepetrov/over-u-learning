@@ -202,7 +202,7 @@ jobs:
 
           def get(client):
               try:
-                  with client.open(Request(FILE, timeout=30)) as response:
+                  with client.open(Request(FILE), timeout=30) as response:
                       return response.status, response.read()
               except HTTPError as error:
                   return error.code, error.read()
@@ -213,7 +213,7 @@ jobs:
           def login(user):
               client = opener()
               data = urlencode({"usr": user, "pwd": os.environ["OVER_U_DEMO_PASSWORD"]}).encode()
-              with client.open(Request(BASE + "/api/method/login", data=data, timeout=30)) as response:
+              with client.open(Request(BASE + "/api/method/login", data=data), timeout=30) as response:
                   assert response.status == 200, f"Synthetic login failed for {user}"
               return client
 
