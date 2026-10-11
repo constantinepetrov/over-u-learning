@@ -63,7 +63,7 @@ function brandHero() {
       ${link('/school/learning', `Перейти к обучению ${icon('arrow')}`, 'ou-brand-cta')}
     </div>
     <div class="ou-brand-hero-image">
-      <img src="/assets/over_u/school/assets/course-cover.jpg" alt="Горный пейзаж на закате" width="720" height="480">
+      <img src="/assets/over_u/school/assets/brand-hero.jpg" alt="Горный пейзаж на закате" width="720" height="480">
       <div class="ou-hero-note"><strong>Учитесь в своём ритме</strong></div>
     </div>
   </section>`
