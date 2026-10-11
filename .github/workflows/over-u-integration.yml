@@ -422,14 +422,16 @@ jobs:
             const chapterRow = page.locator('.chapter-item').filter({hasText: chapterTitle})
             const chapterToggle = chapterRow.locator('button').first()
             if (await chapterToggle.getAttribute('aria-expanded') !== 'true') await chapterToggle.click()
-            const addLessonButton = chapterRow.getByRole('button', {name: 'Add Lesson'})
+            // The synthetic author has Russian locale, so anchor on the native
+            // add icon instead of a translated accessible label.
+            const addLessonButton = chapterRow.locator('button:has(.lucide-plus)').last()
             await addLessonButton.waitFor({state: 'visible', timeout: 15000})
             await addLessonButton.click()
             const lessonTitle = 'CI Lesson ' + Date.now()
             const titleField = page.locator('textarea.lesson-title')
             await titleField.waitFor({state: 'visible', timeout: 20000})
             await titleField.fill(lessonTitle)
-            const body = page.locator('.bn-editor [contenteditable="true"]').first()
+            const body = page.locator('.bn-editor:visible [contenteditable="true"]').first()
             await body.waitFor({state: 'visible', timeout: 15000})
             await body.fill('Synthetic lesson body saved by the native EditorJS interface.')
             await page.waitForResponse(response => response.url().includes('/api/method/frappe.client.set_value') && response.status() === 200, {timeout: 20000})
