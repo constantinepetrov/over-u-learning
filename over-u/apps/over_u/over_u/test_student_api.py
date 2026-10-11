@@ -38,6 +38,11 @@ class TestStudentAPI(BaseTestUtils):
         self.reach_quiz()
         return api.submit_quiz(self.course, "2-2", self.answers())
 
+    def test_seeded_quiz_is_linked_to_its_student_visible_lesson(self):
+        lesson = next(row for row in self.school["lessons"] if row.title == "2.2 Тест — минимум 75%")
+        self.assertEqual(frappe.db.get_value("LMS Quiz", self.school["quiz"], "course"), self.course)
+        self.assertEqual(frappe.db.get_value("LMS Quiz", self.school["quiz"], "lesson"), lesson.name)
+
     def test_session_scoping_and_nonmember_denial(self):
         home = api.home()
         self.assertEqual(home["user"]["email"], self.student)
