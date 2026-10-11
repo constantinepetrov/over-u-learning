@@ -94,6 +94,27 @@ body { background:var(--canvas); color:var(--ink); font-size:15px; line-height:1
 .ou-workspace .answer-option:has(input:checked) { background:#fff8f4; border-color:var(--orange); }
 .ou-workspace input[type=radio] { accent-color:var(--orange); }
 :focus-visible { outline:3px solid var(--orange); outline-offset:3px; }
+.ou-hero-progress {
+  position:absolute; z-index:2; right:22px; bottom:22px;
+  width:144px; height:144px; border-radius:22px;
+  background:rgba(255,254,250,.96); box-shadow:0 12px 30px rgba(22,43,34,.2);
+  display:grid; place-items:center; color:var(--ink);
+}
+.ou-hero-progress svg { position:absolute; inset:12px; width:120px; height:120px; transform:rotate(-90deg); }
+.ou-hero-progress circle { fill:none; stroke-width:5; }
+.ou-hero-ring-track { stroke:#dce4d9; }
+.ou-hero-ring-fill { stroke:var(--orange); stroke-linecap:round; }
+.ou-hero-progress>span { position:relative; z-index:1; display:flex; align-items:center; flex-direction:column; gap:5px; text-align:center; }
+.ou-hero-progress strong { font-size:27px; letter-spacing:-.055em; line-height:1; font-weight:600; font-variant-numeric:tabular-nums; }
+.ou-hero-progress strong small { font-size:15px; }
+.ou-hero-progress>span>small { font-size:10px; color:var(--muted); }
+@media(max-width:760px) {
+  .ou-hero-progress { width:116px; height:116px; right:12px; bottom:12px; border-radius:17px; }
+  .ou-hero-progress svg { width:98px; height:98px; inset:9px; }
+  .ou-hero-progress strong { font-size:23px; }
+  .ou-hero-progress strong small { font-size:13px; }
+  .ou-hero-progress>span>small { font-size:9px; }
+}
 @media(max-width:1160px){
  .ou-header-inner { padding:8px 22px; gap:12px; }
  .ou-brand-word { display:none; }
