@@ -23,6 +23,9 @@ export function shell(content, home, section = 'home') {
     const active = section === key
     return link(href, `${icon(iconName)}<span>${label}</span>`, active ? 'active' : '', active ? 'aria-current="page"' : '')
   }).join('')
+  const mobileAuthorLink = boot.author_tools
+    ? '<a href="/lms" class="ou-author-mobile" aria-label="Студия курсов">Студия</a>'
+    : ''
   return `<div class="ou-shell">
     <header class="ou-header"><div class="ou-header-inner">
       <a class="ou-brand" href="/school" data-nav aria-label="OVER U — ${t('ui_007')}">
@@ -38,7 +41,7 @@ export function shell(content, home, section = 'home') {
       <main id="main" tabindex="-1">${content}</main>
       <footer class="ou-footer"><span>OVER U · Энерголетие / LIFELONG ENERGY</span><span>${t('ui_014')}</span></footer>
     </div>
-    <nav class="ou-mobile-nav" aria-label="Мобильная навигация">${mobileNav}</nav>
+    <nav class="ou-mobile-nav" aria-label="Мобильная навигация">${mobileNav}${mobileAuthorLink}</nav>
   </div>`
 }
 function courseFeature(course) {
