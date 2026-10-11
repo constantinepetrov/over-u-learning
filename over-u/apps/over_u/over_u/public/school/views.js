@@ -55,8 +55,18 @@ function courseFeature(course) {
 function summaryCard(title, value, detail, href, iconName, tone = '') {
   return `<a class="summary-card ${tone}" href="${e(href)}" data-nav><span class="summary-icon">${icon(iconName)}</span><span class="summary-label">${title}</span><strong>${value}</strong><span class="summary-detail">${detail}</span></a>`
 }
-function brandHero() {
-  // Hero artwork is branding; course progress below always comes from the Frappe API.
+function brandHero(course = null) {
+  // Keep the progress badge attached to real enrollment data, never mock values.
+  const value = course ? Math.max(0, Math.min(100, Number(course.progress) || 0)) : null
+  const progressBadge = course
+    ? `<div class="ou-hero-progress" role="progressbar" aria-label="Прогресс курса" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${value}">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="ou-hero-ring-track" cx="50" cy="50" r="43" />
+          <circle class="ou-hero-ring-fill" cx="50" cy="50" r="43" pathLength="100" stroke-dasharray="${value} 100" />
+        </svg>
+        <span><strong>${value}<small>%</small></strong><small>курса пройдено</small></span>
+      </div>`
+    : '<div class="ou-hero-note"><strong>Учитесь в своём ритме</strong></div>'
   return `<section class="ou-brand-hero" aria-labelledby="ou-hero-title">
     <div class="ou-brand-hero-copy">
       <span class="ou-eyebrow">Онлайн-школа OVER U</span>
@@ -67,7 +77,7 @@ function brandHero() {
     </div>
     <div class="ou-brand-hero-image">
       <img src="/assets/over_u/school/assets/brand-hero.jpg" alt="Горный пейзаж на закате" width="720" height="480">
-      <div class="ou-hero-note"><strong>Учитесь в своём ритме</strong></div>
+      ${progressBadge}
     </div>
   </section>`
 }
@@ -82,7 +92,7 @@ export function homeView(home) {
   const activeCourses = courses.filter(c => c.total > 0 && c.completed < c.total)
   const openAssignments = lessons.filter(l => l.kind === 'assignment' && !l.locked && !l.complete && l.assignment?.status !== 'Not Graded')
   const cards = `<section class="learning-summary" aria-label="${t('ui_142')}">${summaryCard(t('ui_143'), activeCourses.length, t('ui_144'), '/school/learning', 'book', 'summary-active')}${summaryCard(t('ui_145'), openAssignments.length, t('ui_146'), openAssignments[0]?.href || '/school/assignments', 'clock', 'summary-upcoming')}${summaryCard(t('ui_147'), completed.length, t('ui_148'), '/school/results', 'check', 'summary-complete')}</section>`
-  return `${brandHero()}<div class="page-heading"><div class="program-identity"><strong>${t('ui_150')}</strong><span>LIFELONG ENERGY · BUSINESS HAPPINESS</span></div><span class="eyebrow">${t('ui_040')}</span><h1>${t('ui_041')}${e(home.user.first_name)}.</h1><p>${t('ui_042')}</p></div>${courseFeature(course)}${cards}<div class="home-details"><section><div class="section-heading"><h2>${t('ui_043')}</h2>${link('/school/assignments', t('ui_030'), 'text-link')}</div>${pending.length ? pending.map(l => `<article class="task-note"><span class="note-symbol">${icon('clock')}</span><div><span class="eyebrow">${t('ui_032')}</span><h3>${e(l.title)}</h3><p>${t('ui_033')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : openAssignments.length ? openAssignments.slice(0, 2).map(l => `<article class="task-note task-open"><span class="note-symbol">${icon('task')}</span><div><span class="eyebrow">${t('ui_145')}</span><h3>${e(l.title)}</h3><p>${t('ui_146')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : `<article class="task-note"><span class="note-symbol">${icon(course.current ? 'book' : 'check')}</span><div><span class="eyebrow">${course.current ? t('ui_034') : t('ui_035')}</span><h3>${course.current ? e(course.current.title) : t('ui_036')}</h3><p>${course.current ? t('ui_037') : t('ui_038')}</p></div></article>`}</section><section><div class="section-heading"><h2>${t('ui_044')}</h2><span class="tiny-label">${completed.length} ${t('ui_045')}${courses.reduce((n, c) => n + c.total, 0)}</span></div>${completed.length ? `<ul class="completed-list">${completed.slice(-3).reverse().map(l => `<li>${icon('check')} ${link(l.href, e(l.title))}</li>`).join('')}</ul>` : t('ui_039')}</section></div>`
+  return `${brandHero(course)}<div class="page-heading"><div class="program-identity"><strong>${t('ui_150')}</strong><span>LIFELONG ENERGY · BUSINESS HAPPINESS</span></div><span class="eyebrow">${t('ui_040')}</span><h1>${t('ui_041')}${e(home.user.first_name)}.</h1><p>${t('ui_042')}</p></div>${courseFeature(course)}${cards}<div class="home-details"><section><div class="section-heading"><h2>${t('ui_043')}</h2>${link('/school/assignments', t('ui_030'), 'text-link')}</div>${pending.length ? pending.map(l => `<article class="task-note"><span class="note-symbol">${icon('clock')}</span><div><span class="eyebrow">${t('ui_032')}</span><h3>${e(l.title)}</h3><p>${t('ui_033')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : openAssignments.length ? openAssignments.slice(0, 2).map(l => `<article class="task-note task-open"><span class="note-symbol">${icon('task')}</span><div><span class="eyebrow">${t('ui_145')}</span><h3>${e(l.title)}</h3><p>${t('ui_146')}</p>${link(l.href, t('ui_031'), 'text-link')}</div></article>`).join('') : `<article class="task-note"><span class="note-symbol">${icon(course.current ? 'book' : 'check')}</span><div><span class="eyebrow">${course.current ? t('ui_034') : t('ui_035')}</span><h3>${course.current ? e(course.current.title) : t('ui_036')}</h3><p>${course.current ? t('ui_037') : t('ui_038')}</p></div></article>`}</section><section><div class="section-heading"><h2>${t('ui_044')}</h2><span class="tiny-label">${completed.length} ${t('ui_045')}${courses.reduce((n, c) => n + c.total, 0)}</span></div>${completed.length ? `<ul class="completed-list">${completed.slice(-3).reverse().map(l => `<li>${icon('check')} ${link(l.href, e(l.title))}</li>`).join('')}</ul>` : t('ui_039')}</section></div>`
 }
 export function learningView(home) {
   return `<div class="page-heading"><span class="eyebrow">${t('ui_047')}</span><h1>${t('ui_048')}</h1><p>${t('ui_049')}</p></div>${home.courses.map(courseFeature).join('') || t('ui_046')}`
