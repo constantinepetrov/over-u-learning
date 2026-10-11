@@ -13,7 +13,7 @@
 				</div>
 			</div>
 			<div class="author-hero-art" aria-hidden="true">
-				<img src="/assets/over_u/school/assets/brand-hero.jpg" alt="" width="900" height="600" loading="lazy" />
+				<img :src="'/assets/over_u/school/assets/brand-hero.jpg'" alt="" width="900" height="600" loading="lazy" />
 				<div class="author-hero-note">Знания, которые становятся действиями</div>
 			</div>
 		</div>
