@@ -11,6 +11,7 @@ permissions:
 jobs:
   semantic:
     name: Validate PR title
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Validate Conventional Commit title
