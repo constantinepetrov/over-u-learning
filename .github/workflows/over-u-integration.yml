@@ -40,6 +40,10 @@ jobs:
       - name: Run frontend unit tests
         working-directory: apps/lms/frontend
         run: yarn test
+      - name: Provide minimal bench socket config for the frontend build
+        run: |
+          mkdir -p sites
+          printf '{"socketio_port":9000}\n' > sites/common_site_config.json
       - name: Build LMS frontend
         working-directory: apps/lms/frontend
         run: yarn build
