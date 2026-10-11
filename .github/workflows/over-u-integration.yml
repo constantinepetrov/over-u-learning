@@ -451,7 +451,7 @@ jobs:
             const deniedBody = await denied.json().catch(() => ({}))
             if (denied.status() === 200 && !deniedBody.exc && deniedBody.message) throw new Error('Another author read a private draft they do not own')
             await outsider.close()
-            await mobileShell.evaluate(el => el.remove())
+            await mobileShell.waitFor({state: 'visible'})
             await mobilePage.close()
             await reopened.close()
             await desktop.close()
