@@ -179,6 +179,75 @@ jobs:
           }
           console.log('/lms loaded in Chromium without JavaScript console or page errors')
           JS
+      - name: Browser-test approved OVER U student design at desktop and phone sizes
+        run: |
+          node --input-type=module <<'JS'
+          import { pathToFileURL } from 'node:url'
+          import { mkdir } from 'node:fs/promises'
+          const { chromium } = await import(pathToFileURL(`${process.env.RUNNER_TEMP}/over-u-playwright/node_modules/playwright/index.mjs`))
+          const output = `${process.env.GITHUB_WORKSPACE}/over-u-brand-screenshots`
+          await mkdir(output, {recursive: true})
+          const browser = await chromium.launch({headless: true})
+          try {
+            for (const [name, width, height] of [['desktop', 1440, 900], ['mobile', 390, 844]]) {
+              const context = await browser.newContext({ viewport: {width, height}, deviceScaleFactor: 1 })
+              const login = await context.request.post('http://over-u.localhost:8000/api/method/login', {
+                form: { usr: 'student1@over-u.example.com', pwd: process.env.OVER_U_DEMO_PASSWORD }
+              })
+              if (login.status() !== 200 || (await login.json()).message !== 'Logged In') {
+                throw new Error('Synthetic student login failed')
+              }
+              const page = await context.newPage()
+              const errors = []
+              page.on('pageerror', error => errors.push(error.message))
+              const response = await page.goto('http://over-u.localhost:8000/school', {
+                waitUntil: 'networkidle', timeout: 60000
+              })
+              if (response?.status() !== 200) throw new Error(`/school HTTP ${response?.status()}`)
+              await page.locator('.ou-brand-hero h1').waitFor({timeout: 25000})
+              const hero = await page.locator('.ou-brand-hero h1').innerText()
+              if (!hero.includes('Энерголетие')) throw new Error('Approved hero is missing')
+              if (await page.locator('.navigation').count()) throw new Error('Old vertical sidebar is still present')
+              if (await page.locator('.ou-header-nav').count() !== 1) throw new Error('New horizontal navigation missing')
+              if (await page.locator('.progress-ring').count() !== 1) throw new Error('Live Frappe course progress ring missing')
+              const ring = await page.locator('.progress-ring svg').boundingBox()
+              const digits = await page.locator('.progress-ring strong').boundingBox()
+              if (!ring || !digits) throw new Error('Progress ring geometry missing')
+              const rx = ring.x + ring.width / 2, ry = ring.y + ring.height / 2
+              const tx = digits.x + digits.width / 2, ty = digits.y + digits.height / 2
+              if (Math.abs(rx - tx) > 3 || Math.abs(ry - ty) > 12) {
+                throw new Error(`Progress ring alignment wrong at ${width}px: ${rx-tx}, ${ry-ty}`)
+              }
+              if (!await page.locator('.ou-brand-hero-image img').evaluate(img => img.complete && img.naturalWidth > 0)) {
+                throw new Error('Branded landscape failed to load')
+              }
+              const geometry = await page.evaluate(() => ({
+                viewport: innerWidth,
+                documentWidth: document.documentElement.scrollWidth,
+                desktopNavVisible: getComputedStyle(document.querySelector('.ou-header-nav')).display !== 'none',
+                mobileNavVisible: getComputedStyle(document.querySelector('.ou-mobile-nav')).display !== 'none'
+              }))
+              if (geometry.documentWidth > width + 2) throw new Error(`Horizontal overflow at ${width}: ${JSON.stringify(geometry)}`)
+              if (geometry.desktopNavVisible === (width === 390) || geometry.mobileNavVisible !== (width === 390)) {
+                throw new Error(`Wrong responsive menu at ${width}: ${JSON.stringify(geometry)}`)
+              }
+              if (errors.length) throw new Error(`JavaScript errors at ${width}: ${errors.join('; ')}`)
+              await page.screenshot({path: `${output}/student-${name}-${width}.png`,fullPage:true})
+              console.log(`/school approved brand ${name} ${width}x${height}: hero, nav, real ring, image, geometry OK`)
+              await context.close()
+            }
+          } finally {
+            await browser.close()
+          }
+          JS
+      - name: Save synthetic design proof screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: over-u-brand-proof
+          path: over-u-brand-screenshots/*.png
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Check direct private assignment-file access
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe'
