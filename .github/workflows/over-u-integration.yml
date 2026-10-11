@@ -210,6 +210,7 @@ jobs:
               if (await page.locator('.navigation').count()) throw new Error('Old vertical sidebar is still present')
               if (await page.locator('.ou-header-nav').count() !== 1) throw new Error('New horizontal navigation missing')
               if (await page.locator('.progress-ring').count() !== 1) throw new Error('Live Frappe course progress ring missing')
+              if (await page.locator('.ou-hero-progress').count() !== 1) throw new Error('Visible live progress ring missing from hero')
               const ring = await page.locator('.progress-ring svg').boundingBox()
               const digits = await page.locator('.progress-ring strong').boundingBox()
               if (!ring || !digits) throw new Error('Progress ring geometry missing')
