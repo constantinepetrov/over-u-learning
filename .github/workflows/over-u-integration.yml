@@ -368,7 +368,7 @@ jobs:
             const fields = page.getByTestId('new-course-fields')
             const title = 'OVER U CI draft ' + Date.now()
             await fields.locator('input:visible').first().fill(title)
-            const instructors = fields.locator('[role="combobox"]').last()
+            const instructors = fields.locator('[data-slot="trigger"][aria-haspopup="listbox"]').last()
             await instructors.click()
             const picker = page.locator('[data-slot="content-body"] [data-slot="input"]')
             await picker.fill(user)
