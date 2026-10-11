@@ -205,6 +205,7 @@ beforeEach(() => {
 	replaceMock.mockReset()
 	socketOnMock.mockReset()
 	socketOffMock.mockReset()
+	call.mockClear()
 })
 
 afterEach(() => {
