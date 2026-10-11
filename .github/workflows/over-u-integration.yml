@@ -156,7 +156,14 @@ jobs:
           import { pathToFileURL } from 'node:url'
           const { chromium } = await import(pathToFileURL(`${process.env.RUNNER_TEMP}/over-u-playwright/node_modules/playwright/index.mjs`))
           const browser = await chromium.launch({ headless: true })
-          const page = await browser.newPage()
+          const context = await browser.newContext()
+          const login = await context.request.post('http://over-u.localhost:8000/api/method/login', {
+            form: { usr: 'Administrator', pwd: process.env.OVER_U_ADMIN_PASSWORD },
+          })
+          if (login.status() !== 200 || (await login.json()).message !== 'Logged In') {
+            throw new Error('Synthetic administrator login failed')
+          }
+          const page = await context.newPage()
           const errors = []
           page.on('pageerror', error => errors.push(error.message))
           page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
@@ -236,4 +243,4 @@ jobs:
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml down --volumes --remove-orphans || true
       - name: Remove temporary CA copy
         if: always()
-        run: rm -f over-u/dev/.ci-ca-bundle.pem
+        run: sudo rm -f over-u/dev/.ci-ca-bundle.pem
