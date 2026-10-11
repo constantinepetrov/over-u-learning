@@ -56,12 +56,19 @@ jobs:
           fi
       - name: Configure temporary synthetic credentials
         run: |
+          db_password=$(openssl rand -hex 24)
+          admin_password=$(openssl rand -hex 24)
+          demo_password=$(openssl rand -hex 24)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$admin_password"
+          echo "::add-mask::$demo_password"
           {
-            echo "OVER_U_DB_PASSWORD=$(openssl rand -hex 24)"
-            echo "OVER_U_ADMIN_PASSWORD=$(openssl rand -hex 24)"
-            echo "OVER_U_DEMO_PASSWORD=$(openssl rand -hex 24)"
-            echo "OVER_U_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt"
+            echo "OVER_U_DB_PASSWORD=$db_password"
+            echo "OVER_U_ADMIN_PASSWORD=$admin_password"
+            echo "OVER_U_DEMO_PASSWORD=$demo_password"
+            echo "OVER_U_CA_BUNDLE=$GITHUB_WORKSPACE/over-u/dev/.ci-ca-bundle.pem"
           } >> "$GITHUB_ENV"
+          cp /etc/ssl/certs/ca-certificates.crt over-u/dev/.ci-ca-bundle.pem
       - name: Build isolated Frappe test image
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml build frappe
       - name: Start disposable test site
@@ -204,3 +211,6 @@ jobs:
       - name: Stop and remove only this job's containers and volumes
         if: always()
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml down --volumes --remove-orphans || true
+      - name: Remove temporary CA copy
+        if: always()
+        run: rm -f over-u/dev/.ci-ca-bundle.pem
