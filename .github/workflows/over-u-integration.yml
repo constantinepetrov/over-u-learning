@@ -420,7 +420,8 @@ jobs:
             await chapterSaved
             await page.getByText(chapterTitle, {exact: true}).waitFor({state: 'visible', timeout: 20000})
             const chapterRow = page.locator('.chapter-item').filter({hasText: chapterTitle})
-            await chapterRow.locator('button').first().click()
+            const chapterToggle = chapterRow.locator('button').first()
+            if (await chapterToggle.getAttribute('aria-expanded') !== 'true') await chapterToggle.click()
             const addLessonButton = chapterRow.getByRole('button', {name: 'Add Lesson'})
             await addLessonButton.waitFor({state: 'visible', timeout: 15000})
             await addLessonButton.click()
