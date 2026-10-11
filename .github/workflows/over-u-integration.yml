@@ -579,8 +579,8 @@ jobs:
                 throw new Error('Native ' + toolName + ' selection did not persist')
               }
             }
-            await addAssessment('quiz', 'OVER U — Проверка основ', 'quiz')
-            await addAssessment('assignment', 'OVER U — Мой план обучения', 'assignment')
+            await addAssessment('quiz', 'OVER U CI — Черновой тест автора', 'quiz')
+            await addAssessment('assignment', 'OVER U CI — Черновое задание автора', 'assignment')
             if (Number((await getCourseDetails()).published) !== 0) throw new Error('Media or assessment authoring published the course unexpectedly')
 
             const previewLink = page.locator('a[href*="studentView=1"]').last()
