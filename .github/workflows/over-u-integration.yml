@@ -255,57 +255,208 @@ jobs:
             await browser.close()
           }
           JS
-      - name: Browser-check Course Creator workspace and native course form
+      - name: Browser-test Course Creator draft round-trip and settled author UI
         run: |
           node --input-type=module <<'JS'
           import { pathToFileURL } from 'node:url'
           import { mkdir } from 'node:fs/promises'
-          const { chromium } = await import(pathToFileURL(`${process.env.RUNNER_TEMP}/over-u-playwright/node_modules/playwright/index.mjs`))
-          const output = `${process.env.RUNNER_TEMP}/over-u-brand-screenshots`
+          const { chromium } = await import(pathToFileURL(process.env.RUNNER_TEMP + '/over-u-playwright/node_modules/playwright/index.mjs'))
+          const base = 'http://over-u.localhost:8000'
+          const output = process.env.RUNNER_TEMP + '/over-u-brand-screenshots'
           await mkdir(output, {recursive: true})
           const browser = await chromium.launch({headless: true})
-          try {
-            for (const [name, width, height] of [['desktop', 1440, 900], ['mobile', 390, 844]]) {
-              const context = await browser.newContext({viewport: {width, height}, deviceScaleFactor: 1})
-              try {
-                const user = 'teacher@over-u.example.com'
-                const login = await context.request.post('http://over-u.localhost:8000/api/method/login', {
-                  form: {usr: user, pwd: process.env.OVER_U_DEMO_PASSWORD}
-                })
-                const auth = await login.json().catch(() => ({}))
-                if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
-                  throw new Error(`Course Creator login failed: HTTP ${login.status()}, ${String(auth.exc_type || auth.message || 'unexpected response').slice(0, 80)}`)
-                }
-                const identity = await context.request.get('http://over-u.localhost:8000/api/method/frappe.auth.get_logged_user')
-                if (identity.status() !== 200 || (await identity.json()).message !== user) {
-                  throw new Error('Course Creator session identity mismatch')
-                }
-                const page = await context.newPage()
-                const errors = []
-                page.on('pageerror', error => errors.push(error.message))
-                const response = await page.goto('http://over-u.localhost:8000/lms', {
-                  waitUntil: 'networkidle', timeout: 60000
-                })
-                if (response?.status() !== 200) throw new Error(`Author /lms HTTP ${response?.status()}`)
-                await page.locator('.author-hero h1').waitFor({timeout: 30000})
-                if (!(await page.locator('.author-hero h1').innerText()).includes('Студия курсов')) {
-                  throw new Error('Branded author workspace is missing')
-                }
-                await page.screenshot({path: `${output}/author-${name}-${width}.png`, fullPage: true})
-                // The seeded demo is an actual course of this author. A missing
-                // card also catches author API filters that silently fail.
-                await page.locator('.author-course').first().waitFor({timeout: 25000})
-                const create = page.locator('.author-hero-create')
-                if (await create.count() !== 1) throw new Error('Native create-course link missing')
-                await create.click()
-                await page.locator('[data-testid="new-course-fields"]').waitFor({timeout: 25000})
-                await page.screenshot({path: `${output}/author-new-course-${name}-${width}.png`, fullPage: true})
-                if (errors.length) throw new Error(`Author page JS errors: ${errors.join('; ')}`)
-                console.log(`Course Creator ${width}px: workspace, own course and native creation form OK`)
-              } finally {
-                await context.close()
-              }
+          const errors = []
+          const user = 'teacher@over-u.example.com'
+          const password = process.env.OVER_U_DEMO_PASSWORD
+
+          async function authenticatedContext(width, height) {
+            const context = await browser.newContext({viewport: {width, height}, deviceScaleFactor: 1})
+            const login = await context.request.post(base + '/api/method/login', {form: {usr: user, pwd: password}})
+            const auth = await login.json().catch(() => ({}))
+            if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
+              throw new Error('Synthetic Course Creator login failed, HTTP ' + login.status())
             }
+            const identity = await context.request.get(base + '/api/method/frappe.auth.get_logged_user')
+            if (identity.status() !== 200 || (await identity.json()).message !== user) {
+              throw new Error('Course Creator session identity mismatch')
+            }
+            return context
+          }
+
+          async function waitForSettledForm(page, mobile, width) {
+            const fields = page.locator('[data-testid="new-course-fields"]')
+            await fields.waitFor({state: 'visible', timeout: 30000})
+            const shell = mobile ? page.locator('[data-testid="form-shell-page"]') : page.locator('[role="dialog"]').filter({has: fields})
+            await shell.waitFor({state: 'visible', timeout: 15000})
+            await page.waitForFunction(() => {
+              const shell = document.querySelector('[data-testid="form-shell-page"]') || [...document.querySelectorAll('[role="dialog"]')].find(el => el.querySelector('[data-testid="new-course-fields"]'))
+              if (!shell) return false
+              const opacity = Number.parseFloat(getComputedStyle(shell).opacity || '1')
+              const transitionsDone = shell.getAnimations({subtree: true}).every(animation => animation.playState !== 'running')
+              return opacity >= 0.99 && transitionsDone
+            }, null, {timeout: 15000})
+            const visuals = await shell.evaluate(el => {
+              const color = getComputedStyle(el).backgroundColor
+              const alphaMatch = color.match(/\\/\\s*([\\d.]+%?)/)
+              const alpha = color === 'transparent' ? 0 : alphaMatch ? Number.parseFloat(alphaMatch[1]) / (alphaMatch[1].endsWith('%') ? 100 : 1) : 1
+              const fields = el.querySelector('[data-testid="new-course-fields"]')
+              const input = fields?.querySelector('input')
+              return {
+                background: color,
+                alpha,
+                fields: Boolean(fields),
+                inputVisible: Boolean(input && input.getBoundingClientRect().width > 0 && getComputedStyle(input).visibility === 'visible'),
+                inputColor: input ? getComputedStyle(input).color : '',
+                pageWidth: document.documentElement.scrollWidth,
+                viewportWidth: innerWidth,
+                inert: Boolean(document.querySelector('#app')?.inert || document.querySelector('#app')?.getAttribute('aria-hidden') === 'true')
+              }
+            })
+            if (!visuals.fields || visuals.alpha < 0.98) throw new Error('Author form surface is not opaque after transition: ' + JSON.stringify(visuals))
+            if (!visuals.inputVisible || !visuals.inputColor) throw new Error('Author form fields are not visibly readable')
+            if (visuals.pageWidth > width + 2) throw new Error('Author form has horizontal overflow: ' + JSON.stringify(visuals))
+            if (mobile && !visuals.inert) throw new Error('Mobile form did not inert the underlying application')
+            await shell.locator('input').first().focus()
+            const focused = await page.evaluate(() => {
+              const shell = document.querySelector('[data-testid="form-shell-page"]') || [...document.querySelectorAll('[role="dialog"]')].find(el => el.querySelector('[data-testid="new-course-fields"]'))
+              return Boolean(shell?.contains(document.activeElement))
+            })
+            if (!focused) throw new Error('Keyboard focus escaped the author form')
+            if (mobile) {
+              const body = page.locator('[data-testid="form-shell-body"]')
+              await body.evaluate(el => { el.scrollTop = el.scrollHeight })
+              const save = page.getByTestId('new-course-save')
+              await save.scrollIntoViewIfNeeded()
+              if (!await save.isVisible()) throw new Error('Save action is unreachable while scrolling the mobile form')
+              await body.evaluate(el => { el.scrollTop = 0 })
+              await shell.locator('input').first().focus()
+            } else {
+              const underlyingHit = await page.evaluate(() => {
+                const point = document.elementFromPoint(innerWidth - 4, Math.floor(innerHeight / 2))
+                return Boolean(point && (point.id === 'app' || point.closest('#app')))
+              })
+              if (underlyingHit) throw new Error('Desktop dialog backdrop does not intercept interaction with the page behind it')
+            }
+            await page.waitForTimeout(250)
+            return shell
+          }
+
+          async function openWorkspace(context, name, width) {
+            const page = await context.newPage()
+            page.on('pageerror', error => errors.push(error.message))
+            page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
+            const response = await page.goto(base + '/lms' + (name ? '/courses/' + name + '?editLesson=1-1#editor' : ''), {waitUntil: 'networkidle', timeout: 60000})
+            if (response?.status() !== 200) throw new Error('Author page HTTP ' + response?.status())
+            await page.locator('.author-hero h1').waitFor({timeout: 30000})
+            if (!(await page.locator('.author-hero h1').innerText()).includes('Студия курсов')) {
+              throw new Error('Branded Course Creator workspace did not load')
+            }
+            await page.screenshot({path: output + '/author-workspace-' + width + '.png', fullPage: true})
+            return page
+          }
+
+          try {
+            const desktop = await authenticatedContext(1440, 900)
+            const page = await openWorkspace(desktop, null, 1440)
+            await page.locator('.author-course').first().waitFor({timeout: 25000})
+            await page.locator('.author-hero-create').click()
+            await waitForSettledForm(page, false, 1440)
+            await page.screenshot({path: output + '/author-new-course-desktop-1440.png', fullPage: true})
+
+            const fields = page.getByTestId('new-course-fields')
+            const title = 'OVER U CI draft ' + Date.now()
+            await fields.locator('label').filter({hasText: 'Title'}).locator('xpath=..').locator('input').fill(title)
+            const instructors = fields.locator('label').filter({hasText: 'Instructors'}).locator('xpath=..').locator('button').first()
+            await instructors.click()
+            const picker = page.locator('[data-slot="content-body"] [data-slot="input"]')
+            await picker.fill(user)
+            const ownOption = page.locator('[data-slot="content-body"] [role="option"]').filter({hasText: user}).first()
+            await ownOption.waitFor({state: 'visible', timeout: 20000})
+            await ownOption.click()
+            await page.keyboard.press('Escape')
+            await fields.locator('label').filter({hasText: 'Short introduction'}).locator('xpath=..').locator('textarea').fill('Synthetic unpublished authoring round-trip.')
+            await fields.locator('div.ProseMirror').evaluate(el => { el.textContent = 'Synthetic course description for isolated CI.'; el.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: ' CI'})) })
+            await page.getByTestId('new-course-save').click()
+            await page.waitForURL(/\\/lms\\/courses\\/(?!new(?:$|[/#]))[^/]+$/, {timeout: 30000})
+            const courseName = new URL(page.url()).pathname.split('/').pop()
+            const getDoc = async (doctype, name) => {
+              const response = await desktop.request.post(base + '/api/method/frappe.client.get', {form: {doctype, name}})
+              const body = await response.json().catch(() => ({}))
+              if (response.status() !== 200 || body.exc) throw new Error('Cannot verify persisted ' + doctype + ' through the author session')
+              return body.message
+            }
+            const persistedCourse = await getDoc('LMS Course', courseName)
+            if (Number(persistedCourse.published) !== 0 || !persistedCourse.title.includes('OVER U CI draft')) {
+              throw new Error('Course was not persisted as an unpublished draft')
+            }
+            const instructorRows = persistedCourse.instructors || []
+            if (!instructorRows.some(row => row.instructor === user)) throw new Error('The Course Creator was not saved as the course instructor')
+
+            const courseEditor = page.getByRole('button').or(page.getByRole('tab')).filter({hasText: 'Course editor'})
+            await courseEditor.click()
+            await page.getByRole('button', {name: 'Add'}).click()
+            const chapterDialog = page.locator('[data-dismissable-layer]').filter({has: page.locator('label', {hasText: 'Title'})})
+            await chapterDialog.waitFor({state: 'visible', timeout: 15000})
+            const chapterTitle = 'CI Chapter ' + Date.now()
+            await chapterDialog.locator('label').filter({hasText: 'Title'}).locator('xpath=..').locator('input').fill(chapterTitle)
+            const chapterSaved = page.waitForResponse(response => response.url().includes('/api/method/lms.lms.api.upsert_chapter') && response.status() === 200)
+            await chapterDialog.getByTestId('chapter-save').click()
+            await chapterSaved
+            await page.getByText(chapterTitle, {exact: true}).waitFor({state: 'visible', timeout: 20000})
+
+            await page.getByRole('button', {name: 'Add Lesson'}).click()
+            const lessonTitle = 'CI Lesson ' + Date.now()
+            const titleField = page.locator('textarea.lesson-title')
+            await titleField.waitFor({state: 'visible', timeout: 20000})
+            await titleField.fill(lessonTitle)
+            const body = page.locator('.bn-editor [contenteditable="true"]').first()
+            await body.waitFor({state: 'visible', timeout: 15000})
+            await body.fill('Synthetic lesson body saved by the native EditorJS interface.')
+            await page.waitForResponse(response => response.url().includes('/api/method/frappe.client.set_value') && response.status() === 200, {timeout: 20000})
+            await page.waitForTimeout(1200)
+            const outlineResponse = await desktop.request.post(base + '/api/method/lms.lms.utils.get_course_outline', {form: {course: courseName, progress: '0'}})
+            const outlineBody = await outlineResponse.json().catch(() => ({}))
+            if (outlineResponse.status() !== 200 || outlineBody.exc) throw new Error('Course outline persistence check failed')
+            const chapters = outlineBody.message || []
+            const chapter = chapters.find(row => row.title === chapterTitle)
+            const lessonRow = chapter?.lessons?.find(row => row.title === lessonTitle)
+            if (!chapter || !lessonRow) throw new Error('Chapter or lesson did not persist in the course outline')
+            const persistedLesson = await getDoc('Course Lesson', lessonRow.name)
+            if (!(persistedLesson.content || '').includes('Synthetic lesson body saved by the native EditorJS interface')) {
+              throw new Error('Lesson body did not persist through the native editor')
+            }
+            if (Number((await getDoc('LMS Course', courseName)).published) !== 0) throw new Error('Authoring flow published the course unexpectedly')
+            await page.screenshot({path: output + '/author-draft-editor-desktop-1440.png', fullPage: true})
+
+            await page.reload({waitUntil: 'networkidle'})
+            await page.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
+            if (await page.locator('textarea.lesson-title').inputValue() !== lessonTitle) throw new Error('Lesson title did not survive page reload')
+            const editorText = await page.locator('.bn-editor').innerText()
+            if (!editorText.includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Lesson body did not survive page reload')
+
+            const reopened = await authenticatedContext(390, 844)
+            const mobilePage = await openWorkspace(reopened, null, 390)
+            await mobilePage.locator('.author-course').filter({hasText: title}).waitFor({state: 'visible', timeout: 30000})
+            await mobilePage.getByRole('link', {name: /Create course/}).first().click()
+            const mobileShell = await waitForSettledForm(mobilePage, true, 390)
+            await mobilePage.screenshot({path: output + '/author-new-course-mobile-390.png', fullPage: true})
+            await mobilePage.goto(base + '/lms/courses/' + courseName + '?editLesson=1-1#editor', {waitUntil: 'networkidle', timeout: 60000})
+            await mobilePage.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
+            if (await mobilePage.locator('textarea.lesson-title').inputValue() !== lessonTitle) throw new Error('Fresh authenticated mobile context did not reopen the persisted lesson')
+            if (!(await mobilePage.locator('.bn-editor').innerText()).includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Fresh authenticated mobile context lost lesson body')
+            await mobilePage.screenshot({path: output + '/author-draft-editor-mobile-390.png', fullPage: true})
+
+            const outsider = await authenticatedContext(390, 844)
+            const denied = await outsider.request.post(base + '/api/method/frappe.client.get', {form: {doctype: 'LMS Course', name: courseName}})
+            const deniedBody = await denied.json().catch(() => ({}))
+            if (denied.status() === 200 && !deniedBody.exc && deniedBody.message) throw new Error('Another author read a private draft they do not own')
+            await outsider.close()
+            await mobileShell.evaluate(el => el.remove())
+            await mobilePage.close()
+            await reopened.close()
+            await desktop.close()
+            if (errors.length) throw new Error('Author browser console errors: ' + errors.join('; ').slice(0, 1000))
+            console.log('Course Creator created an unpublished course in the native UI, assigned self as instructor, persisted a chapter and lesson body, reopened in a fresh authenticated session at desktop and mobile, and an unrelated author was denied.')
           } finally {
             await browser.close()
           }
