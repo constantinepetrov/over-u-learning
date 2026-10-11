@@ -185,7 +185,7 @@ jobs:
           import { pathToFileURL } from 'node:url'
           import { mkdir } from 'node:fs/promises'
           const { chromium } = await import(pathToFileURL(`${process.env.RUNNER_TEMP}/over-u-playwright/node_modules/playwright/index.mjs`))
-          const output = `${process.env.GITHUB_WORKSPACE}/over-u-brand-screenshots`
+          const output = `${process.env.RUNNER_TEMP}/over-u-brand-screenshots`
           await mkdir(output, {recursive: true})
           const browser = await chromium.launch({headless: true})
           try {
@@ -246,7 +246,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: over-u-brand-proof
-          path: over-u-brand-screenshots/*.png
+          path: ${{ runner.temp }}/over-u-brand-screenshots/*.png
           if-no-files-found: ignore
           retention-days: 3
       - name: Check direct private assignment-file access
