@@ -85,9 +85,23 @@ jobs:
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml build frappe
       - name: Start disposable test site
         env:
-          GIT_TRACE: 1
+          GIT_TRACE: 0
           GIT_TERMINAL_PROMPT: 0
-        run: docker compose -p over-u-ci -f over-u/dev/compose.yml up -d
+        run: |
+          cat > over-u/dev/.ci-json-parse-diagnostic.cjs <<'JS'
+          const originalParse = JSON.parse
+          JSON.parse = function (value, ...args) {
+            try {
+              return originalParse.call(this, value, ...args)
+            } catch (error) {
+              if (String(error.stack).includes('GitFetcher') && typeof value === 'string') {
+                console.error('YARN_GIT_MANIFEST_DIAGNOSTIC', JSON.stringify(value.slice(0, 120)))
+              }
+              throw error
+            }
+          }
+          JS
+          NODE_OPTIONS="--require=/workspace/over-u/dev/.ci-json-parse-diagnostic.cjs" docker compose -p over-u-ci -f over-u/dev/compose.yml up -d
       - name: Wait for Frappe and verify /lms assets
         timeout-minutes: 35
         run: |
@@ -232,6 +246,6 @@ jobs:
       - name: Stop and remove only this job's containers and volumes
         if: always()
         run: docker compose -p over-u-ci -f over-u/dev/compose.yml down --volumes --remove-orphans || true
-      - name: Remove temporary CA copy
+      - name: Remove temporary CI files
         if: always()
-        run: rm -f over-u/dev/.ci-ca-bundle.pem
+        run: rm -f over-u/dev/.ci-ca-bundle.pem over-u/dev/.ci-json-parse-diagnostic.cjs
