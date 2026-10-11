@@ -240,9 +240,11 @@ jobs:
                 viewport: innerWidth,
                 documentWidth: document.documentElement.scrollWidth,
                 desktopNavVisible: getComputedStyle(document.querySelector('.ou-header-nav')).display !== 'none',
-                mobileNavVisible: getComputedStyle(document.querySelector('.ou-mobile-nav')).display !== 'none'
+                mobileNavVisible: getComputedStyle(document.querySelector('.ou-mobile-nav')).display !== 'none',
+                mobileNavLabelsFit: [...document.querySelectorAll('.ou-mobile-nav a')].length > 0 && [...document.querySelectorAll('.ou-mobile-nav a')].every(item => item.scrollWidth <= item.clientWidth + 2 && getComputedStyle(item).whiteSpace === 'nowrap')
               }))
               if (geometry.documentWidth > width + 2) throw new Error(`Horizontal overflow at ${width}: ${JSON.stringify(geometry)}`)
+              if (width === 390 && !geometry.mobileNavLabelsFit) throw new Error('Mobile navigation labels wrap or overflow at 390px')
               if (geometry.desktopNavVisible === (width === 390) || geometry.mobileNavVisible !== (width === 390)) {
                 throw new Error(`Wrong responsive menu at ${width}: ${JSON.stringify(geometry)}`)
               }
@@ -366,7 +368,7 @@ jobs:
             const fields = page.getByTestId('new-course-fields')
             const title = 'OVER U CI draft ' + Date.now()
             await fields.locator('input:visible').first().fill(title)
-            const instructors = fields.locator('label').filter({hasText: 'Instructors'}).locator('xpath=..').locator('button').first()
+            const instructors = fields.locator('[role="combobox"]').last()
             await instructors.click()
             const picker = page.locator('[data-slot="content-body"] [data-slot="input"]')
             await picker.fill(user)
