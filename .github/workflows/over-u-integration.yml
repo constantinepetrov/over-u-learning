@@ -404,9 +404,13 @@ jobs:
             const instructorRows = persistedCourse.instructors || []
             if (!instructorRows.some(row => (row.instructor || row.value || row.name || row.email || row) === user)) throw new Error('The Course Creator was not saved as the course instructor')
 
-            const courseEditor = page.getByRole('button').or(page.getByRole('tab')).filter({hasText: 'Course editor'})
-            await courseEditor.click()
-            await page.getByRole('button', {name: 'Add'}).click()
+            // Select the native editor through its supported route hash. The
+            // accessible label is localized, while the tab key remains stable.
+            await page.goto(base + '/lms/courses/' + courseName + '#editor', {waitUntil: 'networkidle', timeout: 60000})
+            await page.waitForFunction(() => location.hash === '#editor')
+            const addChapterButton = page.locator('button:has(.lucide-plus)').last()
+            await addChapterButton.waitFor({state: 'visible', timeout: 20000})
+            await addChapterButton.click()
             const chapterDialog = page.locator('[data-dismissable-layer]').filter({has: page.locator('label', {hasText: 'Title'})})
             await chapterDialog.waitFor({state: 'visible', timeout: 15000})
             const chapterTitle = 'CI Chapter ' + Date.now()
