@@ -460,7 +460,7 @@ jobs:
               const plus = contentEditor.locator('.ce-toolbar__plus:visible').last()
               await plus.waitFor({state: 'visible', timeout: 12000})
               await plus.click()
-              const item = page.locator('.ce-popover-item[data-item-name="' + toolName + '"]')
+              const item = page.locator('.ce-popover-item[data-item-name="' + toolName + '"]').last()
               await item.waitFor({state: 'visible', timeout: 12000})
               await item.click()
             }
