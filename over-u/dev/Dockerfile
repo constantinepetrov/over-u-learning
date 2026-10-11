@@ -3,7 +3,7 @@ FROM python:3.14-slim-bookworm
 ARG TARGETARCH
 RUN --mount=type=secret,id=ca_bundle,required=true \
     apt-get update && apt-get install -y --no-install-recommends \
-    git curl file build-essential pkg-config libmariadb-dev mariadb-client \
+    cron git curl file build-essential pkg-config libmariadb-dev mariadb-client \
     libcairo2 libmagic1 libpango-1.0-0 libpangocairo-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=secret,id=ca_bundle,required=true \
