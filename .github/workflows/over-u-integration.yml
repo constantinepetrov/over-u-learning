@@ -285,13 +285,8 @@ jobs:
             return context
           }
 
-          async function postAs(context, endpoint, form) {
-            const csrf = (await context.cookies(base)).find(cookie => cookie.name === 'csrf_token')?.value
-            if (!csrf) throw new Error('Authenticated synthetic session has no CSRF cookie')
-            return context.request.post(base + endpoint, {
-              form,
-              headers: {'X-Frappe-CSRF-Token': csrf}
-            })
+          async function getAs(context, endpoint, params) {
+            return context.request.get(base + endpoint + '?' + new URLSearchParams(params).toString())
           }
 
           async function waitForSettledForm(page, mobile, width) {
@@ -391,13 +386,13 @@ jobs:
             await page.waitForURL(new RegExp('/lms/courses/(?!new(?:$|[/#]))[^/]+$'), {timeout: 30000})
             const courseName = new URL(page.url()).pathname.split('/').pop()
             const getDoc = async (doctype, name) => {
-              const response = await postAs(desktop, '/api/method/frappe.client.get', {doctype, name})
+              const response = await getAs(desktop, '/api/method/frappe.client.get', {doctype, name})
               const body = await response.json().catch(() => ({}))
               if (response.status() !== 200 || body.exc) throw new Error('Cannot verify persisted ' + doctype + ' through the author session')
               return body.message
             }
             const getCourseDetails = async () => {
-              const response = await postAs(desktop, '/api/method/lms.lms.utils.get_course_details', {course: courseName})
+              const response = await getAs(desktop, '/api/method/lms.lms.utils.get_course_details', {course: courseName})
               const body = await response.json().catch(() => ({}))
               if (response.status() !== 200 || body.exc || !body.message?.name) { const summary = {status: response.status(), exc_type: body.exc_type || null, message_type: typeof body.message, message_keys: body.message && typeof body.message === 'object' ? Object.keys(body.message) : [], message_name: body.message?.name || null}; throw new Error('The native course-details API did not return the author draft: ' + JSON.stringify(summary)) }
               return body.message
@@ -431,7 +426,7 @@ jobs:
             await body.fill('Synthetic lesson body saved by the native EditorJS interface.')
             await page.waitForResponse(response => response.url().includes('/api/method/frappe.client.set_value') && response.status() === 200, {timeout: 20000})
             await page.waitForTimeout(1200)
-            const outlineResponse = await postAs(desktop, '/api/method/lms.lms.utils.get_course_outline', {course: courseName, progress: '0'})
+            const outlineResponse = await getAs(desktop, '/api/method/lms.lms.utils.get_course_outline', {course: courseName, progress: '0'})
             const outlineBody = await outlineResponse.json().catch(() => ({}))
             if (outlineResponse.status() !== 200 || outlineBody.exc) throw new Error('Course outline persistence check failed')
             const chapters = outlineBody.message || []
@@ -464,7 +459,7 @@ jobs:
             await mobilePage.screenshot({path: output + '/author-draft-editor-mobile-390.png', fullPage: true})
 
             const outsider = await authenticatedContext(390, 844, 'student2@over-u.example.com')
-            const denied = await postAs(outsider, '/api/method/frappe.client.get', {doctype: 'LMS Course', name: courseName})
+            const denied = await getAs(outsider, '/api/method/frappe.client.get', {doctype: 'LMS Course', name: courseName})
             const deniedBody = await denied.json().catch(() => ({}))
             if (denied.status() === 200 && !deniedBody.exc && deniedBody.message) throw new Error('Another author read a private draft they do not own')
             await outsider.close()
