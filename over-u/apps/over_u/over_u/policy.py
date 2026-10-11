@@ -60,6 +60,14 @@ def validate_submission(doc, method=None):
     if previous and (previous.assignment != doc.assignment or previous.member != doc.member):
         if assignment_lessons(previous.assignment):
             frappe.throw(_("A reviewed submission cannot be moved to another learner or assignment."))
+    # The stock submission form does not always send its lesson, so fetch_from
+    # cannot populate course. Store the authoritative course from the assignment
+    # to make instructor queues reliably scoped.
+    assignment_course = frappe.db.get_value("LMS Assignment", doc.assignment, "course")
+    if assignment_course:
+        if doc.course and doc.course != assignment_course:
+            frappe.throw(_("Submission course must match its assignment."), frappe.PermissionError)
+        doc.course = assignment_course
     lessons = assignment_lessons(doc.assignment)
     if not lessons:
         return
