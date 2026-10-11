@@ -20,7 +20,7 @@ bench set-redis-socketio-host redis://redis:6379
 sed -i '/^redis/d; /^watch/d' Procfile
 if [ ! -d apps/payments ]; then
   bench get-app https://github.com/frappe/payments --branch version-16 --skip-assets
-  git -C apps/payments fetch origin cca07d9f9392e2ea0e521c5975151db9e4b6c321
+  git -C apps/payments fetch upstream cca07d9f9392e2ea0e521c5975151db9e4b6c321
   git -C apps/payments checkout --detach cca07d9f9392e2ea0e521c5975151db9e4b6c321
   uv pip install -e apps/payments --python env/bin/python
 fi
