@@ -377,7 +377,7 @@ jobs:
             await fields.locator('label').filter({hasText: 'Short introduction'}).locator('xpath=..').locator('textarea').fill('Synthetic unpublished authoring round-trip.')
             await fields.locator('div.ProseMirror').evaluate(el => { el.textContent = 'Synthetic course description for isolated CI.'; el.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: ' CI'})) })
             await page.getByTestId('new-course-save').click()
-            await page.waitForURL(/\\/lms\\/courses\\/(?!new(?:$|[/#]))[^/]+$/, {timeout: 30000})
+            await page.waitForURL(new RegExp('/lms/courses/(?!new(?:$|[/#]))[^/]+$'), {timeout: 30000})
             const courseName = new URL(page.url()).pathname.split('/').pop()
             const getDoc = async (doctype, name) => {
               const response = await desktop.request.post(base + '/api/method/frappe.client.get', {form: {doctype, name}})
