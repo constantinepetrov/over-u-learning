@@ -472,21 +472,27 @@ jobs:
                 throw new Error('Native editor saved malformed lesson content')
               }
             }
-            const videoSave = waitForLessonSave()
+            const videoChooser = page.waitForEvent('filechooser', {timeout: 20000})
+              .then(value => ({value}), error => ({error}))
+            await addEditorTool('upload')
+            const selectedVideoChooser = await videoChooser
+            if (selectedVideoChooser.error) throw selectedVideoChooser.error
+            const videoSave = waitForLessonSave().then(value => ({value}), error => ({error}))
             const videoUpload = page.waitForResponse(
               response => response.url().includes('/api/method/upload_file'),
               {timeout: 60000}
-            )
-            const videoChooser = page.waitForEvent('filechooser', {timeout: 20000})
-            await addEditorTool('upload')
-            await (await videoChooser).setFiles(process.cwd() + '/frontend/public/Quiz.mp4')
-            const videoResponse = await videoUpload
+            ).then(value => ({value}), error => ({error}))
+            await selectedVideoChooser.value.setFiles(process.cwd() + '/frontend/public/Quiz.mp4')
+            const [videoResponseResult, videoSavedResult] = await Promise.all([videoUpload, videoSave])
+            if (videoResponseResult.error) throw videoResponseResult.error
+            if (videoSavedResult.error) throw videoSavedResult.error
+            const videoResponse = videoResponseResult.value
             const videoPayload = await videoResponse.json().catch(() => ({}))
             const videoFile = videoPayload.message || {}
             if (!videoResponse.ok() || !videoFile.file_url || Number(videoFile.is_private) !== 1) {
               throw new Error('Native video upload did not return a private file')
             }
-            const videoSaved = await videoSave
+            const videoSaved = videoSavedResult.value
             if (!videoSaved.ok()) throw new Error('Video block save request failed')
             let blocks = await readLessonBlocks()
             const videoBlock = blocks.find(block => block.type === 'upload' &&
@@ -516,25 +522,31 @@ jobs:
               pdf += 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF\n'
               return Buffer.from(pdf)
             }
-            const pdfSave = waitForLessonSave()
+            const pdfChooser = page.waitForEvent('filechooser', {timeout: 20000})
+              .then(value => ({value}), error => ({error}))
+            await addEditorTool('upload')
+            const selectedPdfChooser = await pdfChooser
+            if (selectedPdfChooser.error) throw selectedPdfChooser.error
+            const pdfSave = waitForLessonSave().then(value => ({value}), error => ({error}))
             const pdfUpload = page.waitForResponse(
               response => response.url().includes('/api/method/upload_file'),
               {timeout: 30000}
-            )
-            const pdfChooser = page.waitForEvent('filechooser', {timeout: 20000})
-            await addEditorTool('upload')
-            await (await pdfChooser).setFiles({
+            ).then(value => ({value}), error => ({error}))
+            await selectedPdfChooser.value.setFiles({
               name: 'over-u-ci-synthetic.pdf',
               mimeType: 'application/pdf',
               buffer: syntheticPdf(),
             })
-            const pdfResponse = await pdfUpload
+            const [pdfResponseResult, pdfSavedResult] = await Promise.all([pdfUpload, pdfSave])
+            if (pdfResponseResult.error) throw pdfResponseResult.error
+            if (pdfSavedResult.error) throw pdfSavedResult.error
+            const pdfResponse = pdfResponseResult.value
             const pdfPayload = await pdfResponse.json().catch(() => ({}))
             const pdfFile = pdfPayload.message || {}
             if (!pdfResponse.ok() || !pdfFile.file_url || Number(pdfFile.is_private) !== 1) {
               throw new Error('Native PDF upload did not return a private file')
             }
-            const pdfSaved = await pdfSave
+            const pdfSaved = pdfSavedResult.value
             if (!pdfSaved.ok()) throw new Error('PDF block save request failed')
             blocks = await readLessonBlocks()
             const pdfBlock = blocks.find(block => block.type === 'upload' &&
@@ -545,7 +557,6 @@ jobs:
             }
 
             async function addAssessment(toolName, title, fieldName) {
-              const saved = waitForLessonSave()
               await addEditorTool(toolName)
               const dialog = page.locator('[data-dismissable-layer]').filter({has: page.locator('input')}).last()
               await dialog.waitFor({state: 'visible', timeout: 15000})
@@ -557,8 +568,11 @@ jobs:
               await option.click()
               const saveButton = dialog.getByRole('button').filter({hasText: /Save|Сохранить/i}).last()
               await saveButton.waitFor({state: 'visible', timeout: 10000})
+              const saved = waitForLessonSave().then(value => ({value}), error => ({error}))
               await saveButton.click()
-              const response = await saved
+              const savedResult = await saved
+              if (savedResult.error) throw savedResult.error
+              const response = savedResult.value
               if (!response.ok()) throw new Error('Native ' + toolName + ' block save failed')
               blocks = await readLessonBlocks()
               if (!blocks.some(block => block.type === toolName && block.data?.[fieldName])) {
