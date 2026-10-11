@@ -244,6 +244,7 @@ import { useRouter } from 'vue-router'
 import { validateFile } from '@/utils'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import { safeUrl } from '@/utils/safeUrl'
+import { useStudentView } from '@/composables/useStudentView'
 import { getScheduleBlockReason } from '@/utils/schedule'
 
 const answer = ref(null)
@@ -251,6 +252,7 @@ const attachment = ref(null)
 const comments = ref(null)
 const router = useRouter()
 const user = inject('$user')
+const isStudentView = useStudentView()
 const isDirty = ref(false)
 const scheduleNow = ref(new Date())
 let scheduleClock = null
@@ -328,6 +330,7 @@ watch(submissionResource, () => {
 const isSubmitting = ref(false)
 
 const submitAssignment = () => {
+	if (isStudentView.value) return
 	if (isSubmitting.value) return
 	if (scheduleBlocked.value && !canGradeSubmission.value) {
 		toast.error(scheduleMessage.value)
@@ -475,6 +478,7 @@ const canGradeSubmission = computed(() => {
 })
 
 const canModifyAssignment = computed(() => {
+	if (isStudentView.value) return false
 	if (scheduleBlocked.value) {
 		return false
 	}

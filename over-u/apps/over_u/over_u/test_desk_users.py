@@ -4,6 +4,7 @@ from lms.lms.test_helpers import BaseTestUtils
 
 
 from over_u.desk import can_access_desk
+from over_u.www.school import can_review_assignments
 
 
 class TestDeskUserOperations(BaseTestUtils):
@@ -32,9 +33,11 @@ class TestDeskUserOperations(BaseTestUtils):
         teacher.add_roles("Course Creator")
         teacher.save()
         self.assertIn("Course Creator", frappe.get_roles(teacher.name))
+        self.assertTrue(can_review_assignments(teacher.name))
         teacher.remove_roles("Course Creator")
         teacher.save()
         self.assertNotIn("Course Creator", frappe.get_roles(teacher.name))
+        self.assertFalse(can_review_assignments(teacher.name))
         teacher.add_roles("Course Creator")
         teacher.save()
         self.assertIn("Course Creator", frappe.get_roles(teacher.name))
@@ -47,6 +50,7 @@ class TestDeskUserOperations(BaseTestUtils):
         self.assertEqual(frappe.db.get_value("User", teacher.name, "enabled"), 1)
 
         self.assertTrue(can_access_desk())
+        self.assertFalse(can_review_assignments(student.name))
         administrator = frappe.get_doc("User", "Administrator")
         for account in (student, teacher):
             frappe.set_user(account.name)

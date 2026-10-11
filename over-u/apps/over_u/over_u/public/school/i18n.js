@@ -1,4 +1,4 @@
-const boot = JSON.parse(document.getElementById('school-boot').textContent)
+export const boot = JSON.parse(document.getElementById('school-boot').textContent)
 const messages = boot.messages || {}
 export function t(key, ...values) {
   if (!(key in messages)) throw new Error(`Missing UI translation: ${key}`)

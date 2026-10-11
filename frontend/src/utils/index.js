@@ -163,7 +163,12 @@ export function getEditorTools(
 			class: Table,
 			inlineToolbar: INLINE_TOOLBAR_ORDER,
 		},
-		quiz: Quiz,
+		// Carry learner-preview mode into the isolated quiz component so an
+		// author's preview cannot save a real attempt.
+		quiz: {
+			class: Quiz,
+			config: { studentView },
+		},
 		// The submission renders in an iframe (a separate app instance), so
 		// provide/inject can't reach it. Pass Student View through the tool
 		// config and on into the iframe URL.

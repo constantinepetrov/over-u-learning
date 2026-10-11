@@ -43,6 +43,8 @@ class TestStudentAPI(BaseTestUtils):
         self.assertEqual(home["user"]["email"], self.student)
         self.assertEqual(len(home["courses"]), 1)
         self.assertEqual(home["courses"][0]["progress"], 0)
+        self.assertIn("image", home["courses"][0])
+        self.assertIn("image", home["courses"][0]["chapters"][0]["lessons"][0])
         self.assertNotIn("ASG-SUB-00015", json.dumps(home))
         frappe.set_user(self.outsider)
         self.assertEqual(api.home()["courses"], [])
@@ -107,6 +109,33 @@ class TestStudentAPI(BaseTestUtils):
         with self.assertRaises(frappe.ValidationError):
             api.submit_assignment(self.course, "3-1", "Replace passed answer")
         self.assertEqual(api.complete_lesson(self.course, "3-2")["course"]["progress"], 100)
+
+    def test_teacher_queue_and_review_are_instructor_scoped(self):
+        self.reach_homework()
+        api.submit_assignment(self.course, "3-1", "A private test answer")
+        submission = frappe.db.get_value("LMS Assignment Submission", {
+            "assignment": self.school["assignment"], "member": self.student,
+        }, "name")
+        with self.assertRaises(frappe.PermissionError):
+            api.teacher_assignments()
+
+        frappe.set_user(TEACHER)
+        queue = api.teacher_assignments()
+        self.assertEqual([row["name"] for row in queue], [submission])
+        self.assertNotIn("A private test answer", json.dumps(queue))
+        detail = api.teacher_assignment(submission)
+        self.assertIn("A private test answer", detail["answer"])
+        saved = api.review_assignment(submission, "Pass", "Хорошая работа")
+        self.assertEqual(saved["status"], "Pass")
+
+        frappe.set_user("Administrator")
+        outsider = self._create_user("over-u-unrelated-reviewer@example.com", "Unrelated", "Reviewer", ["Course Creator"])
+        frappe.set_user(outsider.name)
+        self.assertEqual(api.teacher_assignments(), [])
+        with self.assertRaises(frappe.PermissionError):
+            api.teacher_assignment(submission)
+        frappe.set_user(self.student)
+        self.assertFalse(api.lesson(self.course, "3-2")["locked"])
 
     def test_student_cannot_fetch_another_students_answer(self):
         self.reach_homework()

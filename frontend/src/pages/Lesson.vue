@@ -67,7 +67,7 @@
 						}}
 					</div>
 					<Button
-						v-if="user.data && !lesson.data.disable_self_learning"
+						v-if="user.data && !lesson.data.disable_self_learning && !isStudentView"
 						@click="enrollStudent()"
 						variant="solid"
 					>
@@ -650,6 +650,7 @@ const renderEditor = (holder, content) => {
 let progressSubmitting = false
 const markProgress = () => {
 	if (progressSubmitting) return
+	if (isStudentView.value) return
 	// Only enrolled students record progress; a moderator previewing has no
 	// membership row so save_progress would no-op server-side but still
 	// flip the in-memory `completedLesson` and show a green tick that
@@ -863,7 +864,7 @@ const resetLessonState = (newChapterNumber, newLessonNumber) => {
 }
 
 const trackVideoWatchDuration = () => {
-	if (!lesson.data?.membership) return
+	if (isStudentView.value || !lesson.data?.membership) return
 	let videoDetails = getVideoDetails()
 	videoDetails = videoDetails.concat(getPlyrSourceDetails())
 	call('lms.lms.api.track_video_watch_duration', {
@@ -1166,6 +1167,7 @@ const enrollment = createResource({
 })
 
 const enrollStudent = () => {
+	if (isStudentView.value) return
 	enrollment.submit(
 		{},
 		{

@@ -9,9 +9,10 @@ import router from '@/router'
 import { blockNotice } from '@/utils/blockDom'
 
 export class Quiz {
-	constructor({ data, api, readOnly }) {
+	constructor({ data, api, readOnly, config }) {
 		this.data = data
 		this.readOnly = readOnly
+		this.studentView = Boolean(config?.studentView)
 	}
 
 	static get toolbox() {
@@ -50,7 +51,10 @@ export class Quiz {
 			// a standalone mount (EditorJS blocks live outside the app's Vue tree),
 			// so give it translation and the shared $user the quiz component needs.
 			const { userResource } = usersStore()
-			this.quizApp = createApp(QuizBlock, { quiz })
+			this.quizApp = createApp(QuizBlock, {
+				quiz,
+				preview: this.studentView,
+			})
 			registerDirectives(this.quizApp)
 			this.quizApp.use(translationPlugin)
 			this.quizApp.provide('$user', userResource)

@@ -1,6 +1,6 @@
 import {t} from './i18n.js'
 import {api} from './api.js'
-import {shell, homeView, learningView, courseView, lessonView, assignmentsView, resultsView, profileView, loadingView, errorView} from './views.js'
+import {shell, homeView, learningView, courseView, lessonView, assignmentsView, resultsView, profileView, teacherAssignmentsView, teacherAssignmentView, loadingView, errorView} from './views.js'
 const root = document.getElementById('school')
 const announce = message => { document.getElementById('announcements').textContent = message }
 const drafts = {quizTaking: new Set(), quizAnswers: new Map(), homeworkAnswers: new Map(), homeworkEditing: new Set()}
@@ -11,9 +11,11 @@ function parseRoute() {
   if (parts[0] === 'courses' && parts[1] && parts.length === 2) return {view: 'course', course: parts[1]}
   if (parts[0] === 'courses' && parts[1] && parts[2] === 'lessons' && parts[3] && parts.length === 4) return {view: 'lesson', course: parts[1], number: parts[3]}
   if (parts.length === 1 && ['learning', 'assignments', 'results', 'profile'].includes(parts[0])) return {view: parts[0]}
+  if (parts.length === 1 && parts[0] === 'teacher') return {view: 'teacher'}
+  if (parts.length === 2 && parts[0] === 'teacher' && parts[1]) return {view: 'teacher-detail', submission: parts[1]}
   throw new Error(t('ui_127'))
 }
-function section() { return ['course', 'lesson'].includes(route?.view) ? 'learning' : route?.view || 'home' }
+function section() { return ['course', 'lesson'].includes(route?.view) ? 'learning' : route?.view === 'teacher-detail' ? 'teacher' : route?.view || 'home' }
 function paint(content, focus = false) {
   root.innerHTML = shell(content, home, section())
   if (focus) {
@@ -22,10 +24,10 @@ function paint(content, focus = false) {
   }
 }
 function showData(focus = false) {
-  const views = {home: homeView, learning: learningView, assignments: assignmentsView, results: resultsView, profile: profileView}
-  const content = route.view === 'lesson' ? lessonView(data, drafts) : route.view === 'course' ? courseView(data) : views[route.view](home)
+  const views = {home: homeView, learning: learningView, assignments: assignmentsView, results: resultsView, profile: profileView, teacher: teacherAssignmentsView}
+  const content = route.view === 'lesson' ? lessonView(data, drafts) : route.view === 'course' ? courseView(data) : route.view === 'teacher-detail' ? teacherAssignmentView(data) : views[route.view](route.view === 'teacher' ? data : home)
   paint(content, focus)
-  const title = route.view === 'lesson' ? data.lesson.title : route.view === 'course' ? data.title : {home: t('ui_001'), learning: t('ui_002'), assignments: t('ui_003'), results: t('ui_004'), profile: t('ui_005')}[route.view]
+  const title = route.view === 'lesson' ? data.lesson.title : route.view === 'course' ? data.title : route.view === 'teacher-detail' ? data.assignment : {home: t('ui_001'), learning: t('ui_002'), assignments: t('ui_003'), results: t('ui_004'), profile: t('ui_005'), teacher: t('ui_152')}[route.view]
   document.title = `${title} — OVER U`
 }
 async function loadRoute({refresh = false} = {}) {
@@ -34,7 +36,7 @@ async function loadRoute({refresh = false} = {}) {
     route = parseRoute()
     if (!refresh) paint(loadingView())
     const nextHome = await api.home()
-    const next = route.view === 'lesson' ? await api.lesson(route.course, route.number) : route.view === 'course' ? await api.course(route.course) : null
+    const next = route.view === 'lesson' ? await api.lesson(route.course, route.number) : route.view === 'course' ? await api.course(route.course) : route.view === 'teacher' ? await api.teacherAssignments() : route.view === 'teacher-detail' ? await api.teacherAssignment(route.submission) : null
     if (ticket !== sequence) return
     home = nextHome; data = next
     showData(!refresh)
@@ -58,6 +60,13 @@ root.addEventListener('click', async event => {
   if (!control || busy) return
   const action = control.dataset.action
   if (action === 'retry' || action === 'refresh-status') return loadRoute({refresh: true})
+  if (action === 'logout') {
+    busy = true; control.disabled = true
+    try { await api.logout() }
+    catch (error) { const feedback = document.getElementById('logout-feedback'); if (feedback) feedback.textContent = error.message }
+    finally { busy = false; if (control.isConnected) control.disabled = false }
+    return
+  }
   const key = `${route.course}/${route.number}`
   if (action === 'quiz-retry') { drafts.quizTaking.add(key); showData(); document.querySelector('#quiz-form input')?.focus(); return }
   if (action === 'homework-edit') { drafts.homeworkEditing.add(key); showData(); document.getElementById('homework-answer')?.focus(); return }
@@ -85,7 +94,7 @@ root.addEventListener('input', event => {
 })
 root.addEventListener('submit', async event => {
   const form = event.target
-  if (!['quiz-form', 'homework-form'].includes(form.id)) return
+  if (!['quiz-form', 'homework-form', 'teacher-review-form'].includes(form.id)) return
   event.preventDefault()
   if (busy || !form.reportValidity()) return
   const current = {...route}, path = location.pathname, key = `${current.course}/${current.number}`
@@ -94,7 +103,10 @@ root.addEventListener('submit', async event => {
   feedback.textContent = ''; busy = true; submit.disabled = true; submit.textContent = t('ui_132')
   try {
     let updated
-    if (form.id === 'quiz-form') {
+    if (form.id === 'teacher-review-form') {
+      updated = await api.reviewAssignment(new FormData(form).get('submission'), new FormData(form).get('status'), new FormData(form).get('comments'))
+      navigate('/school/teacher')
+    } else if (form.id === 'quiz-form') {
       const values = new FormData(form)
       const answers = data.quiz.questions.map((q, i) => q.options[Number(values.get(`question-${i}`))])
       updated = await api.quiz(current.course, current.number, answers)

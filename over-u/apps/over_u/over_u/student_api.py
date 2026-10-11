@@ -102,7 +102,8 @@ def _snapshot(course):
         for row in chapter.lessons:
             item = {"title": row.title, "number": row.number, "kind": KINDS.get(row.icon, "text"),
                     "complete": bool(row.get("is_complete")), "locked": bool(row.get("locked")),
-                    "href": _href(course, row.number), "chapter_title": chapter.title}
+                    "href": _href(course, row.number), "chapter_title": chapter.title,
+                    "image": _url(doc.image)}
             if not item["locked"] and item["kind"] in ("assignment", "quiz"):
                 # No raw content or assessment identifiers leave this summary payload.
                 content = frappe.db.get_value("Course Lesson", row.name, "content")
@@ -118,6 +119,7 @@ def _snapshot(course):
     current = next((row for row in flat if not row["complete"] and not row["locked"]), None)
     pending = [row for row in flat if (row.get("assignment") or {}).get("status") == "Not Graded"]
     return {"id": doc.name, "title": doc.title, "introduction": _text(doc.short_introduction),
+            "image": _url(doc.image),
             "chapters": chapters, "total": len(flat), "completed": completed,
             "progress": round(completed / len(flat) * 100, 1) if flat else 0,
             "current": current, "pending": pending, "href": _href(course),
@@ -135,6 +137,91 @@ def home():
     user = frappe.get_cached_doc("User", member)
     return {"api_version": API_VERSION, "user": {"first_name": user.first_name, "name": user.full_name,
                                                 "email": member}, "courses": courses}
+
+
+def _review_submission(name):
+    member = _member()
+    if not isinstance(name, str) or not name:
+        frappe.throw(_("Submission not found."), frappe.DoesNotExistError)
+    submission = frappe.get_doc("LMS Assignment Submission", name)
+    from over_u.policy import assignment_lessons
+    from lms.lms.permissions import can_author_course
+    assignment_rows = assignment_lessons(submission.assignment)
+    if submission.lesson:
+        assignment_rows = [lesson for lesson in assignment_rows if lesson.name == submission.lesson]
+    elif submission.course:
+        assignment_rows = [lesson for lesson in assignment_rows if lesson.course == submission.course]
+    lessons = [lesson for lesson in assignment_rows if can_author_course(lesson.course, user=member)]
+    if not lessons or not frappe.has_permission(submission.doctype, ptype="read", doc=submission, user=member):
+        frappe.throw(_("You cannot review this assignment."), frappe.PermissionError)
+    return submission, lessons[0]
+
+
+@frappe.whitelist()
+def teacher_assignments():
+    member = _member()
+    if not set(frappe.get_roles(member)) & {"Course Creator", "Moderator", "Batch Evaluator", "System Manager"}:
+        frappe.throw(_("You cannot review assignments."), frappe.PermissionError)
+    from lms.lms.permissions import can_author_course
+    courses = [name for name in frappe.get_all("LMS Course", pluck="name", limit_page_length=0)
+               if can_author_course(name, user=member)]
+    if not courses:
+        return []
+    rows = frappe.get_all(
+        "LMS Assignment Submission",
+        filters={"status": "Not Graded", "course": ["in", courses]},
+        fields=["name", "assignment", "member", "member_name", "assignment_title", "course", "lesson", "creation"],
+        order_by="creation asc", limit_page_length=200,
+    )
+    result = []
+    for row in rows:
+        try:
+            submission, lesson = _review_submission(row.name)
+        except frappe.PermissionError:
+            continue
+        result.append({
+            "name": submission.name,
+            "member": submission.member_name or submission.member,
+            "course": frappe.db.get_value("LMS Course", lesson.course, "title"),
+            "lesson": lesson.title,
+            "assignment": submission.assignment_title or frappe.db.get_value("LMS Assignment", submission.assignment, "title"),
+            "status": submission.status,
+            "href": "/school/teacher/" + quote(submission.name, safe=""),
+            "created": str(submission.creation),
+        })
+    return result
+
+
+@frappe.whitelist()
+def teacher_assignment(submission: str):
+    doc, lesson = _review_submission(submission)
+    return {
+        "name": doc.name,
+        "member": doc.member_name or doc.member,
+        "course": frappe.db.get_value("LMS Course", lesson.course, "title"),
+        "lesson": lesson.title,
+        "assignment": doc.assignment_title or frappe.db.get_value("LMS Assignment", doc.assignment, "title"),
+        "question": _rich(doc.question),
+        "answer": _rich(doc.answer),
+        "status": doc.status,
+        "comments": _rich(doc.comments),
+        "created": str(doc.creation),
+    }
+
+
+@frappe.whitelist()
+def review_assignment(submission: str, status: str, comments: str = ""):
+    if status not in ("Pass", "Fail"):
+        frappe.throw(_("Choose Pass or Fail."))
+    if not isinstance(comments, str) or len(comments) > 10000:
+        frappe.throw(_("The comment is too long."))
+    doc, _lesson = _review_submission(submission)
+    if not frappe.has_permission(doc.doctype, ptype="write", doc=doc):
+        frappe.throw(_("You cannot review this assignment."), frappe.PermissionError)
+    doc.status = status
+    doc.comments = comments
+    doc.save()
+    return {"name": doc.name, "status": doc.status}
 
 
 @frappe.whitelist()

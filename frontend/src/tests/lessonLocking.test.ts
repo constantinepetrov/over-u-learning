@@ -9,12 +9,14 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { call } from 'frappe-ui'
 
 const pushMock = vi.hoisted(() => vi.fn())
 const replaceMock = vi.hoisted(() => vi.fn())
 const socketOnMock = vi.hoisted(() => vi.fn())
 const socketOffMock = vi.hoisted(() => vi.fn())
 const created = vi.hoisted(() => ({ list: [] as any[] }))
+const routeQuery = vi.hoisted(() => ({ value: {} as Record<string, string> }))
 const stub = vi.hoisted(() => (name: string) => ({
 	name,
 	template: `<div><slot /></div>`,
@@ -23,7 +25,7 @@ const stub = vi.hoisted(() => (name: string) => ({
 vi.mock('vue-router', () => ({
 	useRoute: () => ({
 		params: { chapterNumber: '1', lessonNumber: '1' },
-		query: {},
+		query: routeQuery.value,
 	}),
 	useRouter: () => ({ push: pushMock, replace: replaceMock }),
 }))
@@ -198,6 +200,7 @@ let wrapper: VueWrapper
 
 beforeEach(() => {
 	created.list.length = 0
+	routeQuery.value = {}
 	pushMock.mockReset()
 	replaceMock.mockReset()
 	socketOnMock.mockReset()
@@ -515,6 +518,38 @@ describe('Lesson.vue unlocks the next lesson without a reload', () => {
 		progressHandler()({ course: 'COURSE-1', lesson: 'L1', progress: 40 })
 
 		expect(outline.reload).not.toHaveBeenCalled()
+	})
+})
+
+describe('Student View does not write learner progress', () => {
+	it('does not save lesson or video progress for an enrolled author', async () => {
+		routeQuery.value = { studentView: '1' }
+		wrapper = await mountLesson()
+		const lesson = findResource('lms.lms.utils.get_lesson')
+		const progress = findResource(
+			'lms.lms.doctype.course_lesson.course_lesson.save_progress'
+		)
+		lesson.data = { ...baseLesson, membership: { progress: 0 } }
+		await flushPromises()
+
+		;(wrapper.vm as any).markProgress()
+		;(wrapper.vm as any).trackVideoWatchDuration()
+
+		expect(progress.submit).not.toHaveBeenCalled()
+		expect(call).not.toHaveBeenCalledWith(
+			'lms.lms.api.track_video_watch_duration',
+			expect.anything()
+		)
+	})
+
+	it('does not enroll the author from a locked lesson preview', async () => {
+		routeQuery.value = { studentView: '1' }
+		wrapper = await mountLesson()
+		const enrollment = findResource('frappe.client.insert')
+
+		;(wrapper.vm as any).enrollStudent()
+
+		expect(enrollment.submit).not.toHaveBeenCalled()
 	})
 })
 

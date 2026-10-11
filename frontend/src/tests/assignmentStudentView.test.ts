@@ -102,4 +102,13 @@ describe('getEditorTools wiring', () => {
 
 		expect(tools.assignment.config.studentView).toBe(false)
 	})
+
+	it('hands the quiz tool the Student View flag too', () => {
+		const tools = getEditorTools(false, {}, { studentView: true }) as Record<
+			string,
+			any
+		>
+
+		expect(tools.quiz.config.studentView).toBe(true)
+	})
 })

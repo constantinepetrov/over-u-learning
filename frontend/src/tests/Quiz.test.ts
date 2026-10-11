@@ -287,4 +287,15 @@ describe('Quiz in an author preview', () => {
 			vi.useRealTimers()
 		}
 	})
+
+	it('does not erase saved answers when Student View starts', async () => {
+		const savedAnswers = JSON.stringify([{ question_name: 'Q1', answer: ['1'] }])
+	localStorage.setItem('Quiz pager states', savedAnswers)
+		const wrapper = mountQuiz({ preview: true })
+		await flushPromises()
+		await startQuiz(wrapper)
+
+		expect(localStorage.getItem('Quiz pager states')).toBe(savedAnswers)
+		wrapper.unmount()
+	})
 })

@@ -1,7 +1,7 @@
 import {t, language} from './i18n.js'
 // The only browser module that knows the server adapter's endpoint names.
 const boot = JSON.parse(document.getElementById('school-boot').textContent)
-const methods = new Set(['home', 'course', 'lesson', 'complete_lesson', 'submit_quiz', 'submit_assignment'])
+const methods = new Set(['home', 'course', 'lesson', 'complete_lesson', 'submit_quiz', 'submit_assignment', 'teacher_assignments', 'teacher_assignment', 'review_assignment'])
 export class SchoolError extends Error {
   constructor(message, status) { super(message); this.status = status }
 }
@@ -39,4 +39,15 @@ export const api = {
   complete: (course, number) => request('complete_lesson', {course, number}),
   quiz: (course, number, answers) => request('submit_quiz', {course, number, answers}),
   homework: (course, number, answer) => request('submit_assignment', {course, number, answer}),
+  teacherAssignments: () => request('teacher_assignments'),
+  teacherAssignment: submission => request('teacher_assignment', {submission}),
+  reviewAssignment: (submission, status, comments) => request('review_assignment', {submission, status, comments}),
+  logout: async () => {
+    let response
+    try {
+      response = await fetch('/api/method/logout', {method: 'POST', credentials: 'same-origin', headers: {'X-Frappe-CSRF-Token': boot.csrf_token}})
+    } catch { throw new SchoolError(t('ui_137'), 0) }
+    if (!response.ok) throw new SchoolError(t('ui_139'), response.status)
+    window.location.assign('/login')
+  },
 }

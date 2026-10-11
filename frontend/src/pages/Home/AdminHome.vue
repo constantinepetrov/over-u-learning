@@ -1,5 +1,6 @@
 <template>
 	<div>
+		<AuthorWorkspace />
 		<div class="mt-10 space-y-10">
 			<div v-if="evals?.data?.length">
 				<div class="text-lg-semibold text-ink-gray-9 mb-3">
@@ -121,35 +122,6 @@
 			</div>
 		</div>
 
-		<div v-if="createdCourses.data?.length" class="mt-10">
-			<div class="flex items-center justify-between mb-3">
-				<span class="text-lg-semibold text-ink-gray-9">
-					{{ __('Courses Created') }}
-				</span>
-				<router-link
-					:to="{
-						name: 'Courses',
-					}"
-				>
-					<span class="flex items-center gap-x-1 text-ink-gray-5 text-xs">
-						<span>
-							{{ __('See all') }}
-						</span>
-						<span class="lucide-move-right size-3 rtl:rotate-180" />
-					</span>
-				</router-link>
-			</div>
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-				<router-link
-					v-for="course in createdCourses.data"
-					:key="course.name"
-					:to="{ name: 'CourseDetail', params: { courseName: course.name } }"
-				>
-					<CourseCard :course="course" />
-				</router-link>
-			</div>
-		</div>
-
 		<div v-if="createdBatches.data?.length" class="mt-10">
 			<div class="flex items-center justify-between mb-3">
 				<span class="text-lg-semibold text-ink-gray-9">
@@ -179,43 +151,17 @@
 			</div>
 		</div>
 
-		<div
-			v-if="!createdCourses.data?.length && !createdBatches.data?.length"
-			class="flex flex-col items-center justify-center mt-60"
-		>
-			<span class="lucide-graduation-cap size-10 mx-auto text-ink-gray-5" />
-			<div class="text-lg-semibold text-ink-gray-7 mb-1.5">
-				{{ __('No courses created') }}
-			</div>
-			<div
-				class="leading-5 text-base w-full md:w-2/5 text-base text-center text-ink-gray-7"
-			>
-				{{
-					__(
-						'There are no courses currently. Create your first course to get started!'
-					)
-				}}
-			</div>
-			<router-link :to="{ name: 'NewCourse' }" class="mt-4">
-				<Button>
-					<template #prefix>
-						<span class="lucide-plus size-4" />
-					</template>
-					{{ __('Create Course') }}
-				</Button>
-			</router-link>
-		</div>
 	</div>
 </template>
 <script setup lang="ts">
-import { Button, createResource, Tooltip } from 'frappe-ui'
+import { createResource, Tooltip } from 'frappe-ui'
 import { inject } from 'vue'
 import { formatTime } from '@/utils'
 import { formatTimezone } from '@/utils/timezone'
 import { profileRoute } from '@/utils/routes'
-import CourseCard from '@/components/CourseCard.vue'
 import BatchCard from '@/pages/Batches/components/BatchCard.vue'
 import { safeUrl } from '@/utils/safeUrl'
+import AuthorWorkspace from './AuthorWorkspace.vue'
 
 const user = inject<any>('$user')
 const dayjs = inject<any>('$dayjs')
@@ -224,11 +170,6 @@ const props = defineProps<{
 	liveClasses?: { data?: any[] }
 	evals?: { data?: any[] }
 }>()
-
-const createdCourses = createResource({
-	url: 'lms.lms.api.get_created_courses',
-	auto: true,
-})
 
 const createdBatches = createResource({
 	url: 'lms.lms.api.get_created_batches',

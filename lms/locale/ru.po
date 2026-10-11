@@ -9908,6 +9908,94 @@ msgstr "{} Предоставленный"
 msgid "{} Passed"
 msgstr "{} Прошел"
 
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "OVER U course studio"
+msgstr "Студия курсов OVER U"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Author workspace"
+msgstr "Кабинет автора курсов"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Create a course, arrange its chapters and lessons, and prepare learning materials in Frappe Learning."
+msgstr "Создавайте курс, собирайте модули и уроки, готовьте учебные материалы во Frappe Learning."
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Create course"
+msgstr "Создать курс"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Draft"
+msgstr "Черновик"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "All my courses"
+msgstr "Все мои курсы"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "My courses"
+msgstr "Мои курсы"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Not published"
+msgstr "Не опубликовано"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Continue editing"
+msgstr "Продолжить работу"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "{0} lessons"
+msgstr "Уроков: {0}"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "{0} learners"
+msgstr "Учеников: {0}"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Add a short course introduction in course settings."
+msgstr "Добавьте краткое описание в настройках курса."
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Edit course"
+msgstr "Редактировать курс"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Open course"
+msgstr "Открыть курс"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Your course list is empty"
+msgstr "Список курсов пока пуст"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Create a draft course to begin preparing your content. It will not appear in the student catalog until it is published."
+msgstr "Создайте черновик и подготовьте материалы. Ученики не увидят курс в каталоге до публикации."
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "How course authoring works"
+msgstr "Как устроена подготовка курса"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Create the course draft and add the instructors."
+msgstr "Создайте черновик курса и укажите преподавателей."
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Open the course editor to add chapters, lessons, text, media, quizzes, and assignments."
+msgstr "В редакторе курса добавьте модули, уроки, текст, медиафайлы, тесты и задания."
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Use Student View to preview a lesson. Publishing is controlled by the course moderator."
+msgstr "Предпросмотрите урок в режиме ученика. Публикацией управляет модератор курса."
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Under review"
+msgstr "На согласовании"
+
+#: frontend/src/pages/Home/AuthorWorkspace.vue
+msgid "Deleting a lesson also deletes learner progress for that lesson."
+msgstr "При удалении урока также удаляются записи прогресса учеников по этому уроку."
+
 #. Count format of shortcut in the Learning Workspace
 #: lms/lms/workspace/learning/learning.json
 msgid "{} Published"

@@ -21,6 +21,7 @@ class LMSAssignmentSubmission(Document):
 		self.validate_duplicates()
 		self.validate_url()
 		self.validate_status()
+		self.validate_assignment_attachment()
 
 	def sanitize_rich_text_fields(self):
 		"""Drop form controls the framework's allowlist keeps: `comments` is mailed as
@@ -118,6 +119,88 @@ class LMSAssignmentSubmission(Document):
 			soup = BeautifulSoup(self.answer, "html.parser")
 			images = soup.find_all("img")
 			self.attach_images_to_document(images)
+
+	def validate_assignment_attachment(self):
+		"""Keep uploaded homework files private and scoped to their submission."""
+		if not self.assignment_attachment:
+			return
+
+		from urllib.parse import parse_qs, urlsplit
+
+		parsed_url = urlsplit(self.assignment_attachment)
+		if parsed_url.scheme or parsed_url.netloc:
+			frappe.throw(
+				_("External links cannot be used as private assignment attachments."),
+				frappe.PermissionError,
+			)
+		file_url = parsed_url.path
+		file_ids = parse_qs(parsed_url.query).get("fid", [])
+		if file_ids:
+			file_name = file_ids[0]
+		else:
+			files = frappe.get_all(
+				"File", filters={"file_url": file_url}, fields=["name", "owner"]
+			)
+			file_name = next(
+				(file.name for file in files if file.owner == frappe.session.user),
+				files[0].name if files and PRIVILEGED_ROLES & set(frappe.get_roles()) else None,
+			)
+		if not file_name or frappe.db.get_value("File", file_name, "file_url") != file_url:
+			frappe.throw(
+				_("Please upload the assignment file to this school before submitting it."),
+				frappe.PermissionError,
+			)
+
+		file_doc = frappe.get_doc("File", file_name)
+		if file_doc.is_remote_file or not file_url.startswith(("/files/", "/private/files/")):
+			frappe.throw(
+				_("External links cannot be used as private assignment attachments."),
+				frappe.PermissionError,
+			)
+
+		privileged = bool(PRIVILEGED_ROLES & set(frappe.get_roles()))
+		if not privileged and file_doc.owner != frappe.session.user:
+			frappe.throw(
+				_("You can only attach files uploaded from your own account."),
+				frappe.PermissionError,
+			)
+
+		temporary_name = self.get("__temporary_name")
+		already_attached_elsewhere = (
+			file_doc.attached_to_doctype
+			and file_doc.attached_to_name
+			and (
+				file_doc.attached_to_doctype != self.doctype
+				or file_doc.attached_to_name not in {self.name, temporary_name}
+			)
+		)
+		if already_attached_elsewhere:
+			frappe.throw(
+				_("This file is already attached to another record."),
+				frappe.PermissionError,
+			)
+
+		if not file_doc.is_private and file_doc.content_hash:
+			shared_file = frappe.db.exists(
+				"File", {"content_hash": file_doc.content_hash, "name": ["!=", file_doc.name]}
+			)
+			if shared_file:
+				frappe.throw(
+					_("This file is shared by other records. Upload a separate copy for your homework."),
+					frappe.PermissionError,
+				)
+		elif not file_doc.is_private:
+			frappe.throw(
+				_("This file cannot be secured. Upload it again before submitting your homework."),
+				frappe.PermissionError,
+			)
+
+		file_doc.attached_to_doctype = self.doctype
+		file_doc.attached_to_name = self.name
+		file_doc.attached_to_field = "assignment_attachment"
+		file_doc.is_private = 1
+		file_doc.save(ignore_permissions=True)
+		self.assignment_attachment = file_doc.file_url
 
 	def attach_images_to_document(self, images):
 		for img in images:

@@ -35,7 +35,7 @@ services:
     volumes:
       - ../..:/workspace
       - bench:/home/frappe/frappe-bench
-      - ${OVER_U_CA_BUNDLE:-/etc/ssl/certs/ca-certificates.crt}:/run/ca-bundle.pem:ro
+      - ${OVER_U_CA_BUNDLE:-/etc/ssl/cert.pem}:/run/ca-bundle.pem:ro
     ports:
       - 127.0.0.1:8000:8000
       - 127.0.0.1:9000:9000
@@ -49,4 +49,4 @@ volumes:
   bench:
 secrets:
   ca_bundle:
-    file: ${OVER_U_CA_BUNDLE:-/etc/ssl/certs/ca-certificates.crt}
+    file: ${OVER_U_CA_BUNDLE:-/etc/ssl/cert.pem}

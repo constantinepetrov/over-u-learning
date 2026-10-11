@@ -1,6 +1,8 @@
 # Copyright (c) 2021, Frappe and Contributors
 # See license.txt
 
+import os
+
 import frappe
 
 from lms.lms.test_helpers import BaseTestUtils, MemberOwnershipTestMixin
@@ -45,6 +47,93 @@ class TestLMSAssignmentSubmission(MemberOwnershipTestMixin, BaseTestUtils):
 		doc.member = self.student_b.name
 		doc.save()
 		self.assertEqual(doc.member, self.student_b.name)
+
+	def _new_public_file(self, filename="synthetic-homework.txt"):
+		owner = frappe.session.user
+		frappe.set_user("Administrator")
+		file_doc = frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": filename,
+				"content": b"synthetic homework attachment",
+				"is_private": 0,
+			}
+		).insert(ignore_permissions=True)
+		frappe.db.set_value("File", file_doc.name, "owner", owner)
+		frappe.set_user(owner)
+		return file_doc
+
+	def test_submission_attachments_are_private_and_scoped_to_the_submission(self):
+		frappe.set_user(self.student_a.name)
+		file_doc = self._new_public_file()
+		submission = self._new_submission(member=self.student_a.name)
+		submission.type = "Document"
+		submission.assignment_attachment = file_doc.file_url
+		submission.insert()
+
+		file_doc.reload()
+		private_url = submission.assignment_attachment.split("?", 1)[0]
+		private_file_name = frappe.db.get_value("File", {"file_url": private_url}, "name")
+		private_file = frappe.get_doc("File", private_file_name)
+		self.assertEqual(private_file.is_private, 1)
+		self.assertTrue(private_url.startswith("/private/files/"))
+		self.assertEqual(submission.assignment_attachment, private_file.file_url)
+		self.assertEqual(file_doc.name, private_file.name)
+		self.assertEqual(private_file.attached_to_doctype, "LMS Assignment Submission")
+		self.assertEqual(private_file.attached_to_name, submission.name)
+		self.assertEqual(private_file.attached_to_field, "assignment_attachment")
+		from frappe.utils import get_site_path
+
+		self.assertFalse(
+			os.path.exists(get_site_path("public", "files", file_doc.file_name))
+		)
+		self.assertFalse(frappe.has_permission("File", ptype="read", doc=private_file, user="Guest"))
+		self.assertFalse(
+			frappe.has_permission("File", ptype="read", doc=private_file, user=self.student_b.name)
+		)
+		self.assertTrue(
+			frappe.has_permission("File", ptype="read", doc=private_file, user=self.student_a.name)
+		)
+		self.assertTrue(
+			frappe.has_permission("File", ptype="read", doc=private_file, user=self.moderator.name)
+		)
+		from frappe.core.doctype.file.utils import find_file_by_url
+
+		for user in ("Guest", self.student_b.name):
+			frappe.set_user(user)
+			self.assertIsNone(find_file_by_url(private_file.file_url))
+		for user in (self.student_a.name, self.moderator.name):
+			frappe.set_user(user)
+			self.assertIsNotNone(find_file_by_url(private_file.file_url))
+		frappe.set_user(self.student_a.name)
+
+	def test_student_cannot_attach_another_students_file(self):
+		frappe.set_user(self.student_b.name)
+		file_doc = self._new_public_file("other-student-homework.txt")
+		frappe.set_user(self.student_a.name)
+		submission = self._new_submission(member=self.student_a.name)
+		submission.type = "Document"
+		submission.assignment_attachment = file_doc.file_url
+		with self.assertRaises(frappe.PermissionError):
+			submission.insert()
+
+	def test_shared_public_files_are_not_made_private_as_a_side_effect(self):
+		frappe.set_user(self.student_a.name)
+		file_doc = self._new_public_file("shared-public-homework.txt")
+		shared = self._new_public_file("shared-public-homework-copy.txt")
+		self.assertEqual(shared.content_hash, file_doc.content_hash)
+		submission = self._new_submission(member=self.student_a.name)
+		submission.type = "Document"
+		submission.assignment_attachment = file_doc.file_url
+		with self.assertRaises(frappe.PermissionError):
+			submission.insert()
+		file_doc.reload()
+		shared.reload()
+		self.assertEqual(file_doc.is_private, 0)
+		self.assertEqual(shared.is_private, 0)
+
+	def test_submission_attachments_are_not_configured_as_public(self):
+		self.assertEqual(frappe.get_meta("LMS Assignment Submission").make_attachments_public, 0)
 
 	# --- Form-control stripping (defence in depth; see lms/lms/html_sanitizer.py) ---
 	#

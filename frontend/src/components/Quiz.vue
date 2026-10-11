@@ -1045,6 +1045,7 @@ const handlePageHide = () => {
 }
 
 const handleBeforeUnload = (event) => {
+	if (props.preview) return
 	if (activeQuestion.value > 0 && !quizSubmission.data) {
 		recordCurrentAttempt()
 		event.preventDefault()
@@ -1327,6 +1328,7 @@ const switchQuestion = (questionNumber) => {
 }
 
 const loadSavedAnswers = () => {
+	if (props.preview) return
 	let quizData = JSON.parse(localStorage.getItem(quiz.data.title))
 	if (quizData) {
 		let localQuestion = quizData.find(
@@ -1377,11 +1379,9 @@ watch(
 const startQuiz = () => {
 	if (scheduleBlocked.value) return
 	activeQuestion.value = 1
-	localStorage.removeItem(quiz.data.title)
-	// Neither in an author preview. Nothing may be submitted there, so a countdown
-	// would reach zero with no way to end the attempt and the camera would stay on
-	// with it, and a violation cap would do the same.
+	// Preview must not alter local answers shared with a learner's quiz session.
 	if (props.preview) return
+	localStorage.removeItem(quiz.data.title)
 	if (quiz.data.duration) startTimer()
 	if (quiz.data.enable_proctoring) proctoringActive.value = true
 }
@@ -1525,6 +1525,7 @@ const checkAnswer = () => {
 }
 
 const addToLocalStorage = () => {
+	if (props.preview) return
 	let quizData = JSON.parse(localStorage.getItem(quiz.data.title))
 	let questionData = {
 		question_name: currentQuestion.value,
