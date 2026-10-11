@@ -33,6 +33,7 @@ def seed():
     existing = frappe.db.exists("LMS Course", {"title": COURSE_TITLE})
     if existing:
         repair_demo_video(existing)
+        repair_demo_quiz_link(existing)
         return manifest(existing)
     course = frappe.get_doc({"doctype": "LMS Course", "title": COURSE_TITLE,
                             "short_introduction": "Демо: уроки, тест 75%, домашнее задание и зачёт преподавателя.",
@@ -85,6 +86,7 @@ def seed():
             chapter.reload()
             chapter.append("lessons", {"lesson": lesson.name})
             chapter.save()
+    repair_demo_quiz_link(course.name)
     for email in STUDENTS:
         frappe.get_doc({"doctype": "LMS Enrollment", "course": course.name, "member": email}).insert()
     for field in ("enforce_quiz_completion", "enforce_assignment_completion", "persona_captured"):
@@ -100,6 +102,15 @@ def manifest(course=None):
             "lessons": frappe.get_all("Course Lesson", {"course": course}, ["name", "title", "chapter"], order_by="creation asc"),
             "quiz": frappe.db.exists("LMS Quiz", {"title": "OVER U — Проверка основ"}),
             "assignment": frappe.db.exists("LMS Assignment", {"title": "OVER U — Мой план обучения"})}
+
+
+def repair_demo_quiz_link(course=None):
+    course = course or frappe.db.exists("LMS Course", {"title": COURSE_TITLE})
+    lesson = frappe.db.get_value("Course Lesson", {"course": course, "title": "2.2 Тест — минимум 75%"}, "name")
+    quiz = frappe.db.exists("LMS Quiz", {"title": "OVER U — Проверка основ"})
+    if course and lesson and quiz:
+        # Keep existing demo sites compatible with the LMS quiz access check.
+        frappe.db.set_value("LMS Quiz", quiz, {"course": course, "lesson": lesson}, update_modified=False)
 
 
 def repair_demo_video(course=None):
