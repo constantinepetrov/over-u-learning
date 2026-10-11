@@ -195,10 +195,18 @@ jobs:
                 form: { usr: 'student1@over-u.example.com', pwd: process.env.OVER_U_DEMO_PASSWORD }
               })
               const auth = await login.json().catch(() => ({}))
-              if (login.status() !== 200 || auth.message !== 'Logged In') {
+              // Frappe returns "No App" on successful Website User login and
+              // "Logged In" on successful System User login. Check the session
+              // identity as well as the response to reject anonymous sessions.
+              if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
                 // Only report status and error category. CI credentials and cookies stay masked.
                 const reason = String(auth.exc_type || auth.message || 'unexpected response').slice(0, 120)
                 throw new Error(`Synthetic student login failed: HTTP ${login.status()}, reason=${reason}`)
+              }
+              const identityResponse = await context.request.get('http://over-u.localhost:8000/api/method/frappe.auth.get_logged_user')
+              const identity = await identityResponse.json().catch(() => ({}))
+              if (identityResponse.status() !== 200 || identity.message !== 'student1@over-u.example.com') {
+                throw new Error('Synthetic student session identity mismatch')
               }
               const page = await context.newPage()
               const errors = []
@@ -208,6 +216,9 @@ jobs:
               })
               if (response?.status() !== 200) throw new Error(`/school HTTP ${response?.status()}`)
               await page.locator('.ou-brand-hero h1').waitFor({timeout: 25000})
+              // Always retain a real-render screenshot even if a later layout
+              // assertion fails; the existing artifact step uploads it on failure.
+              await page.screenshot({path: `${output}/student-${name}-${width}.png`, fullPage: true})
               const hero = await page.locator('.ou-brand-hero h1').innerText()
               if (!hero.includes('Энерголетие')) throw new Error('Approved hero is missing')
               if (await page.locator('.navigation').count()) throw new Error('Old vertical sidebar is still present')
