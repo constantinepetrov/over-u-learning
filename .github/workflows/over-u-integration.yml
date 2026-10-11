@@ -419,8 +419,11 @@ jobs:
             await chapterDialog.getByTestId('chapter-save').click()
             await chapterSaved
             await page.getByText(chapterTitle, {exact: true}).waitFor({state: 'visible', timeout: 20000})
-
-            await page.getByRole('button', {name: 'Add Lesson'}).click()
+            const chapterRow = page.locator('.chapter-item').filter({hasText: chapterTitle})
+            await chapterRow.locator('button').first().click()
+            const addLessonButton = chapterRow.getByRole('button', {name: 'Add Lesson'})
+            await addLessonButton.waitFor({state: 'visible', timeout: 15000})
+            await addLessonButton.click()
             const lessonTitle = 'CI Lesson ' + Date.now()
             const titleField = page.locator('textarea.lesson-title')
             await titleField.waitFor({state: 'visible', timeout: 20000})
