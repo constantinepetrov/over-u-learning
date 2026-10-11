@@ -22,18 +22,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          path: apps/lms
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: frappe/frappe
+          ref: develop
+          path: apps/frappe
+          sparse-checkout: ui
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install frontend dependencies
-        working-directory: frontend
+        working-directory: apps/lms/frontend
         run: yarn install --frozen-lockfile --non-interactive
       - name: Run frontend unit tests
-        working-directory: frontend
+        working-directory: apps/lms/frontend
         run: yarn test
       - name: Build LMS frontend
-        working-directory: frontend
+        working-directory: apps/lms/frontend
         run: yarn build
 
 
