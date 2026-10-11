@@ -194,8 +194,11 @@ jobs:
               const login = await context.request.post('http://over-u.localhost:8000/api/method/login', {
                 form: { usr: 'student1@over-u.example.com', pwd: process.env.OVER_U_DEMO_PASSWORD }
               })
-              if (login.status() !== 200 || (await login.json()).message !== 'Logged In') {
-                throw new Error('Synthetic student login failed')
+              const auth = await login.json().catch(() => ({}))
+              if (login.status() !== 200 || auth.message !== 'Logged In') {
+                // Only report status and error category. CI credentials and cookies stay masked.
+                const reason = String(auth.exc_type || auth.message || 'unexpected response').slice(0, 120)
+                throw new Error(`Synthetic student login failed: HTTP ${login.status()}, reason=${reason}`)
               }
               const page = await context.newPage()
               const errors = []
