@@ -1,8 +1,8 @@
 """Authoring contract for Website Users with the Course Creator role."""
 
 import frappe
-from lms.lms.test_helpers import BaseTestUtils
 
+from lms.lms.test_helpers import BaseTestUtils
 from over_u.school import TEACHER
 
 
