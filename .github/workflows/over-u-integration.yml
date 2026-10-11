@@ -181,7 +181,7 @@ jobs:
           JS
       - name: Check direct private assignment-file access
         run: |
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe' >/dev/null
+          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe'
           python3 - <<'PY'
           import http.cookiejar
           import os

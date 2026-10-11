@@ -17,6 +17,9 @@ def create_private_assignment_file_probe():
 		}
 	).insert()
 	school = manifest()
+	# Use a privileged setup user for the probe record so its unrelated lesson
+	# unlock policy does not prevent testing the file's access rules.
+	frappe.set_user("Administrator")
 	frappe.get_doc(
 		{
 			"doctype": "LMS Assignment Submission",
