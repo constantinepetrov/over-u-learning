@@ -447,6 +447,143 @@ jobs:
             if (!(persistedLesson.content || '').includes('Synthetic lesson body saved by the native EditorJS interface')) {
               throw new Error('Lesson body did not persist through the native editor')
             }
+
+            const contentEditor = page.locator('.bn-editor:visible').last()
+            const waitForLessonSave = () => page.waitForResponse(
+              response => response.url().includes('/api/method/frappe.client.set_value'),
+              {timeout: 30000}
+            )
+            async function addEditorTool(toolName) {
+              const lastBlock = contentEditor.locator('.ce-block').last()
+              await lastBlock.scrollIntoViewIfNeeded()
+              await lastBlock.hover()
+              const plus = contentEditor.locator('.ce-toolbar__plus:visible').last()
+              await plus.waitFor({state: 'visible', timeout: 12000})
+              await plus.click()
+              const item = page.locator('.ce-popover-item[data-item-name="' + toolName + '"]')
+              await item.waitFor({state: 'visible', timeout: 12000})
+              await item.click()
+            }
+            async function readLessonBlocks() {
+              const lessonDoc = await getDoc('Course Lesson', lessonRow.name)
+              try {
+                return JSON.parse(lessonDoc.content || '{}').blocks || []
+              } catch {
+                throw new Error('Native editor saved malformed lesson content')
+              }
+            }
+            const videoSave = waitForLessonSave()
+            const videoUpload = page.waitForResponse(
+              response => response.url().includes('/api/method/upload_file'),
+              {timeout: 60000}
+            )
+            const videoChooser = page.waitForEvent('filechooser', {timeout: 20000})
+            await addEditorTool('upload')
+            await (await videoChooser).setFiles(process.cwd() + '/frontend/public/Quiz.mp4')
+            const videoResponse = await videoUpload
+            const videoPayload = await videoResponse.json().catch(() => ({}))
+            const videoFile = videoPayload.message || {}
+            if (!videoResponse.ok() || !videoFile.file_url || Number(videoFile.is_private) !== 1) {
+              throw new Error('Native video upload did not return a private file')
+            }
+            const videoSaved = await videoSave
+            if (!videoSaved.ok()) throw new Error('Video block save request failed')
+            let blocks = await readLessonBlocks()
+            const videoBlock = blocks.find(block => block.type === 'upload' &&
+              (block.data?.file_url || '').toLowerCase().endsWith('.mp4'))
+            if (!videoBlock || !String(videoBlock.data.file_url).startsWith('/private/files/')) {
+              throw new Error('Private video block did not persist in the lesson')
+            }
+
+            function syntheticPdf() {
+              const stream = 'BT /F1 12 Tf 10 50 Td (Synthetic OVER U CI PDF) Tj ET\n'
+              const objects = [
+                '<< /Type /Catalog /Pages 2 0 R >>',
+                '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+                '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+                '<< /Length ' + Buffer.byteLength(stream) + ' >>\nstream\n' + stream + 'endstream',
+                '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+              ]
+              let pdf = '%PDF-1.4\n'
+              const offsets = [0]
+              for (let index = 0; index < objects.length; index++) {
+                offsets.push(Buffer.byteLength(pdf))
+                pdf += (index + 1) + ' 0 obj\n' + objects[index] + '\nendobj\n'
+              }
+              const xrefOffset = Buffer.byteLength(pdf)
+              pdf += 'xref\n0 6\n0000000000 65535 f \n'
+              for (const offset of offsets.slice(1)) pdf += String(offset).padStart(10, '0') + ' 00000 n \n'
+              pdf += 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF\n'
+              return Buffer.from(pdf)
+            }
+            const pdfSave = waitForLessonSave()
+            const pdfUpload = page.waitForResponse(
+              response => response.url().includes('/api/method/upload_file'),
+              {timeout: 30000}
+            )
+            const pdfChooser = page.waitForEvent('filechooser', {timeout: 20000})
+            await addEditorTool('upload')
+            await (await pdfChooser).setFiles({
+              name: 'over-u-ci-synthetic.pdf',
+              mimeType: 'application/pdf',
+              buffer: syntheticPdf(),
+            })
+            const pdfResponse = await pdfUpload
+            const pdfPayload = await pdfResponse.json().catch(() => ({}))
+            const pdfFile = pdfPayload.message || {}
+            if (!pdfResponse.ok() || !pdfFile.file_url || Number(pdfFile.is_private) !== 1) {
+              throw new Error('Native PDF upload did not return a private file')
+            }
+            const pdfSaved = await pdfSave
+            if (!pdfSaved.ok()) throw new Error('PDF block save request failed')
+            blocks = await readLessonBlocks()
+            const pdfBlock = blocks.find(block => block.type === 'upload' &&
+              (String(block.data?.file_type || '').toLowerCase().includes('pdf') ||
+                String(block.data?.file_url || '').toLowerCase().endsWith('.pdf')))
+            if (!pdfBlock || !String(pdfBlock.data.file_url).startsWith('/private/files/')) {
+              throw new Error('Private PDF block did not persist in the lesson')
+            }
+
+            async function addAssessment(toolName, title, fieldName) {
+              const saved = waitForLessonSave()
+              await addEditorTool(toolName)
+              const dialog = page.locator('[data-dismissable-layer]').filter({has: page.locator('input')}).last()
+              await dialog.waitFor({state: 'visible', timeout: 15000})
+              const input = dialog.locator('input').first()
+              await input.click()
+              await input.fill(title)
+              const option = page.locator('[data-slot="content-body"] [role="option"]').filter({hasText: title}).last()
+              await option.waitFor({state: 'visible', timeout: 20000})
+              await option.click()
+              const saveButton = dialog.getByRole('button').filter({hasText: /Save|Сохранить/i}).last()
+              await saveButton.waitFor({state: 'visible', timeout: 10000})
+              await saveButton.click()
+              const response = await saved
+              if (!response.ok()) throw new Error('Native ' + toolName + ' block save failed')
+              blocks = await readLessonBlocks()
+              if (!blocks.some(block => block.type === toolName && block.data?.[fieldName])) {
+                throw new Error('Native ' + toolName + ' selection did not persist')
+              }
+            }
+            await addAssessment('quiz', 'OVER U — Проверка основ', 'quiz')
+            await addAssessment('assignment', 'OVER U — Мой план обучения', 'assignment')
+            if (Number((await getCourseDetails()).published) !== 0) throw new Error('Media or assessment authoring published the course unexpectedly')
+
+            const previewLink = page.locator('a[href*="studentView=1"]').last()
+            await previewLink.waitFor({state: 'visible', timeout: 15000})
+            await previewLink.click()
+            await page.waitForURL(url => url.search.includes('studentView=1'), {timeout: 20000})
+            await page.getByText(lessonTitle, {exact: true}).waitFor({state: 'visible', timeout: 20000})
+            await page.screenshot({path: output + '/author-draft-preview-desktop-1440.png', fullPage: true})
+            await page.goto(base + '/lms/courses/' + courseName + '?editLesson=1-1#editor', {waitUntil: 'networkidle', timeout: 60000})
+            await page.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
+            const expectedBlockTypes = ['upload', 'upload', 'quiz', 'assignment']
+            const persistedTypes = (await readLessonBlocks()).map(block => block.type)
+            for (const type of expectedBlockTypes) {
+              const index = persistedTypes.indexOf(type)
+              if (index < 0) throw new Error('Draft lost a native ' + type + ' block before reload')
+              persistedTypes.splice(index, 1)
+            }
             if (Number((await getCourseDetails()).published) !== 0) throw new Error('Authoring flow published the course unexpectedly')
             await page.screenshot({path: output + '/author-draft-editor-desktop-1440.png', fullPage: true})
 
@@ -459,7 +596,7 @@ jobs:
             const reopened = await authenticatedContext(390, 844)
             const mobilePage = await openWorkspace(reopened, null, 390)
             await mobilePage.locator('.author-course').filter({hasText: title}).waitFor({state: 'visible', timeout: 30000})
-            await mobilePage.getByRole('link', {name: /Create course/}).first().click()
+            await mobilePage.locator('.author-hero-create').click()
             const mobileShell = await waitForSettledForm(mobilePage, true, 390)
             await mobilePage.screenshot({path: output + '/author-new-course-mobile-390.png', fullPage: true})
             await mobilePage.goto(base + '/lms/courses/' + courseName + '?editLesson=1-1#editor', {waitUntil: 'networkidle', timeout: 60000})
