@@ -390,7 +390,7 @@ jobs:
             const getCourseDetails = async () => {
               const response = await desktop.request.post(base + '/api/method/lms.lms.utils.get_course_details', {form: {course: courseName}})
               const body = await response.json().catch(() => ({}))
-              if (response.status() !== 200 || body.exc || !body.message?.name) throw new Error('The native course-details API did not return the author draft')
+              if (response.status() !== 200 || body.exc || !body.message?.name) { const summary = {status: response.status(), exc_type: body.exc_type || null, message_type: typeof body.message, message_keys: body.message && typeof body.message === 'object' ? Object.keys(body.message) : [], message_name: body.message?.name || null}; throw new Error('The native course-details API did not return the author draft: ' + JSON.stringify(summary)) }
               return body.message
             }
             const persistedCourse = await getCourseDetails()
