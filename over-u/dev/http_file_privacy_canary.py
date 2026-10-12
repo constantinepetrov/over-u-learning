@@ -273,7 +273,10 @@ def main():
 				"limit_page_length": 10,
 			},
 		)
-		visible = any(row.get("name") == submission_name for row in submission_rows.get("message", []))
+		rows = submission_rows.get("message", [])
+		if not isinstance(rows, list):
+			rows = []
+		visible = any(row.get("name") == submission_name for row in rows)
 		expected_visible = label == "assigned teacher"
 		assert (
 			visible == expected_visible
