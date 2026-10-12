@@ -45,13 +45,20 @@ RUN : "${CACHE_BUST}" && \
 COPY --chown=frappe:frappe over-u/apps/over_u /home/frappe/frappe-bench/apps/over_u
 COPY --chown=frappe:frappe over-u/dev/build-localized-frontend.mjs over-u/dev/localization-plugin.mjs /home/frappe/over-u/dev/
 RUN cd /home/frappe/frappe-bench && \
-  uv pip install -e apps/over_u --python env/bin/python && \
+  uv pip install -e apps/over_u -e apps/payments -e apps/lms --python env/bin/python && \
+  printf 'frappe\npayments\nlms\nover_u\n' > sites/apps.txt && \
   ln -sfn /home/frappe/frappe-bench/apps/lms/frontend /home/frappe/frontend && \
   ln -sfn /home/frappe/frappe-bench/apps/lms /home/frappe/lms && \
   mkdir -p /home/frappe/frontend/node_modules/@framework && \
   rm -rf /home/frappe/frontend/node_modules/@framework/ui && \
   ln -s /home/frappe/frappe-bench/apps/frappe/ui /home/frappe/frontend/node_modules/@framework/ui && \
-  bench build
+  bench build && \
+  rm -rf sites/assets/lms sites/assets/over_u && \
+  ln -s /home/frappe/frappe-bench/apps/lms/lms/public sites/assets/lms && \
+  ln -s /home/frappe/frappe-bench/apps/over_u/over_u/public sites/assets/over_u && \
+  test -f sites/assets/lms/frontend/index.html && \
+  test -n "$(find sites/assets/lms/frontend/assets -maxdepth 1 -type f -name 'index-*.js' -print -quit)" && \
+  test -f sites/assets/over_u/localization/editor-menu.js
 
 FROM ${FRAPPE_BASE_IMAGE} AS backend
 ARG SOURCE_REVISION
@@ -65,7 +72,9 @@ USER frappe
 COPY --from=builder --chown=frappe:0 /home/frappe/frappe-bench /home/frappe/frappe-bench
 RUN chmod -R g=u /home/frappe/frappe-bench && \
   cd /home/frappe/frappe-bench && \
-  uv pip install -e apps/payments -e apps/lms --python env/bin/python
+  test -f sites/assets/lms/frontend/index.html && \
+  test -n "$(find sites/assets/lms/frontend/assets -maxdepth 1 -type f -name 'index-*.js' -print -quit)" && \
+  test -f sites/assets/over_u/localization/editor-menu.js
 WORKDIR /home/frappe/frappe-bench
 RUN cp -r /home/frappe/frappe-bench/sites/assets /home/frappe/frappe-bench/assets && \
   rm -rf /home/frappe/frappe-bench/sites/assets
