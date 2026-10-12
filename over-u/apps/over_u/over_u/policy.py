@@ -66,6 +66,10 @@ def assignment_submission_has_permission(doc, user=None, ptype=None, **kwargs):
 	user = user or frappe.session.user
 	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
 		return True
+	if ptype == "create":
+		# Keep create authority with the standard DocPerm checks. The member may
+		# only be populated later by LMS's submission controller.
+		return True
 
 	if doc.member == user:
 		return ptype != "share"
