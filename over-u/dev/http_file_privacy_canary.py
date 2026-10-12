@@ -106,9 +106,13 @@ def main():
 			},
 		},
 	)
-	assert status == 200, f"Normal student submission insert failed: HTTP {status}: {inserted}"
+	assert status == 200, (
+		f"Normal student submission insert failed: HTTP {status}: {inserted}"
+	)
 	submission_name = inserted.get("message", {}).get("name")
-	assert submission_name, f"Normal student insert returned no submission name: {inserted}"
+	assert submission_name, (
+		f"Normal student insert returned no submission name: {inserted}"
+	)
 
 	filename = "over-u-http-private-attachment.txt"
 	boundary, body = multipart(
@@ -230,7 +234,10 @@ def main():
 			visible == allowed
 		), f"frappe.client.get_list submission policy mismatch for {label}: HTTP {status}, visible={visible}"
 
-	print("frappe.client.insert created a submission as the student; upload_file(is_private=0) stored its attachment privately.")
+	print(
+		"frappe.client.insert created a submission as the student; "
+		"upload_file(is_private=0) stored its attachment privately."
+	)
 	print(
 		"Guest, another student, and unrelated Course Creator were denied; owner and assigned teacher were allowed."
 	)
