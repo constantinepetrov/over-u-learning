@@ -7,6 +7,8 @@ from over_u.school import STUDENTS, TEACHER, _user, manifest
 
 
 def insert_synthetic_fixture(doc):
+	# Seed-only helper for focused authorization assertions. The separate HTTP
+	# canary creates submissions and uploads as a student without either bypass.
 	# nosemgrep: lms-unjustified-ignore-permissions - test fixtures use synthetic records to exercise file authorization boundaries.
 	return doc.insert(ignore_permissions=True)
 

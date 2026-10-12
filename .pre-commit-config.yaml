@@ -10,11 +10,22 @@ repos:
         files: "lms.*"
         exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
       - id: check-yaml
+        exclude: ^over-u/deploy/compose\.overu\.yaml$
       - id: check-merge-conflict
       - id: check-ast
       - id: check-json
       - id: check-toml
       - id: debug-statements
+
+  - repo: local
+    hooks:
+      - id: compose-yaml-check
+        name: Validate Docker Compose YAML extensions
+        entry: python scripts/check_compose_yaml.py
+        language: python
+        additional_dependencies: [PyYAML==6.0.3]
+        files: ^over-u/deploy/compose\.overu\.yaml$
+        types: [yaml]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.1

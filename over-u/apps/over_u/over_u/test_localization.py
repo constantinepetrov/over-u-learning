@@ -82,7 +82,8 @@ class TestLocalization(BaseTestUtils):
         en = json.loads((folder / "en.json").read_text())
         self.assertEqual(set(ru), set(en))
         for key in ru:
-            self.assertTrue(ru[key]); self.assertTrue(en[key])
+            self.assertTrue(ru[key])
+            self.assertTrue(en[key])
             self.assertEqual(re.findall(r"\{\d+\}", ru[key]), re.findall(r"\{\d+\}", en[key]))
         source = "\n".join((folder.parent / name).read_text() for name in ["views.js", "components.js", "app.js", "api.js"])
         self.assertEqual(set(re.findall(r"t\('(ui_\d+)'", source)), set(ru))
