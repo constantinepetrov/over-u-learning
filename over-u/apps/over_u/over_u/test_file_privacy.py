@@ -68,12 +68,23 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 		).insert()
 
 		self.assertTrue(frappe.has_permission(submission.doctype, "read", doc=submission, user=STUDENTS[1]))
+		self.assertTrue(frappe.has_permission(submission.doctype, "write", doc=submission, user=STUDENTS[1]))
 		self.assertTrue(frappe.has_permission(submission.doctype, "read", doc=submission, user=TEACHER))
+		self.assertTrue(frappe.has_permission(submission.doctype, "write", doc=submission, user=TEACHER))
 		self.assertFalse(frappe.has_permission(submission.doctype, "read", doc=submission, user=STUDENTS[0]))
+		self.assertFalse(frappe.has_permission(submission.doctype, "write", doc=submission, user=STUDENTS[0]))
 		self.assertFalse(
 			frappe.has_permission(
 				submission.doctype,
 				"read",
+				doc=submission,
+				user="over-u-unrelated-teacher@example.com",
+			)
+		)
+		self.assertFalse(
+			frappe.has_permission(
+				submission.doctype,
+				"write",
 				doc=submission,
 				user="over-u-unrelated-teacher@example.com",
 			)

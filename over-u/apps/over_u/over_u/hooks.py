@@ -7,11 +7,13 @@ app_license = "AGPL-3.0"
 required_apps = ["lms"]
 after_install = [
 	"over_u.install.configure",
+	"over_u.install.ensure_submission_attachment_write_permission",
 	"over_u.localization.migrate_existing_users",
 	"over_u.file_privacy.enforce_assignment_attachment_privacy",
 ]
 after_migrate = [
 	"over_u.install.configure",
+	"over_u.install.ensure_submission_attachment_write_permission",
 	"over_u.localization.configure_defaults",
 	"over_u.file_privacy.enforce_assignment_attachment_privacy",
 ]
