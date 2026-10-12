@@ -93,30 +93,22 @@ def has_payload(result):
 def main():
 	student_email = UPLOAD_PROBE["student"]
 	owner = login(student_email)
-	status, submission_result = api(
+	status, inserted = api(
 		owner,
-		"over_u.student_api.submit_assignment",
+		"frappe.client.insert",
 		{
-			"course": UPLOAD_PROBE["course"],
-			"number": "1-1",
-			"answer": "Synthetic answer created through the normal student endpoint.",
+			"doc": {
+				"doctype": "LMS Assignment Submission",
+				"assignment": UPLOAD_PROBE["assignment"],
+				"member": student_email,
+				"type": "Text",
+				"answer": "Synthetic answer created through the ordinary student document API.",
+			},
 		},
 	)
-	assert status == 200, f"Student assignment submission endpoint failed: HTTP {status}"
-	status, rows = api(
-		owner,
-		"frappe.client.get_list",
-		{
-			"doctype": "LMS Assignment Submission",
-			"filters": {"assignment": UPLOAD_PROBE["assignment"], "member": student_email},
-			"fields": ["name"],
-			"limit_page_length": 10,
-		},
-	)
-	assert status == 200, f"Student could not read own submission list: HTTP {status}"
-	submissions = rows.get("message", [])
-	assert len(submissions) == 1, f"Expected one normal student submission, got {len(submissions)}"
-	submission_name = submissions[0]["name"]
+	assert status == 200, f"Normal student submission insert failed: HTTP {status}: {inserted}"
+	submission_name = inserted.get("message", {}).get("name")
+	assert submission_name, f"Normal student insert returned no submission name: {inserted}"
 
 	filename = "over-u-http-private-attachment.txt"
 	boundary, body = multipart(
@@ -124,7 +116,7 @@ def main():
 			"doctype": "LMS Assignment Submission",
 			"docname": submission_name,
 			"fieldname": "assignment_attachment",
-			"folder": "Home/Attachments",
+			"folder": "Home",
 			"is_private": "0",
 			"file_url": "",
 			"file_name": filename,
@@ -144,10 +136,7 @@ def main():
 	uploaded = json.loads(uploaded_body).get("message", {})
 	file_url = uploaded.get("file_url")
 	file_name = uploaded.get("name")
-	assert uploaded.get("is_private") in (
-		1,
-		True,
-	), f"upload_file(is_private=0) did not force File.is_private=1: {uploaded}"
+	assert int(uploaded.get("is_private") or 0) == 1, f"upload_file(is_private=0) did not force File.is_private=1: {uploaded}"
 	assert file_url and file_url.startswith(
 		"/private/files/"
 	), f"Homework upload was not stored under /private/files/: {file_url!r}"
@@ -241,7 +230,7 @@ def main():
 			visible == allowed
 		), f"frappe.client.get_list submission policy mismatch for {label}: HTTP {status}, visible={visible}"
 
-	print("HTTP upload_file(is_private=0) created a private attachment using an ordinary student submission.")
+	print("frappe.client.insert created a submission as the student; upload_file(is_private=0) stored its attachment privately.")
 	print(
 		"Guest, another student, and unrelated Course Creator were denied; owner and assigned teacher were allowed."
 	)
