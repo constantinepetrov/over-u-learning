@@ -17,9 +17,9 @@ def create_private_assignment_file_probe():
 		}
 	).insert()
 	school = manifest()
-	# Use a privileged setup user for the probe record so its unrelated lesson
-	# unlock policy does not prevent testing the file's access rules.
-	frappe.set_user("Administrator")
+	# Preserve the LMS `if_owner` behavior while skipping only the unrelated lesson
+	# unlock validation in this synthetic access-control fixture.
+	frappe.set_user(STUDENTS[0])
 	submission = frappe.get_doc(
 		{
 			"doctype": "LMS Assignment Submission",
@@ -29,7 +29,9 @@ def create_private_assignment_file_probe():
 			"answer": "Synthetic CI attachment access probe",
 			"assignment_attachment": file_doc.file_url,
 		}
-	).insert()
+	)
+	submission.flags.ignore_validate = True
+	submission.insert(ignore_permissions=True)
 	file_doc.reload()
 	return {
 		"file_url": file_doc.file_url,
