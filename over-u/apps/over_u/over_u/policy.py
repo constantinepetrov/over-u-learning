@@ -64,7 +64,8 @@ def assignment_submission_has_permission(doc, user=None, ptype=None, **kwargs):
 	from lms.lms.permissions import can_author_course
 
 	user = user or frappe.session.user
-	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+	roles = frappe.get_roles(user)
+	if user == "Administrator" or {"System Manager", "Moderator"} & set(roles):
 		return True
 	if ptype == "create":
 		# Keep create authority with the standard DocPerm checks. The member may
@@ -83,7 +84,7 @@ def assignment_submission_query(user=None):
 	from lms.lms.permissions import can_author_course
 
 	user = user or frappe.session.user
-	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
+	if user == "Administrator" or {"System Manager", "Moderator"} & set(frappe.get_roles(user)):
 		return ""
 
 	courses = [
