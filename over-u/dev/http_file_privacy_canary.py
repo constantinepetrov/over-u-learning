@@ -97,7 +97,7 @@ def checkpoint(label, client_):
 	if probe["http"] != 200:
 		detail["cookie_metadata"] = cookie_metadata(client_)
 	print("Owner session checkpoint:", json.dumps(detail, sort_keys=True))
-	return prob
+	return probe
 
 
 def login(email, password=PASS):
