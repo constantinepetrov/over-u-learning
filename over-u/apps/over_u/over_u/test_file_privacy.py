@@ -50,7 +50,11 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"authors": [{"author": TEACHER}],
 			}
 		).insert()
-		_user("over-u-unrelated-teacher@example.com", "Unrelated Synthetic Teacher", ["Course Creator"])
+		_user(
+			"over-u-unrelated-teacher@example.com",
+			"Unrelated Synthetic Teacher",
+			["Course Creator"],
+		)
 		frappe.set_user(STUDENTS[1])
 		submission = frappe.get_doc(
 			{
@@ -123,7 +127,9 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 			("Guest", False),
 		):
 			frappe.set_user(user)
-			self.assertEqual(file_doc.is_downloadable(), expected, f"Unexpected File access for {user}")
+			self.assertEqual(
+				file_doc.is_downloadable(), expected, f"Unexpected File access for {user}"
+			)
 
 	def test_course_asset_can_remain_public(self):
 		file_doc = frappe.get_doc(
