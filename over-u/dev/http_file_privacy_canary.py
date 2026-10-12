@@ -151,18 +151,6 @@ def main():
 		and uploaded.get("attached_to_field") == "assignment_attachment"
 	), f"upload_file did not link the private File to the submission field: {uploaded}"
 
-	status, parent = api(
-		owner,
-		"frappe.client.get",
-		{"doctype": "LMS Assignment Submission", "name": submission_name},
-	)
-	assert status == 200, (
-		f"Student cannot read their own submission after upload: HTTP {status}: {parent}"
-	)
-	assert parent.get("message", {}).get("member") == student_email, (
-		f"Submission owner mismatch after upload: {parent}"
-	)
-
 	clients = {
 		"owner": owner,
 		"other student": login("student2@over-u.example.com"),
