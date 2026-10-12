@@ -274,23 +274,32 @@ def main():
 			"public_files_url": (public_status, has_sentinel(public_body)),
 		}
 		results[label] = private_results
+	violations = []
+	for label, method_results in results.items():
+		allowed = label in ("owner", "assigned teacher")
 		for method in ("plain_url", "plain_url_with_fid", "handler_download_file"):
-			code, contains = private_results[method]
-			assert (code == 200 and contains) if allowed else (code != 200 and not contains), (
-				f"{method} policy mismatch for {label}: HTTP {code}, payload={contains}"
-			)
-		assert (file_visible and file_list_visible) if allowed else (not file_visible and not file_list_visible), (
-			f"File metadata visibility mismatch for {label}: get={file_visible}, list={file_list_visible}"
-		)
-		assert (sub_visible and sub_list_visible) if allowed else (not sub_visible and not sub_list_visible), (
-			f"Submission visibility mismatch for {label}: get={sub_visible}, list={sub_list_visible}"
-		)
-		assert public_status != 200 or not has_sentinel(public_body), f"{label} fetched the homework through /files/"
+			code, contains = method_results[method]
+			if not ((code == 200 and contains) if allowed else (code != 200 and not contains)):
+				violations.append(f"{label} {method}: HTTP {code}, sentinel={contains}")
+		for method in ("file_get", "file_get_list"):
+			code, visible = method_results[method]
+			if visible != allowed:
+				violations.append(f"{label} {method}: HTTP {code}, visible={visible}")
+		for method in ("submission_get", "submission_get_list"):
+			code, visible = method_results[method]
+			if visible != allowed:
+				violations.append(f"{label} {method}: HTTP {code}, visible={visible}")
+		code, contains = method_results["public_files_url"]
+		if code == 200 and contains:
+			violations.append(f"{label} public_files_url exposed sentinel: HTTP {code}")
 
 	print("Synthetic upload metadata:", json.dumps({key: uploaded.get(key) for key in FILE_FIELDS}, sort_keys=True))
 	print("Same-URL File rows:", json.dumps(duplicate_rows, sort_keys=True))
 	print("HTTP authorization matrix:", json.dumps(results, sort_keys=True))
-	assert len(duplicate_rows) == 1, "Duplicate File URLs make find_file_by_url ambiguous"
+	if len(duplicate_rows) != 1:
+		violations.append(f"Ambiguous same-URL File count: {len(duplicate_rows)}")
+	if violations:
+		raise AssertionError("HTTP canary failures: " + " | ".join(violations))
 
 
 if __name__ == "__main__":
