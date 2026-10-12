@@ -20,7 +20,7 @@ def create_private_assignment_file_probe():
 	# Use a privileged setup user for the probe record so its unrelated lesson
 	# unlock policy does not prevent testing the file's access rules.
 	frappe.set_user("Administrator")
-	frappe.get_doc(
+	submission = frappe.get_doc(
 		{
 			"doctype": "LMS Assignment Submission",
 			"assignment": school["assignment"],
@@ -31,7 +31,12 @@ def create_private_assignment_file_probe():
 		}
 	).insert()
 	file_doc.reload()
-	return {"file_url": file_doc.file_url, "owner": STUDENTS[0]}
+	return {
+		"file_url": file_doc.file_url,
+		"file_name": file_doc.name,
+		"owner": STUDENTS[0],
+		"submission": submission.name,
+	}
 
 
 def cleanup_private_assignment_file_probe():

@@ -181,7 +181,9 @@ jobs:
           JS
       - name: Check direct private assignment-file access
         run: |
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe'
+          PROBE_JSON="$(docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe')"
+          printf '%s\n' "$PROBE_JSON"
+          export OVER_U_CI_PROBE="$PROBE_JSON"
           python3 - <<'PY'
           import http.cookiejar
           import json
@@ -193,6 +195,7 @@ jobs:
           BASE = "http://over-u.localhost:8000"
           FILE = BASE + "/private/files/over-u-ci-private-attachment.txt"
           SENTINEL = b"OVER_U_SYNTHETIC_PRIVATE_ATTACHMENT"
+          PROBE = json.loads(os.environ["OVER_U_CI_PROBE"])
 
           class NoRedirect(HTTPRedirectHandler):
               def redirect_request(self, request, response, code, message, headers, new_url):
@@ -240,13 +243,12 @@ jobs:
           owner = login("student1@over-u.example.com")
           outsider = login("student2@over-u.example.com")
           teacher = login("teacher@over-u.example.com")
-          status, owner_rows = api(owner, "frappe.client.get_list", doctype="LMS Assignment Submission", fields=["name", "assignment_attachment"], filters={"assignment_attachment": "/private/files/over-u-ci-private-attachment.txt"}, limit_page_length=20)
-          assert status == 200, f"Owner could not list their submission (HTTP {status})"
-          row = next((item for item in owner_rows.get("message", []) if item.get("assignment_attachment") == "/private/files/over-u-ci-private-attachment.txt"), None)
-          assert row, "Owner's synthetic submission was absent from frappe.client.get_list"
-          submission_name = row["name"]
+          status, owner_rows = api(owner, "frappe.client.get_list", doctype="LMS Assignment Submission", fields=["name"], limit_page_length=100)
+          assert status == 200, f"Owner could not list submissions (HTTP {status})"
+          submission_name = PROBE["submission"]
+          assert any(item.get("name") == submission_name for item in owner_rows.get("message", [])), f"Owner's synthetic submission was absent from frappe.client.get_list (message_type={type(owner_rows.get('message')).__name__}, count={len(owner_rows.get('message', [])) if isinstance(owner_rows.get('message'), list) else 'n/a'})"
 
-          status, outsider_rows = api(outsider, "frappe.client.get_list", doctype="LMS Assignment Submission", fields=["name", "assignment_attachment"], limit_page_length=100)
+          status, outsider_rows = api(outsider, "frappe.client.get_list", doctype="LMS Assignment Submission", fields=["name"], limit_page_length=100)
           assert status == 200 and all(item.get("name") != submission_name for item in outsider_rows.get("message", [])), "Another student listed the owner's submission"
           status, outsider_doc = api(outsider, "frappe.client.get", doctype="LMS Assignment Submission", name=submission_name)
           assert status != 200 and SENTINEL.decode() not in json.dumps(outsider_doc), "Another student read the owner's submission through frappe.client.get"
@@ -255,10 +257,10 @@ jobs:
               status, submission = api(client, "frappe.client.get", doctype="LMS Assignment Submission", name=submission_name)
               assert status == 200 and submission.get("message", {}).get("assignment_attachment") == "/private/files/over-u-ci-private-attachment.txt", f"{label} could not read the submission through frappe.client.get (HTTP {status})"
 
-          status, file_rows = api(owner, "frappe.client.get_list", doctype="File", fields=["name", "file_url"], filters={"file_url": "/private/files/over-u-ci-private-attachment.txt"}, limit_page_length=20)
-          assert status == 200 and file_rows.get("message"), "Owner could not list the attached File document"
-          file_name = file_rows["message"][0]["name"]
-          status, outsider_files = api(outsider, "frappe.client.get_list", doctype="File", fields=["name", "file_url"], filters={"file_url": "/private/files/over-u-ci-private-attachment.txt"}, limit_page_length=20)
+          file_name = PROBE["file_name"]
+          status, file_rows = api(owner, "frappe.client.get_list", doctype="File", fields=["name"], limit_page_length=100)
+          assert status == 200 and any(item.get("name") == file_name for item in file_rows.get("message", [])), "Owner could not list the attached File document"
+          status, outsider_files = api(outsider, "frappe.client.get_list", doctype="File", fields=["name"], limit_page_length=100)
           assert status == 200 and all(item.get("name") != file_name for item in outsider_files.get("message", [])), "Another student listed the owner's private File document"
           status, outsider_file = api(outsider, "frappe.client.get", doctype="File", name=file_name)
           assert status != 200 and SENTINEL.decode() not in json.dumps(outsider_file), "Another student read the private File document through frappe.client.get"
