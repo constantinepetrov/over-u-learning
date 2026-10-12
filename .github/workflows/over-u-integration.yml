@@ -754,6 +754,12 @@ jobs:
           assert public_status != 200 and SENTINEL not in public_body, "Private homework bytes were reachable through /files/"
           print("HTTP upload with is_private=0 was stored privately; direct URL denied to Guest, another student, unrelated Course Creator and /files path; allowed to owner and assigned teacher")
           PY
+      - name: Verify regular student upload and File API access matrix
+        run: |
+          upload_probe="$(docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_http_upload_probe')"
+          printf '%s\n' "$upload_probe"
+          export OVER_U_UPLOAD_PROBE="$upload_probe"
+          python3 over-u/dev/http_file_privacy_canary.py
       - name: Run synthetic Frappe integration and privacy tests
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'

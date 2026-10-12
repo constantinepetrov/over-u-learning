@@ -7,6 +7,9 @@ from over_u.school import STUDENTS, TEACHER, _user, manifest
 
 
 def insert_synthetic_fixture(doc):
+	# Seed-only helper for authorization tests: ignore_permissions bypasses DocPerm
+	# so a synthetic File can belong to a different test user. Doc validation still
+	# runs. No ignore_validate flag is used in this fixture or the HTTP canary.
 	# nosemgrep: lms-unjustified-ignore-permissions - test fixtures use synthetic records to exercise file authorization boundaries.
 	return doc.insert(ignore_permissions=True)
 
@@ -156,6 +159,8 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 		file_doc = insert_synthetic_fixture(file_doc)
 		file_doc.is_private = 0
 		with self.assertRaises(frappe.PermissionError):
+			# Bypass DocPerm only so this test reaches the server-side privacy
+			# validator; normal validation is still enabled on the synthetic File.
 			# nosemgrep: lms-unjustified-ignore-permissions - test exercises server-side rejection of a public-state mutation.
 			file_doc.save(ignore_permissions=True)
 		file_doc.reload()
