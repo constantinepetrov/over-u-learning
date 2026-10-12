@@ -242,7 +242,6 @@ def main():
 		# fresh owner session so file authorization is measured independently.
 		owner = login(student_email)
 
-
 	admin = login("Administrator", ADMIN_PASS)
 	admin_status, admin_submission = api(
 		admin,
@@ -264,7 +263,6 @@ def main():
 			sort_keys=True,
 		),
 	)
-
 
 	status, same_url_payload = api(
 		admin,
