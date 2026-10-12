@@ -18,6 +18,7 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"type": "Document",
 				"answer": "Synthetic attachment privacy test",
 			}
+		# nosemgrep: lms-unjustified-ignore-permissions - synthetic fixture links a test student to a test course.
 		).insert(ignore_permissions=True)
 
 	def test_doctype_metadata_is_kept_private(self):
@@ -55,6 +56,7 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"attached_to_doctype": "LMS Course",
 				"attached_to_name": self.school["course"],
 			}
+		# nosemgrep: lms-unjustified-ignore-permissions - synthetic fixture creates a course asset to test File extension scope.
 		).insert(ignore_permissions=True)
 		self.assertEqual(file_doc.is_private, 0)
 		self.assertTrue(file_doc.file_url.startswith("/files/"))
@@ -69,6 +71,7 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"attached_to_doctype": "LMS Course",
 				"attached_to_name": self.school["course"],
 			}
+		# nosemgrep: lms-unjustified-ignore-permissions - synthetic public file tests that homework cannot reuse it.
 		).insert(ignore_permissions=True)
 		with self.assertRaises(frappe.PermissionError):
 			frappe.get_doc(
@@ -81,6 +84,7 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 					"attached_to_name": self.submission.name,
 					"attached_to_field": "assignment_attachment",
 				}
+				# nosemgrep: lms-unjustified-ignore-permissions - test asserts rejection of a fabricated attachment.
 			).insert(ignore_permissions=True)
 		public_file.reload()
 		self.assertEqual(public_file.is_private, 0)
@@ -97,9 +101,11 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"attached_to_name": self.submission.name,
 				"attached_to_field": "assignment_attachment",
 			}
+		# nosemgrep: lms-unjustified-ignore-permissions - fixture directly creates a test file to verify it cannot be made public.
 		).insert(ignore_permissions=True)
 		file_doc.is_private = 0
 		with self.assertRaises(frappe.PermissionError):
+			# nosemgrep: lms-unjustified-ignore-permissions - test exercises server-side rejection of a public-state mutation.
 			file_doc.save(ignore_permissions=True)
 		file_doc.reload()
 		self.assertEqual(file_doc.is_private, 1)

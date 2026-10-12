@@ -651,6 +651,7 @@ jobs:
             exit 1
           fi
           echo "OVER_U_CI_PROBE_SUBMISSION=$submission" >> "$GITHUB_ENV"
+          export OVER_U_CI_PROBE_SUBMISSION="$submission"
           python3 - <<'PY'
           import http.cookiejar
           import json
