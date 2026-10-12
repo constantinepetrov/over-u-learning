@@ -85,9 +85,9 @@ def multipart(fields, filename, content):
 		parts.extend(
 			[
 				f"--{boundary}\r\n".encode(),
-					f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
-					str(value).encode(),
-					b"\r\n",
+				f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
+				str(value).encode(),
+				b"\r\n",
 			]
 		)
 	parts.extend(
@@ -182,9 +182,7 @@ def main():
 		"frappe.client.get",
 		{"doctype": "LMS Assignment Submission", "name": submission_name},
 	)
-	owner_submission_open = (
-		status == 200 and message(reopened).get("assignment_attachment") == file_url
-	)
+	owner_submission_open = status == 200 and message(reopened).get("assignment_attachment") == file_url
 
 	# Administrator is used only to enumerate synthetic duplicate-URL records.
 	admin = login("Administrator", ADMIN_PASS)
@@ -200,9 +198,9 @@ def main():
 	)
 	duplicate_rows = rows(same_url_payload) if status == 200 else []
 	duplicate_rows = [{key: row.get(key) for key in FILE_FIELDS} for row in duplicate_rows]
-	assert any(row.get("name") == file_name for row in duplicate_rows), (
-		"Administrator File listing did not find the just-uploaded synthetic file"
-	)
+	assert any(
+		row.get("name") == file_name for row in duplicate_rows
+	), "Administrator File listing did not find the just-uploaded synthetic file"
 
 	clients = {
 		"owner": (owner, student_email),
