@@ -61,6 +61,8 @@ def assignment_lessons(assignment):
 
 def assignment_submission_has_permission(doc, user=None, ptype=None, **kwargs):
 	"""Limit private submission records to their learner and course authors."""
+	from lms.lms.permissions import can_author_course
+
 	user = user or frappe.session.user
 	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
 		return True
