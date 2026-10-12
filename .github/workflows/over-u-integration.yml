@@ -851,14 +851,22 @@ jobs:
           mkdir -p /tmp/overu-oci
           tar -xf /tmp/overu-image.oci.tar -C /tmp/overu-oci index.json
           action_digest='${{ steps.image_build.outputs.digest }}'
-          manifest_digest="$(jq -r '.manifests[0].digest' /tmp/overu-oci/index.json)"
-          printf 'OCI manifest digest: %s\nBuildx digest: %s\nIndex descriptors: %s\n' \
-            "$manifest_digest" "$action_digest" "$(jq -c '.manifests' /tmp/overu-oci/index.json)"
-          if [ -n "$action_digest" ]; then test "$manifest_digest" = "$action_digest"; fi
-          manifest_path="blobs/sha256/${manifest_digest#sha256:}"
-          tar -xOf /tmp/overu-image.oci.tar "$manifest_path" > /tmp/overu-manifest.json
-          test "$(sha256sum /tmp/overu-manifest.json | cut -d' ' -f1)" = "${manifest_digest#sha256:}"
-          config_digest="$(jq -r '.config.digest' /tmp/overu-manifest.json)"
+          index_digest="$(jq -r '.manifests[0].digest' /tmp/overu-oci/index.json)"
+          printf 'OCI index descriptor: %s\nBuildx digest: %s\nIndex descriptors: %s\n' \
+            "$index_digest" "$action_digest" "$(jq -c '.manifests' /tmp/overu-oci/index.json)"
+          if [ -n "$action_digest" ]; then test "$index_digest" = "$action_digest"; fi
+          manifest_digest="$index_digest"
+          config_digest=""
+          for depth in 1 2 3; do
+            manifest_path="blobs/sha256/${manifest_digest#sha256:}"
+            tar -xOf /tmp/overu-image.oci.tar "$manifest_path" > /tmp/overu-manifest.json
+            test "$(sha256sum /tmp/overu-manifest.json | cut -d' ' -f1)" = "${manifest_digest#sha256:}"
+            config_digest="$(jq -r '.config.digest // empty' /tmp/overu-manifest.json)"
+            if [ -n "$config_digest" ]; then break; fi
+            manifest_digest="$(jq -r '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64")][0].digest // empty' /tmp/overu-manifest.json)"
+            test -n "$manifest_digest"
+          done
+          test -n "$config_digest"
           config_path="blobs/sha256/${config_digest#sha256:}"
           tar -xOf /tmp/overu-image.oci.tar "$config_path" > /tmp/overu-config.json
           check_label() {
@@ -875,6 +883,6 @@ jobs:
           check_label io.overu.build.frappe-docker.revision "$docker_sha"
           check_label io.overu.build.frappe.build-image "$frappe_build"
           check_label io.overu.build.frappe.base-image "$frappe_runtime"
-          printf 'Revision: %s\nOCI manifest: %s\nImage config: %s\nFrappe: %s\nFrappe build image: %s\nFrappe runtime image: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
-            "$revision" "$manifest_digest" "$config_digest" "$frappe" "$frappe_build" "$frappe_runtime" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
+          printf 'Revision: %s\nOCI image index: %s\nOCI image manifest: %s\nImage config: %s\nFrappe: %s\nFrappe build image: %s\nFrappe runtime image: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
+            "$revision" "$index_digest" "$manifest_digest" "$config_digest" "$frappe" "$frappe_build" "$frappe_runtime" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
           test -s /tmp/overu-image.oci.tar
