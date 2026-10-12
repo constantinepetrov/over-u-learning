@@ -212,12 +212,15 @@ def main():
 		),
 	}
 	guest = client()
-	actors = [("Guest", guest, "Guest"), *[(label, *entry) for label, entry in clients.items()]]
+	actors = [*(label, *entry) for label, entry in clients.items()], ("Guest", guest, "Guest")]
 	public_path = "/files/" + file_url.rsplit("/", 1)[-1]
 	results = {}
 
 	for label, session, identity in actors:
-		assert_identity(session, identity)
+		# Guest has a fresh, empty cookie jar; the identity endpoint itself rejects
+		# anonymous callers with HTTP 403, so it cannot confirm Guest via API.
+		if label != "Guest":
+			assert_identity(session, identity)
 		plain_status, plain_body, _ = request(session, file_url)
 		assert_identity(session, identity)
 		fid_status, fid_body, _ = request(session, file_url + "?" + urlencode({"fid": file_name}))
