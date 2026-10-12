@@ -690,6 +690,10 @@ jobs:
               return client
 
           owner = login("student1@over-u.example.com")
+          # Use the assigned instructor to attach the synthetic file. The demo
+          # homework lesson is deliberately locked until the learner completes
+          # earlier lessons, which is unrelated to this file-privacy probe.
+          teacher = login("teacher@over-u.example.com")
           boundary = "----over-u-" + uuid.uuid4().hex
           fields = {
               "is_private": "0",
@@ -708,8 +712,12 @@ jobs:
               data=bytes(body),
               headers={"Content-Type": "multipart/form-data; boundary=" + boundary},
           )
-          with owner.open(request, timeout=30) as response:
-              uploaded = json.loads(response.read().decode())["message"]
+          try:
+              with teacher.open(request, timeout=30) as response:
+                  uploaded = json.loads(response.read().decode())["message"]
+          except HTTPError as error:
+              detail = error.read().decode(errors="replace")[:500]
+              raise AssertionError(f"Assigned teacher could not upload the synthetic attachment: HTTP {error.code}: {detail}") from error
           assert int(uploaded["is_private"]) == 1, "upload_file(is_private=0) created a public homework attachment"
           assert uploaded["file_url"].startswith("/private/files/"), "Homework upload was not stored in private/files"
           FILE = BASE + uploaded["file_url"]
@@ -732,7 +740,6 @@ jobs:
           api_owner_status, api_owner_body = get_download_api(owner, uploaded["file_url"])
           assert api_owner_status == 200 and SENTINEL in api_owner_body, "Owner could not download homework through the Frappe file API"
 
-          teacher = login("teacher@over-u.example.com")
           teacher_status, teacher_body = get(teacher, FILE)
           assert teacher_status == 200 and SENTINEL in teacher_body, f"Course teacher could not review the attachment (HTTP {teacher_status})"
           api_teacher_status, api_teacher_body = get_download_api(teacher, uploaded["file_url"])
