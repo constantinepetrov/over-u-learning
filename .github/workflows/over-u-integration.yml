@@ -785,3 +785,76 @@ jobs:
       - name: Remove temporary CA copy
         if: always()
         run: sudo rm -f over-u/dev/.ci-ca-bundle.pem
+
+  production-image:
+    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.ref == 'refs/heads/feature/overu-approved-ui-integration' || github.base_ref == 'feature/overu-brand-design' || github.base_ref == 'feature/overu-approved-ui-integration'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Read pinned versions
+        id: pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          lock=over-u/deploy/versions.lock.json
+          {
+            echo "frappe=$(jq -r '.frappe.commit' "$lock")"
+            echo "payments=$(jq -r '.payments.commit' "$lock")"
+            echo "lms=$(jq -r '.lms.commit' "$lock")"
+            echo "frappe_docker=$(jq -r '.frappe_docker.commit' "$lock")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build pinned OCI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: over-u/deploy/Containerfile.overu
+          platforms: linux/amd64
+          push: false
+          outputs: type=oci,dest=/tmp/overu-image.oci.tar
+          build-args: |
+            SOURCE_REVISION=${{ github.event.pull_request.head.sha }}
+            FRAPPE_COMMIT=${{ steps.pins.outputs.frappe }}
+            PAYMENTS_COMMIT=${{ steps.pins.outputs.payments }}
+            LMS_COMMIT=${{ steps.pins.outputs.lms }}
+            FRAPPE_DOCKER_COMMIT=${{ steps.pins.outputs.frappe_docker }}
+          cache-from: type=gha,scope=overu-production-image
+          cache-to: type=gha,mode=max,scope=overu-production-image
+
+      - name: Verify image revision and OCI digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          lock=over-u/deploy/versions.lock.json
+          revision='${{ github.event.pull_request.head.sha }}'
+          frappe="$(jq -r '.frappe.commit' "$lock")"
+          payments="$(jq -r '.payments.commit' "$lock")"
+          lms="$(jq -r '.lms.commit' "$lock")"
+          docker_sha="$(jq -r '.frappe_docker.commit' "$lock")"
+          test "$(git hash-object over-u/deploy/frappe-docker/main-entrypoint.sh)" = "$(jq -r '.frappe_docker.vendored_files[\"resources/core/main-entrypoint.sh\"]' "$lock")"
+          test "$(git hash-object over-u/deploy/frappe-docker/start.sh)" = "$(jq -r '.frappe_docker.vendored_files[\"resources/core/start.sh\"]' "$lock")"
+          mkdir -p /tmp/overu-oci
+          tar -xf /tmp/overu-image.oci.tar -C /tmp/overu-oci index.json
+          manifest_digest="$(jq -r '.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64") | .digest' /tmp/overu-oci/index.json | head -n1)"
+          manifest_path="blobs/sha256/${manifest_digest#sha256:}"
+          tar -xOf /tmp/overu-image.oci.tar "$manifest_path" > /tmp/overu-manifest.json
+          test "$(sha256sum /tmp/overu-manifest.json | cut -d' ' -f1)" = "${manifest_digest#sha256:}"
+          config_digest="$(jq -r '.config.digest' /tmp/overu-manifest.json)"
+          config_path="blobs/sha256/${config_digest#sha256:}"
+          tar -xOf /tmp/overu-image.oci.tar "$config_path" > /tmp/overu-config.json
+          test "$(jq -r '.config.Labels[\"org.opencontainers.image.revision\"]' /tmp/overu-config.json)" = "$revision"
+          test "$(jq -r '.config.Labels[\"io.overu.build.frappe.revision\"]' /tmp/overu-config.json)" = "$frappe"
+          test "$(jq -r '.config.Labels[\"io.overu.build.payments.revision\"]' /tmp/overu-config.json)" = "$payments"
+          test "$(jq -r '.config.Labels[\"io.overu.build.lms.revision\"]' /tmp/overu-config.json)" = "$lms"
+          test "$(jq -r '.config.Labels[\"io.overu.build.frappe-docker.revision\"]' /tmp/overu-config.json)" = "$docker_sha"
+          printf 'Revision: %s\nOCI manifest: %s\nImage config: %s\nFrappe: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
+            "$revision" "$manifest_digest" "$config_digest" "$frappe" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
+          test -s /tmp/overu-image.oci.tar
