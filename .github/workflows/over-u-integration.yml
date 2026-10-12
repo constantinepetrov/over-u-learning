@@ -164,8 +164,9 @@ jobs:
             // synthetic Course Creator used by the author editor round-trip.
             form: { usr: 'teacher@over-u.example.com', pwd: process.env.OVER_U_DEMO_PASSWORD },
           })
-          if (login.status() !== 200 || (await login.json()).message !== 'Logged In') {
-            throw new Error('Synthetic administrator login failed')
+          const auth = await login.json().catch(() => ({}))
+          if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
+            throw new Error(`Synthetic Course Creator login failed: HTTP ${login.status()}`)
           }
           const page = await context.newPage()
           const errors = []
