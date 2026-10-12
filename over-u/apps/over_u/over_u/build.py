@@ -1,7 +1,8 @@
 """Standard Frappe after_build extension; no upstream source modification."""
-from pathlib import Path
-import subprocess
+
 import os
+import subprocess
+from pathlib import Path
 
 
 def after_build():
@@ -13,4 +14,8 @@ def after_build():
         "OVER_U_LMS_FRONTEND",
         str(Path.home() / "frappe-bench/apps/lms/frontend"),
     )
-    subprocess.run(["node", str(repo / "over-u/dev/build-localized-frontend.mjs")], check=True, env=env)
+    subprocess.run(
+        ["node", str(repo / "over-u/dev/build-localized-frontend.mjs")],
+        check=True,
+        env=env,
+    )
