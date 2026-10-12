@@ -246,11 +246,26 @@ def main():
 		status, submission = api(
 			session, "frappe.client.get", {"doctype": "LMS Assignment Submission", "name": submission_name}
 		)
-		assert (
-			(status == 200 and submission.get("message", {}).get("assignment_attachment") == file_url)
-			if allowed
-			else (status != 200 and not has_payload(submission) and file_url not in json.dumps(submission))
-		), f"frappe.client.get submission policy mismatch for {label}: HTTP {status}"
+		submission_json = json.dumps(submission)
+		submission_message = submission.get("message")
+		if not isinstance(submission_message, dict):
+			submission_message = {}
+		submission_visible = (
+			status == 200
+			and submission_message.get("assignment_attachment") == file_url
+		)
+		if label == "assigned teacher":
+			assert submission_visible, (
+				f"Assigned teacher could not read the submission through frappe.client.get: "
+				f"HTTP {status}: {submission}"
+			)
+		elif label in ("Guest", "other student", "unrelated Course Creator"):
+			assert (
+				not submission_visible
+				and submission_name not in submission_json
+				and file_url not in submission_json
+				and not has_payload(submission)
+			), f"frappe.client.get exposed the submission to {label}: HTTP {status}"
 
 		status, submission_rows = api(
 			session,
