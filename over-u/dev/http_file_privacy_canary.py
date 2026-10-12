@@ -62,12 +62,33 @@ def api(client_, method, params, http_method="POST"):
 		return status, {"raw": body.decode("utf-8", "replace")}
 
 
-def assert_identity(client_, expected):
+def probe_identity(client_):
 	status, session = api(client_, "frappe.auth.get_logged_user", {}, http_method="GET")
 	actual = session.get("message") if isinstance(session, dict) else None
-	assert (
-		status == 200 and actual == expected
-	), f"Session identity mismatch before request: expected={expected!r}, status={status}, actual={actual!r}"
+	return {"http": status, "identity": actual}
+
+
+def cookie_metadata(client_):
+	processor = next(handler for handler in client_.handlers if isinstance(handler, HTTPCookieProcessor))
+	return [
+		{
+			"name": cookie.name,
+			"domain": cookie.domain,
+			"path": cookie.path,
+			"secure": cookie.secure,
+			"expires": cookie.expires,
+		}
+		for cookie in processor.cookiejar
+	]
+
+
+def assert_identity(client_, expected):
+	probe = probe_identity(client_)
+	assert probe == {"http": 200, "identity": expected}, (
+		f"Session identity mismatch: expected={expected!r}, "
+		f"status={probe['http']}, actual={probe['identity']!r}"
+	)
+	return probe
 
 
 def login(email, password=PASS):
@@ -218,19 +239,46 @@ def main():
 	results = {}
 
 	for label, session, identity in actors:
-		# Guest has a fresh, empty cookie jar; the identity endpoint itself rejects
-		# anonymous callers with HTTP 403, so it cannot confirm Guest via API.
-		if label != "Guest":
-			assert_identity(session, identity)
-		plain_status, plain_body, _ = request(session, file_url)
-		assert_identity(session, identity)
-		fid_status, fid_body, _ = request(session, file_url + "?" + urlencode({"fid": file_name}))
-		assert_identity(session, identity)
-		handler_status, handler_body, _ = request(
-			session,
-			"/api/method/frappe.handler.download_file?" + urlencode({"file_url": file_url, "fid": file_name}),
-		)
-		public_status, public_body, _ = request(session, public_path)
+		# Probe after setup and immediately before each file route. A failing probe
+		# is recorded but must not prevent collecting the actual download response.
+		identity_checks = []
+		for route_name, route in (
+			("plain_url", lambda: request(session, file_url)),
+			("plain_url_with_fid", lambda: request(session, file_url + "?" + urlencode({"fid": file_name}))),
+			(
+				"handler_download_file",
+				lambda: request(
+					session,
+					"/api/method/frappe.handler.download_file?"
+					+ urlencode({"file_url": file_url, "fid": file_name}),
+				),
+			),
+			("public_files_url", lambda: request(session, public_path)),
+		):
+			probe = {"http": None, "identity": "Guest"} if label == "Guest" else probe_identity(session)
+			identity_checks.append({"before": route_name, **probe})
+			if label != "Guest" and probe != {"http": 200, "identity": identity}:
+				print(
+					"Session probe failure:",
+					json.dumps(
+						{
+							"actor": label,
+						"before": route_name,
+						"probe": probe,
+						"cookie_metadata": cookie_metadata(session),
+					},
+					 sort_keys=True,
+					),
+				)
+			status, body, _headers = route()
+			if route_name == "plain_url":
+				plain_status, plain_body = status, body
+			elif route_name == "plain_url_with_fid":
+				fid_status, fid_body = status, body
+			elif route_name == "handler_download_file":
+				handler_status, handler_body = status, body
+			else:
+				public_status, public_body = status, body
 
 		file_status, file_payload = api(session, "frappe.client.get", {"doctype": "File", "name": file_name})
 		file_record = message(file_payload)
@@ -268,6 +316,7 @@ def main():
 		sub_rows = rows(sub_list_payload)
 		sub_list_visible = any(row.get("name") == submission_name for row in sub_rows)
 		private_results = {
+			"identity_before_routes": identity_checks,
 			"plain_url": (plain_status, has_sentinel(plain_body)),
 			"plain_url_with_fid": (fid_status, has_sentinel(fid_body)),
 			"handler_download_file": (handler_status, has_sentinel(handler_body)),
