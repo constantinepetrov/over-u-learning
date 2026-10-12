@@ -13,7 +13,15 @@ SENTINEL = b"OVER_U_SYNTHETIC_HTTP_UPLOAD"
 PASS = os.environ["OVER_U_DEMO_PASSWORD"]
 ADMIN_PASS = os.environ["OVER_U_ADMIN_PASSWORD"]
 UPLOAD_PROBE = json.loads(os.environ["OVER_U_UPLOAD_PROBE"])
-FILE_FIELDS = ["name", "owner", "file_url", "is_private", "attached_to_doctype", "attached_to_name", "attached_to_field"]
+FILE_FIELDS = [
+	"name",
+	"owner",
+	"file_url",
+	"is_private",
+	"attached_to_doctype",
+	"attached_to_name",
+	"attached_to_field",
+]
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -57,7 +65,9 @@ def api(client_, method, params, http_method="POST"):
 def assert_identity(client_, expected):
 	status, session = api(client_, "frappe.auth.get_logged_user", {})
 	actual = session.get("message") if isinstance(session, dict) else None
-	assert status == 200 and actual == expected, f"Session identity mismatch before request: expected={expected!r}, status={status}, actual={actual!r}"
+	assert (
+		status == 200 and actual == expected
+	), f"Session identity mismatch before request: expected={expected!r}, status={status}, actual={actual!r}"
 
 
 def login(email, password=PASS):
@@ -83,11 +93,11 @@ def multipart(fields, filename, content):
 	parts.extend(
 		[
 			f"--{boundary}\r\n".encode(),
-				f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode(),
-				b"Content-Type: text/plain\r\n\r\n",
-				content,
-				b"\r\n",
-				f"--{boundary}--\r\n".encode(),
+			f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode(),
+			b"Content-Type: text/plain\r\n\r\n",
+			content,
+			b"\r\n",
+			f"--{boundary}--\r\n".encode(),
 		]
 	)
 	return boundary, b"".join(parts)
@@ -152,32 +162,28 @@ def main():
 	assert status == 200, f"Normal upload_file request failed: HTTP {status}"
 	uploaded = message(json.loads(uploaded_body))
 	file_url, file_name = uploaded.get("file_url"), uploaded.get("name")
-	assert int(uploaded.get("is_private") or 0) == 1, "upload_file(is_private=0) created a public homework attachment"
+	assert (
+		int(uploaded.get("is_private") or 0) == 1
+	), "upload_file(is_private=0) created a public homework attachment"
 	assert file_url and file_url.startswith("/private/files/"), "Homework upload did not use private storage"
-	assert uploaded.get("owner") == student_email, "Uploaded File owner did not match the authenticated learner"
+	assert (
+		uploaded.get("owner") == student_email
+	), "Uploaded File owner did not match the authenticated learner"
 	assert (
 		uploaded.get("attached_to_doctype") == "LMS Assignment Submission"
 		and uploaded.get("attached_to_name") == submission_name
 		and uploaded.get("attached_to_field") == "assignment_attachment"
 	), "upload_file did not link the private File to the submission field"
 
-	# Exercise the ordinary document API explicitly, then reopen the submission.
-	status, saved = api(
-		owner,
-		"frappe.client.set_value",
-		{
-			"doctype": "LMS Assignment Submission",
-			"name": submission_name,
-			"fieldname": "assignment_attachment",
-			"value": file_url,
-		},
-	)
-	assert status == 200, f"Owner could not save the uploaded attachment reference: HTTP {status}"
+	# upload_file with doctype, docname, and fieldname is the normal LMS upload
+	# path. Reopen the submission to confirm that the field link persisted.
 	status, reopened = api(
-		owner, "frappe.client.get", {"doctype": "LMS Assignment Submission", "name": submission_name}
+		owner,
+		"frappe.client.get",
+		{"doctype": "LMS Assignment Submission", "name": submission_name},
 	)
-	assert status == 200 and message(reopened).get("assignment_attachment") == file_url, (
-		"Owner could not reopen the submission with its attachment reference"
+	owner_submission_open = (
+		status == 200 and message(reopened).get("assignment_attachment") == file_url
 	)
 
 	# Administrator is used only to enumerate synthetic duplicate-URL records.
@@ -199,21 +205,20 @@ def main():
 	)
 
 	clients = {
-		"owner": (owner, student_email, True),
-		"other student": (login("student2@over-u.example.com"), "student2@over-u.example.com", False),
-		"assigned teacher": (login("teacher@over-u.example.com"), "teacher@over-u.example.com", True),
+		"owner": (owner, student_email),
+		"other student": (login("student2@over-u.example.com"), "student2@over-u.example.com"),
+		"assigned teacher": (login("teacher@over-u.example.com"), "teacher@over-u.example.com"),
 		"unrelated Course Creator": (
 			login("over-u-unrelated-teacher@example.com"),
 			"over-u-unrelated-teacher@example.com",
-			False,
 		),
 	}
 	guest = client()
-	actors = [("Guest", guest, "Guest", False), *[(label, *entry) for label, entry in clients.items()]]
+	actors = [("Guest", guest, "Guest"), *[(label, *entry) for label, entry in clients.items()]]
 	public_path = "/files/" + file_url.rsplit("/", 1)[-1]
 	results = {}
 
-	for label, session, identity, allowed in actors:
+	for label, session, identity in actors:
 		assert_identity(session, identity)
 		plain_status, plain_body, _ = request(session, file_url)
 		assert_identity(session, identity)
@@ -221,14 +226,11 @@ def main():
 		assert_identity(session, identity)
 		handler_status, handler_body, _ = request(
 			session,
-			"/api/method/frappe.handler.download_file?"
-			+ urlencode({"file_url": file_url, "fid": file_name}),
+			"/api/method/frappe.handler.download_file?" + urlencode({"file_url": file_url, "fid": file_name}),
 		)
 		public_status, public_body, _ = request(session, public_path)
 
-		file_status, file_payload = api(
-			session, "frappe.client.get", {"doctype": "File", "name": file_name}
-		)
+		file_status, file_payload = api(session, "frappe.client.get", {"doctype": "File", "name": file_name})
 		file_record = message(file_payload)
 		file_visible = file_status == 200 and file_record.get("file_url") == file_url
 		list_status, file_list_payload = api(
@@ -275,6 +277,8 @@ def main():
 		}
 		results[label] = private_results
 	violations = []
+	if not owner_submission_open:
+		violations.append("owner submission attachment reference did not survive reopen")
 	for label, method_results in results.items():
 		allowed = label in ("owner", "assigned teacher")
 		for method in ("plain_url", "plain_url_with_fid", "handler_download_file"):
@@ -293,7 +297,10 @@ def main():
 		if code == 200 and contains:
 			violations.append(f"{label} public_files_url exposed sentinel: HTTP {code}")
 
-	print("Synthetic upload metadata:", json.dumps({key: uploaded.get(key) for key in FILE_FIELDS}, sort_keys=True))
+	print(
+		"Synthetic upload metadata:",
+		json.dumps({key: uploaded.get(key) for key in FILE_FIELDS}, sort_keys=True),
+	)
 	print("Same-URL File rows:", json.dumps(duplicate_rows, sort_keys=True))
 	print("HTTP authorization matrix:", json.dumps(results, sort_keys=True))
 	if len(duplicate_rows) != 1:
