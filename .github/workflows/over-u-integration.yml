@@ -146,6 +146,8 @@ jobs:
               assert response.status == 200, f"asset {asset} returned {response.status}"
           print(f"/lms returned 200 and {len(parser.urls)} frontend assets returned 200")
           PY
+      - name: Run homework file privacy unit tests
+        run: docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_file_privacy'
       - name: Install isolated browser smoke-test tools
         run: |
           npm install --prefix "$RUNNER_TEMP/over-u-playwright" --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.0
@@ -189,7 +191,6 @@ jobs:
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_desk_users'
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_file_privacy'
           # The single upstream same-transaction upload test passes its assertions but
           # Frappe's rollback callback then tries to move a file already removed by its
           # earlier insert callback. The HTTP probe above exercises the same access matrix
