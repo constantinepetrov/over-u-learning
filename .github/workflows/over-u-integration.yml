@@ -850,12 +850,11 @@ jobs:
           test "$(git hash-object over-u/deploy/frappe-docker/start.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/start.sh"]' "$lock")"
           mkdir -p /tmp/overu-oci
           tar -xf /tmp/overu-image.oci.tar -C /tmp/overu-oci index.json
-          archive_digest="sha256:$(sha256sum /tmp/overu-oci/index.json | cut -d' ' -f1)"
           action_digest='${{ steps.image_build.outputs.digest }}'
-          printf 'OCI archive digest: %s\nBuildx digest: %s\nIndex descriptors: %s\n' \
-            "$archive_digest" "$action_digest" "$(jq -c '.manifests' /tmp/overu-oci/index.json)"
-          if [ -n "$action_digest" ]; then test "$archive_digest" = "$action_digest"; fi
           manifest_digest="$(jq -r '.manifests[0].digest' /tmp/overu-oci/index.json)"
+          printf 'OCI manifest digest: %s\nBuildx digest: %s\nIndex descriptors: %s\n' \
+            "$manifest_digest" "$action_digest" "$(jq -c '.manifests' /tmp/overu-oci/index.json)"
+          if [ -n "$action_digest" ]; then test "$manifest_digest" = "$action_digest"; fi
           manifest_path="blobs/sha256/${manifest_digest#sha256:}"
           tar -xOf /tmp/overu-image.oci.tar "$manifest_path" > /tmp/overu-manifest.json
           test "$(sha256sum /tmp/overu-manifest.json | cut -d' ' -f1)" = "${manifest_digest#sha256:}"
