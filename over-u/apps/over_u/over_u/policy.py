@@ -76,6 +76,8 @@ def assignment_submission_has_permission(doc, user=None, ptype=None, **kwargs):
 
 def assignment_submission_query(user=None):
 	"""Keep assignment list queries within the learner and instructor scope."""
+	from lms.lms.permissions import can_author_course
+
 	user = user or frappe.session.user
 	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
 		return ""

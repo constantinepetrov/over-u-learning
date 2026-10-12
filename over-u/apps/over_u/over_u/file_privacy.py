@@ -31,14 +31,8 @@ class PrivateAssignmentFile:
 		super().validate()
 
 	def _enforce_private_on_insert(self):
-		# A new upload has content and no URL yet. Set privacy before File.before_insert
-		# writes it, so even upload_file(is_private=0) lands under private/files.
-		if self.get_content():
-			self.is_private = 1
-			return
-
-		# Reusing a public or remote URL would bypass private-file access checks. Do
-		# not mutate that File or move a public course asset as a side effect.
+		# Existing URLs must be checked before get_content(): the latter reads a
+		# public file from disk and would make it look like a new upload.
 		if self.file_url:
 			existing = frappe.db.get_value(
 				"File", {"file_url": self.file_url}, ["name", "is_private"], as_dict=True
@@ -55,6 +49,12 @@ class PrivateAssignmentFile:
 				)
 			if not self.file_url.startswith("/private/files/"):
 				frappe.throw(_("Homework attachments must use private file storage."), frappe.PermissionError)
+			self.is_private = 1
+			return
+
+		# A new upload has content and no URL yet. Set privacy before File.before_insert
+		# writes it, so even upload_file(is_private=0) lands under private/files.
+		if self.get_content():
 			self.is_private = 1
 
 
