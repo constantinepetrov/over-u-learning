@@ -2,12 +2,11 @@
 
 import frappe
 from frappe import _
-from frappe.core.doctype.file.file import File
 
 ASSIGNMENT_SUBMISSION = "LMS Assignment Submission"
 
 
-class PrivateAssignmentFile(File):
+class PrivateAssignmentFile:
 	"""Enforce private storage before Frappe writes an assignment file to disk."""
 
 	def before_insert(self):

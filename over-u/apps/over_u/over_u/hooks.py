@@ -15,8 +15,8 @@ after_migrate = [
 	"over_u.localization.configure_defaults",
 	"over_u.file_privacy.enforce_assignment_attachment_privacy",
 ]
-override_doctype_class = {
-	"File": "over_u.file_privacy.PrivateAssignmentFile",
+extend_doctype_class = {
+	"File": ["over_u.file_privacy.PrivateAssignmentFile"],
 }
 lms_assignment_completion_filters = ["over_u.policy.completion_filters"]
 override_whitelisted_methods = {
