@@ -90,6 +90,7 @@ def assert_identity(client_, expected):
 	)
 	return probe
 
+
 def checkpoint(label, client_):
 	probe = probe_identity(client_)
 	detail = {"stage": label, "probe": probe}
