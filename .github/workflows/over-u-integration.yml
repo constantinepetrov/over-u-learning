@@ -177,6 +177,19 @@ jobs:
           await page.waitForTimeout(2000)
           const mounted = await page.locator('#app').count()
           if (!mounted) errors.push('Vue app mount not found')
+          if (errors.length) {
+            const body = await page.locator('body').innerText().catch(() => '')
+            console.error('Page text at failure:', body.slice(0, 1200))
+            const stack = errors.find(value => value.includes('/assets/lms/frontend/assets/'))
+            const match = stack?.match(/(\/assets\/lms\/frontend\/assets\/[^:\s]+\.js):(\d+):(\d+)/)
+            if (match) {
+              const script = await context.request.get('http://over-u.localhost:8000' + match[1])
+              const lines = (await script.text()).split('\n')
+              const line = lines[Number(match[2]) - 1] || ''
+              const column = Number(match[3])
+              console.error('Failing bundle context:', line.slice(Math.max(0, column - 500), column + 500))
+            }
+          }
           await browser.close()
           if (errors.length) {
             console.error(errors.join('\n'))
