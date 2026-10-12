@@ -190,7 +190,19 @@ def main():
 		body,
 		{"Content-Type": f"multipart/form-data; boundary={boundary}"},
 	)
-	assert status == 200, f"Normal upload_file request failed: HTTP {status}"
+	if status != 200:
+		try:
+			upload_error = json.loads(uploaded_body)
+		except json.JSONDecodeError:
+			upload_error = {}
+		detail = {
+			"exc_type": upload_error.get("exc_type"),
+			"message": upload_error.get("message"),
+		}
+		raise AssertionError(
+			f"Normal upload_file request failed: HTTP {status}, "
+			f"server_error={json.dumps(detail, sort_keys=True)}"
+		)
 	uploaded = message(json.loads(uploaded_body))
 	owner_after_upload = checkpoint("after_upload_file", owner)
 	file_url, file_name = uploaded.get("file_url"), uploaded.get("name")
