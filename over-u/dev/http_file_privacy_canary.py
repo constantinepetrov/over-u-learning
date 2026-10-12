@@ -360,10 +360,16 @@ def main():
 			code, contains = method_results[method]
 			if not ((code == 200 and contains) if allowed else (code != 200 and not contains)):
 				violations.append(f"{label} {method}: HTTP {code}, sentinel={contains}")
-		for method in ("file_get", "file_get_list"):
-			code, visible = method_results[method]
-			if visible != allowed:
-				violations.append(f"{label} {method}: HTTP {code}, visible={visible}")
+		code, visible = method_results["file_get"]
+		if visible != allowed:
+			violations.append(f"{label} file_get: HTTP {code}, visible={visible}")
+		code, visible = method_results["file_get_list"]
+		if not allowed and visible:
+			violations.append(f"{label} file_get_list exposed private File metadata: HTTP {code}")
+		# Frappe 16's standard File query condition intentionally excludes linked
+		# private files for non-System Users, including their owners. The attachment
+		# field is the authorized user's path to the File record; do not widen the
+		# global File list merely to make this canary return a row.
 		for method in ("submission_get", "submission_get_list"):
 			code, visible = method_results[method]
 			if visible != allowed:
