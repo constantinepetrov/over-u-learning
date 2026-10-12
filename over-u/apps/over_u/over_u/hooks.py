@@ -5,20 +5,37 @@ app_description = "School configuration and assignment completion policy"
 app_email = "dev@over-u.example.com"
 app_license = "AGPL-3.0"
 required_apps = ["lms"]
-after_install = ["over_u.install.configure", "over_u.localization.migrate_existing_users"]
-after_migrate = ["over_u.install.configure", "over_u.localization.configure_defaults"]
+after_install = [
+	"over_u.install.configure",
+	"over_u.localization.migrate_existing_users",
+	"over_u.file_privacy.enforce_assignment_attachment_privacy",
+]
+after_migrate = [
+	"over_u.install.configure",
+	"over_u.localization.configure_defaults",
+	"over_u.file_privacy.enforce_assignment_attachment_privacy",
+]
 lms_assignment_completion_filters = ["over_u.policy.completion_filters"]
 override_whitelisted_methods = {
-    "lms.lms.api.get_translations": "over_u.localization.get_translations",
-    "lms.lms.doctype.course_lesson.course_lesson.save_progress": "over_u.policy.save_progress",
+	"lms.lms.api.get_translations": "over_u.localization.get_translations",
+	"lms.lms.doctype.course_lesson.course_lesson.save_progress": "over_u.policy.save_progress",
 }
 doc_events = {
-    "User": {"before_insert": "over_u.localization.set_new_user_language"},
-    "LMS Assignment Submission": {
-        "validate": "over_u.policy.validate_submission",
-        "on_update": "over_u.policy.update_assignment_progress",
-    },
-    "LMS Course Progress": {"validate": "over_u.policy.validate_progress"},
+	"User": {"before_insert": "over_u.localization.set_new_user_language"},
+	"LMS Assignment Submission": {
+		"validate": "over_u.policy.validate_submission",
+		"on_update": "over_u.policy.update_assignment_progress",
+	},
+	"LMS Course Progress": {"validate": "over_u.policy.validate_progress"},
+}
+extend_doctype_class = {
+	"File": ["over_u.file_privacy.PrivateAssignmentFile"],
+}
+has_permission = {
+	"LMS Assignment Submission": "over_u.assignment_permissions.assignment_submission_has_permission",
+}
+permission_query_conditions = {
+	"LMS Assignment Submission": "over_u.assignment_permissions.assignment_submission_query",
 }
 
 website_route_rules = [{"from_route": "/school/<path:app_path>", "to_route": "school"}]
@@ -31,9 +48,11 @@ doctype_list_js = {"User": "public/localization/user-list.js"}
 
 # Send administrators directly to the native Users workspace after login.
 app_home = "/desk/users"
-add_to_apps_screen = [{
-    "name": "over_u",
-    "title": "OVER U",
-    "route": "/desk/users",
-    "has_permission": "over_u.desk.can_access_desk",
-}]
+add_to_apps_screen = [
+	{
+		"name": "over_u",
+		"title": "OVER U",
+		"route": "/desk/users",
+		"has_permission": "over_u.desk.can_access_desk",
+	}
+]

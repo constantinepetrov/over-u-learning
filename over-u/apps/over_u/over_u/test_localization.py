@@ -6,6 +6,7 @@ from unittest.mock import patch
 import frappe
 from frappe.translate import print_language
 from werkzeug.wrappers import Request, Response
+
 from lms.lms.test_helpers import BaseTestUtils
 from over_u import localization, student_api
 from over_u.school import manifest
@@ -16,6 +17,7 @@ BROWSER_USER = "localization-test@over-u.example.com"
 def browser_fixture():
     """Dev-only fixture; existing students and their credentials stay untouched."""
     import os
+
     from frappe.utils.password import update_password
     if not frappe.conf.allow_tests or frappe.session.user != "Administrator":
         frappe.throw("Development test fixture only", frappe.PermissionError)
@@ -82,7 +84,8 @@ class TestLocalization(BaseTestUtils):
         en = json.loads((folder / "en.json").read_text())
         self.assertEqual(set(ru), set(en))
         for key in ru:
-            self.assertTrue(ru[key]); self.assertTrue(en[key])
+            self.assertTrue(ru[key])
+            self.assertTrue(en[key])
             self.assertEqual(re.findall(r"\{\d+\}", ru[key]), re.findall(r"\{\d+\}", en[key]))
         source = "\n".join((folder.parent / name).read_text() for name in ["views.js", "components.js", "app.js", "api.js"])
         self.assertEqual(set(re.findall(r"t\('(ui_\d+)'", source)), set(ru))

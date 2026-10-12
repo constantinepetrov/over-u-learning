@@ -146,6 +146,8 @@ jobs:
               assert response.status == 200, f"asset {asset} returned {response.status}"
           print(f"/lms returned 200 and {len(parser.urls)} frontend assets returned 200")
           PY
+      - name: Run homework file privacy unit tests
+        run: docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_file_privacy'
       - name: Install isolated browser smoke-test tools
         run: |
           npm install --prefix "$RUNNER_TEMP/over-u-playwright" --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.0
@@ -179,55 +181,12 @@ jobs:
           }
           console.log('/lms loaded in Chromium without JavaScript console or page errors')
           JS
-      - name: Check direct private assignment-file access
+      - name: Seed isolated HTTP attachment probes
         run: |
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe'
-          python3 - <<'PY'
-          import http.cookiejar
-          import os
-          from urllib.error import HTTPError
-          from urllib.parse import urlencode
-          from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
-
-          BASE = "http://over-u.localhost:8000"
-          FILE = BASE + "/private/files/over-u-ci-private-attachment.txt"
-          SENTINEL = b"OVER_U_SYNTHETIC_PRIVATE_ATTACHMENT"
-
-          class NoRedirect(HTTPRedirectHandler):
-              def redirect_request(self, request, response, code, message, headers, new_url):
-                  return None
-
-          def opener():
-              return build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()), NoRedirect)
-
-          def get(client):
-              try:
-                  with client.open(Request(FILE), timeout=30) as response:
-                      return response.status, response.read()
-              except HTTPError as error:
-                  return error.code, error.read()
-
-          guest_status, guest_body = get(opener())
-          assert guest_status != 200 and SENTINEL not in guest_body, f"Guest received the private attachment (HTTP {guest_status})"
-
-          def login(user):
-              client = opener()
-              data = urlencode({"usr": user, "pwd": os.environ["OVER_U_DEMO_PASSWORD"]}).encode()
-              with client.open(Request(BASE + "/api/method/login", data=data), timeout=30) as response:
-                  assert response.status == 200, f"Synthetic login failed for {user}"
-              return client
-
-          outsider_status, outsider_body = get(login("student2@over-u.example.com"))
-          assert outsider_status != 200 and SENTINEL not in outsider_body, f"Another student received the private attachment (HTTP {outsider_status})"
-
-          owner_status, owner_body = get(login("student1@over-u.example.com"))
-          assert owner_status == 200 and SENTINEL in owner_body, f"Owner could not download their attachment (HTTP {owner_status})"
-
-          teacher_status, teacher_body = get(login("teacher@over-u.example.com"))
-          assert teacher_status == 200 and SENTINEL in teacher_body, f"Course teacher could not review the attachment (HTTP {teacher_status})"
-          print("Direct attachment URL denied to Guest and another student, allowed to owner and course teacher")
-          PY
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.cleanup_private_assignment_file_probe'
+          UPLOAD_PROBE="$(docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_http_upload_probe')"
+          printf '%s\n' "$UPLOAD_PROBE"
+          export OVER_U_UPLOAD_PROBE="$UPLOAD_PROBE"
+          python3 over-u/dev/http_file_privacy_canary.py
       - name: Run synthetic Frappe integration and privacy tests
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'
