@@ -213,15 +213,49 @@ def main():
 	assert submission_name, "Normal student insert returned no submission name"
 	owner_after_insert = checkpoint("after_submission_insert", owner)
 
+	admin = login("Administrator", ADMIN_PASS)
+	admin_status, admin_submission = api(
+		admin,
+		"frappe.client.get",
+		{"doctype": "LMS Assignment Submission", "name": submission_name},
+	)
+	admin_submission_facts = message(admin_submission)
+	print(
+		"Admin synthetic submission facts:",
+		json.dumps(
+			{
+				"status": admin_status,
+				"name": admin_submission_facts.get("name"),
+				"owner": admin_submission_facts.get("owner"),
+				"member": admin_submission_facts.get("member"),
+				"assignment": admin_submission_facts.get("assignment"),
+				"assignment_attachment": admin_submission_facts.get("assignment_attachment"),
+			},
+			sort_keys=True,
+		),
+	)
+
 	status, reopened = api(
 		owner,
 		"frappe.client.get",
 		{"doctype": "LMS Assignment Submission", "name": submission_name},
 	)
 	owner_submission_open = status == 200 and message(reopened).get("assignment_attachment") == file_url
+	read_error = reopened if isinstance(reopened, dict) else {}
+	print(
+		"Owner submission HTTP get:",
+		json.dumps(
+			{
+				"status": status,
+				"exc_type": read_error.get("exc_type"),
+				"message": read_error.get("message"),
+				"attachment_matches": owner_submission_open,
+			},
+			sort_keys=True,
+		),
+	)
 	owner_after_reopen = checkpoint("after_submission_reopen", owner)
 
-	admin = login("Administrator", ADMIN_PASS)
 	status, same_url_payload = api(
 		admin,
 		"frappe.client.get_list",
