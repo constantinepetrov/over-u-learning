@@ -207,6 +207,10 @@ def main():
 			None,
 			file_url,
 		), f"frappe.client.get File returned a different URL for {label}: HTTP {status}"
+		if label == "assigned teacher":
+			assert file_doc_visible, (
+				f"Assigned teacher could not read the File through frappe.client.get: HTTP {status}"
+			)
 		if not allowed:
 			assert (
 				not file_doc_visible
@@ -234,6 +238,10 @@ def main():
 		), f"frappe.client.get_list exposed the private File to {label}: HTTP {status}"
 		if visible:
 			assert all(row.get("file_url") == file_url for row in rows)
+		if label == "assigned teacher":
+			assert visible, (
+				f"Assigned teacher could not list the File through frappe.client.get_list: HTTP {status}"
+			)
 		if not allowed:
 			file_rows_json = json.dumps(file_rows)
 			assert (
@@ -278,8 +286,9 @@ def main():
 			},
 		)
 		visible = any(row.get("name") == submission_name for row in submission_rows.get("message", []))
+		expected_visible = label == "assigned teacher"
 		assert (
-			visible == allowed
+			visible == expected_visible
 		), f"frappe.client.get_list submission policy mismatch for {label}: HTTP {status}, visible={visible}"
 
 	print(
