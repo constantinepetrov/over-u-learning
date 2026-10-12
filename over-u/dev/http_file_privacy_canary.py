@@ -145,20 +145,13 @@ def main():
 		"/private/files/"
 	), f"Homework upload was not stored under /private/files/: {file_url!r}"
 
-	# Simulate the ordinary form save after its upload field returns a URL.
-	status, saved = api(
-		owner,
-		"frappe.client.set_value",
-		{
-			"doctype": "LMS Assignment Submission",
-			"name": submission_name,
-			"fieldname": "assignment_attachment",
-			"value": file_url,
-		},
-	)
-	assert (
-		status == 200 and saved.get("message", {}).get("assignment_attachment") == file_url
-	), f"Student could not save the uploaded attachment field through the normal document API: HTTP {status}"
+	status, attached_file = api(owner, "frappe.client.get", {"doctype": "File", "name": file_name})
+	metadata = attached_file.get("message", {})
+	assert status == 200 and (
+		metadata.get("attached_to_doctype") == "LMS Assignment Submission"
+		and metadata.get("attached_to_name") == submission_name
+		and metadata.get("attached_to_field") == "assignment_attachment"
+	), f"upload_file did not link the private File to the submission field: HTTP {status}: {metadata}"
 
 	clients = {
 		"owner": owner,
