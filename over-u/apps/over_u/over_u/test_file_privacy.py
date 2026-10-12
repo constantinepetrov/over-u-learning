@@ -5,6 +5,11 @@ from over_u.file_privacy import enforce_assignment_attachment_privacy
 from over_u.school import STUDENTS, manifest
 
 
+def insert_synthetic_fixture(doc):
+	# nosemgrep: lms-unjustified-ignore-permissions - test fixtures use synthetic records to exercise file authorization boundaries.
+	return doc.insert(ignore_permissions=True)
+
+
 class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 	def setUp(self):
 		super().setUp()
@@ -18,8 +23,8 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"type": "Document",
 				"answer": "Synthetic attachment privacy test",
 			}
-			# nosemgrep: lms-unjustified-ignore-permissions - synthetic fixture links a test student to a test course.
-		).insert(ignore_permissions=True)
+		)
+		self.submission = insert_synthetic_fixture(self.submission)
 
 	def test_doctype_metadata_is_kept_private(self):
 		frappe.db.set_value("DocType", "LMS Assignment Submission", "make_attachments_public", 1)
@@ -56,8 +61,8 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"attached_to_doctype": "LMS Course",
 				"attached_to_name": self.school["course"],
 			}
-			# nosemgrep: lms-unjustified-ignore-permissions - synthetic fixture creates a course asset to test File extension scope.
-		).insert(ignore_permissions=True)
+		)
+		file_doc = insert_synthetic_fixture(file_doc)
 		self.assertEqual(file_doc.is_private, 0)
 		self.assertTrue(file_doc.file_url.startswith("/files/"))
 
@@ -71,8 +76,8 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"attached_to_doctype": "LMS Course",
 				"attached_to_name": self.school["course"],
 			}
-			# nosemgrep: lms-unjustified-ignore-permissions - synthetic public file tests that homework cannot reuse it.
-		).insert(ignore_permissions=True)
+		)
+		public_file = insert_synthetic_fixture(public_file)
 		with self.assertRaises(frappe.PermissionError):
 			frappe.get_doc(
 				{
@@ -84,8 +89,7 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 					"attached_to_name": self.submission.name,
 					"attached_to_field": "assignment_attachment",
 				}
-				# nosemgrep: lms-unjustified-ignore-permissions - test asserts rejection of a fabricated attachment.
-			).insert(ignore_permissions=True)
+			).insert()
 		public_file.reload()
 		self.assertEqual(public_file.is_private, 0)
 		self.assertTrue(public_file.file_url.startswith("/files/"))
@@ -101,8 +105,8 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 				"attached_to_name": self.submission.name,
 				"attached_to_field": "assignment_attachment",
 			}
-			# nosemgrep: lms-unjustified-ignore-permissions - fixture directly creates a test file to verify it cannot be made public.
-		).insert(ignore_permissions=True)
+		)
+		file_doc = insert_synthetic_fixture(file_doc)
 		file_doc.is_private = 0
 		with self.assertRaises(frappe.PermissionError):
 			# nosemgrep: lms-unjustified-ignore-permissions - test exercises server-side rejection of a public-state mutation.
