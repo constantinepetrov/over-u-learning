@@ -63,7 +63,7 @@ def api(client_, method, params, http_method="POST"):
 
 
 def assert_identity(client_, expected):
-	status, session = api(client_, "frappe.auth.get_logged_user", {})
+	status, session = api(client_, "frappe.auth.get_logged_user", {}, http_method="GET")
 	actual = session.get("message") if isinstance(session, dict) else None
 	assert (
 		status == 200 and actual == expected
