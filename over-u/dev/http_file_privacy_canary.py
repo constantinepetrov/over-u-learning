@@ -55,9 +55,11 @@ def api(client_, method, params, http_method="POST"):
 def login(email):
 	client_ = client()
 	status, payload = api(client_, "login", {"usr": email, "pwd": PASS})
+	assert status == 200, f"Synthetic login failed for {email}: HTTP {status}: {payload}"
+	status, session = api(client_, "frappe.auth.get_logged_user", {})
 	assert (
-		status == 200 and payload.get("message") == "Logged In"
-	), f"Synthetic login failed for {email}: HTTP {status}"
+		status == 200 and session.get("message") == email
+	), f"Login did not establish the expected session for {email}: HTTP {status}: {session}"
 	return client_
 
 
