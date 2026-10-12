@@ -5,8 +5,19 @@ app_description = "School configuration and assignment completion policy"
 app_email = "dev@over-u.example.com"
 app_license = "AGPL-3.0"
 required_apps = ["lms"]
-after_install = ["over_u.install.configure", "over_u.localization.migrate_existing_users"]
-after_migrate = ["over_u.install.configure", "over_u.localization.configure_defaults"]
+after_install = [
+    "over_u.install.configure",
+    "over_u.localization.migrate_existing_users",
+    "over_u.file_privacy.enforce_assignment_attachment_privacy",
+]
+after_migrate = [
+    "over_u.install.configure",
+    "over_u.localization.configure_defaults",
+    "over_u.file_privacy.enforce_assignment_attachment_privacy",
+]
+override_doctype_class = {
+    "File": "over_u.file_privacy.PrivateAssignmentFile",
+}
 lms_assignment_completion_filters = ["over_u.policy.completion_filters"]
 override_whitelisted_methods = {
     "lms.lms.api.get_translations": "over_u.localization.get_translations",

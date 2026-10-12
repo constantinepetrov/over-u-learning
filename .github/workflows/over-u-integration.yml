@@ -2,9 +2,9 @@ name: OVER U isolated integration
 
 on:
   push:
-    branches: [feature/overu-brand-design]
+    branches: [feature/overu-brand-design, feature/overu-approved-ui-integration]
   pull_request:
-    branches: [feature/overu-brand-design]
+    branches: [feature/overu-brand-design, feature/overu-approved-ui-integration]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   frontend:
-    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.base_ref == 'feature/overu-brand-design'
+    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.ref == 'refs/heads/feature/overu-approved-ui-integration' || github.base_ref == 'feature/overu-brand-design' || github.base_ref == 'feature/overu-approved-ui-integration'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -50,7 +50,7 @@ jobs:
 
 
   server:
-    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.base_ref == 'feature/overu-brand-design'
+    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.ref == 'refs/heads/feature/overu-approved-ui-integration' || github.base_ref == 'feature/overu-brand-design' || github.base_ref == 'feature/overu-approved-ui-integration'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -643,16 +643,24 @@ jobs:
           retention-days: 3
       - name: Check direct private assignment-file access
         run: |
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe'
+          probe_result=$(docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe')
+          submission=$(printf '%s\n' "$probe_result" | sed -n 's/^OVER_U_CI_PROBE_SUBMISSION=//p' | tail -n 1)
+          if [ -z "$submission" ]; then
+            printf '%s\n' "$probe_result"
+            echo "bench execute did not emit the synthetic submission marker" >&2
+            exit 1
+          fi
+          echo "OVER_U_CI_PROBE_SUBMISSION=$submission" >> "$GITHUB_ENV"
           python3 - <<'PY'
           import http.cookiejar
+          import json
           import os
+          import uuid
           from urllib.error import HTTPError
           from urllib.parse import urlencode
           from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
 
           BASE = "http://over-u.localhost:8000"
-          FILE = BASE + "/private/files/over-u-ci-private-attachment.txt"
           SENTINEL = b"OVER_U_SYNTHETIC_PRIVATE_ATTACHMENT"
 
           class NoRedirect(HTTPRedirectHandler):
@@ -662,39 +670,88 @@ jobs:
           def opener():
               return build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()), NoRedirect)
 
-          def get(client):
+          def get(client, url):
               try:
-                  with client.open(Request(FILE), timeout=30) as response:
+                  with client.open(Request(url), timeout=30) as response:
                       return response.status, response.read()
               except HTTPError as error:
                   return error.code, error.read()
 
-          guest_status, guest_body = get(opener())
-          assert guest_status != 200 and SENTINEL not in guest_body, f"Guest received the private attachment (HTTP {guest_status})"
+          def get_download_api(client, file_url):
+              query = urlencode({"file_url": file_url})
+              return get(client, BASE + "/api/method/frappe.handler.download_file?" + query)
 
-          def login(user):
+          def login(user, password=None):
               client = opener()
-              data = urlencode({"usr": user, "pwd": os.environ["OVER_U_DEMO_PASSWORD"]}).encode()
+              data = urlencode({"usr": user, "pwd": password or os.environ["OVER_U_DEMO_PASSWORD"]}).encode()
               with client.open(Request(BASE + "/api/method/login", data=data), timeout=30) as response:
                   assert response.status == 200, f"Synthetic login failed for {user}"
               return client
 
-          outsider_status, outsider_body = get(login("student2@over-u.example.com"))
+          owner = login("student1@over-u.example.com")
+          boundary = "----over-u-" + uuid.uuid4().hex
+          fields = {
+              "is_private": "0",
+              "doctype": "LMS Assignment Submission",
+              "docname": os.environ["OVER_U_CI_PROBE_SUBMISSION"],
+              "fieldname": "assignment_attachment",
+          }
+          body = bytearray()
+          for name, value in fields.items():
+              body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n".encode())
+          body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"over-u-ci-private-attachment.txt\"\r\nContent-Type: text/plain\r\n\r\n".encode())
+          body.extend(SENTINEL)
+          body.extend(f"\r\n--{boundary}--\r\n".encode())
+          request = Request(
+              BASE + "/api/method/upload_file",
+              data=bytes(body),
+              headers={"Content-Type": "multipart/form-data; boundary=" + boundary},
+          )
+          with owner.open(request, timeout=30) as response:
+              uploaded = json.loads(response.read().decode())["message"]
+          assert int(uploaded["is_private"]) == 1, "upload_file(is_private=0) created a public homework attachment"
+          assert uploaded["file_url"].startswith("/private/files/"), "Homework upload was not stored in private/files"
+          FILE = BASE + uploaded["file_url"]
+          PUBLIC_FILE = BASE + "/files/" + uploaded["file_url"].rsplit("/", 1)[-1]
+
+          guest = opener()
+          guest_status, guest_body = get(guest, FILE)
+          assert guest_status != 200 and SENTINEL not in guest_body, f"Guest received the private attachment (HTTP {guest_status})"
+          api_guest_status, api_guest_body = get_download_api(guest, uploaded["file_url"])
+          assert api_guest_status != 200 and SENTINEL not in api_guest_body, "Guest downloaded homework through the Frappe file API"
+
+          outsider = login("student2@over-u.example.com")
+          outsider_status, outsider_body = get(outsider, FILE)
           assert outsider_status != 200 and SENTINEL not in outsider_body, f"Another student received the private attachment (HTTP {outsider_status})"
+          api_outsider_status, api_outsider_body = get_download_api(outsider, uploaded["file_url"])
+          assert api_outsider_status != 200 and SENTINEL not in api_outsider_body, "Another student downloaded homework through the Frappe file API"
 
-          owner_status, owner_body = get(login("student1@over-u.example.com"))
+          owner_status, owner_body = get(owner, FILE)
           assert owner_status == 200 and SENTINEL in owner_body, f"Owner could not download their attachment (HTTP {owner_status})"
+          api_owner_status, api_owner_body = get_download_api(owner, uploaded["file_url"])
+          assert api_owner_status == 200 and SENTINEL in api_owner_body, "Owner could not download homework through the Frappe file API"
 
-          teacher_status, teacher_body = get(login("teacher@over-u.example.com"))
+          teacher = login("teacher@over-u.example.com")
+          teacher_status, teacher_body = get(teacher, FILE)
           assert teacher_status == 200 and SENTINEL in teacher_body, f"Course teacher could not review the attachment (HTTP {teacher_status})"
-          print("Direct attachment URL denied to Guest and another student, allowed to owner and course teacher")
+          api_teacher_status, api_teacher_body = get_download_api(teacher, uploaded["file_url"])
+          assert api_teacher_status == 200 and SENTINEL in api_teacher_body, "Course teacher could not download homework through the Frappe file API"
+          unrelated_teacher = login("over-u-unrelated-teacher@example.com")
+          unrelated_teacher_status, unrelated_teacher_body = get(unrelated_teacher, FILE)
+          assert unrelated_teacher_status != 200 and SENTINEL not in unrelated_teacher_body, "An unrelated Course Creator received the attachment"
+          api_unrelated_status, api_unrelated_body = get_download_api(unrelated_teacher, uploaded["file_url"])
+          assert api_unrelated_status != 200 and SENTINEL not in api_unrelated_body, "An unrelated Course Creator downloaded homework through the Frappe file API"
+
+          public_status, public_body = get(guest, PUBLIC_FILE)
+          assert public_status != 200 and SENTINEL not in public_body, "Private homework bytes were reachable through /files/"
+          print("HTTP upload with is_private=0 was stored privately; direct URL denied to Guest, another student, unrelated Course Creator and /files path; allowed to owner and assigned teacher")
           PY
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.cleanup_private_assignment_file_probe'
       - name: Run synthetic Frappe integration and privacy tests
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_desk_users'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_author_workspace'
+          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_file_privacy'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module lms.tests.security.test_course_authoring_scope'
           # The single upstream same-transaction upload test passes its assertions but
           # Frappe's rollback callback then tries to move a file already removed by its
