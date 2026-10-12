@@ -36,6 +36,7 @@ repos:
       - id: ruff
         name: "Run ruff linter"
       - id: ruff-format
+        exclude: ^over-u/apps/over_u/over_u/test_localization\.py$
         name: "Run ruff formatter"
 
   - repo: https://github.com/pre-commit/mirrors-prettier

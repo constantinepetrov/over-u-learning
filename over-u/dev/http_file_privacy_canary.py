@@ -8,7 +8,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
 
-
 BASE = "http://over-u.localhost:8000"
 SENTINEL = b"OVER_U_SYNTHETIC_HTTP_UPLOAD"
 PASS = os.environ["OVER_U_DEMO_PASSWORD"]
@@ -35,7 +34,9 @@ def request(client_, path, data=None, headers=None):
 
 
 def api(client_, method, params, http_method="POST"):
-	encoded = urlencode({key: json.dumps(value) if isinstance(value, (dict, list)) else value for key, value in params.items()})
+	encoded = urlencode(
+		{key: json.dumps(value) if isinstance(value, dict | list) else value for key, value in params.items()}
+	)
 	if http_method == "GET":
 		status, body, _headers = request(client_, f"/api/method/{method}?{encoded}")
 	else:
@@ -54,7 +55,9 @@ def api(client_, method, params, http_method="POST"):
 def login(email):
 	client_ = client()
 	status, payload = api(client_, "login", {"usr": email, "pwd": PASS})
-	assert status == 200 and payload.get("message") == "Logged In", f"Synthetic login failed for {email}: HTTP {status}"
+	assert (
+		status == 200 and payload.get("message") == "Logged In"
+	), f"Synthetic login failed for {email}: HTTP {status}"
 	return client_
 
 
@@ -141,18 +144,28 @@ def main():
 	uploaded = json.loads(uploaded_body).get("message", {})
 	file_url = uploaded.get("file_url")
 	file_name = uploaded.get("name")
-	assert uploaded.get("is_private") in (1, True), f"upload_file(is_private=0) did not force File.is_private=1: {uploaded}"
-	assert file_url and file_url.startswith("/private/files/"), f"Homework upload was not stored under /private/files/: {file_url!r}"
+	assert uploaded.get("is_private") in (
+		1,
+		True,
+	), f"upload_file(is_private=0) did not force File.is_private=1: {uploaded}"
+	assert file_url and file_url.startswith(
+		"/private/files/"
+	), f"Homework upload was not stored under /private/files/: {file_url!r}"
 
 	# Simulate the ordinary form save after its upload field returns a URL.
 	status, saved = api(
 		owner,
 		"frappe.client.set_value",
-		{"doctype": "LMS Assignment Submission", "name": submission_name, "fieldname": "assignment_attachment", "value": file_url},
+		{
+			"doctype": "LMS Assignment Submission",
+			"name": submission_name,
+			"fieldname": "assignment_attachment",
+			"value": file_url,
+		},
 	)
-	assert status == 200 and saved.get("message", {}).get("assignment_attachment") == file_url, (
-		f"Student could not save the uploaded attachment field through the normal document API: HTTP {status}"
-	)
+	assert (
+		status == 200 and saved.get("message", {}).get("assignment_attachment") == file_url
+	), f"Student could not save the uploaded attachment field through the normal document API: HTTP {status}"
 
 	clients = {
 		"owner": owner,
@@ -167,47 +180,71 @@ def main():
 	for label, session in (("Guest", client()), *clients.items()):
 		status, body, _headers = request(session, private_path)
 		allowed = label in ("owner", "assigned teacher")
-		assert (status == 200 and SENTINEL in body) if allowed else (status != 200 and SENTINEL not in body), (
-			f"Direct private URL policy mismatch for {label}: HTTP {status}"
-		)
+		assert (
+			(status == 200 and SENTINEL in body) if allowed else (status != 200 and SENTINEL not in body)
+		), f"Direct private URL policy mismatch for {label}: HTTP {status}"
 
 		status, body, _headers = request(session, public_path)
 		assert status != 200 or SENTINEL not in body, f"{label} fetched the homework through /files/"
 
-		status, body, _headers = request(session, "/api/method/frappe.handler.download_file?" + urlencode({"file_url": file_url}))
-		allowed = label in ("owner", "assigned teacher")
-		assert (status == 200 and SENTINEL in body) if allowed else (status != 200 and SENTINEL not in body), (
-			f"{file_get_method} policy mismatch for {label}: HTTP {status}"
+		status, body, _headers = request(
+			session, "/api/method/frappe.handler.download_file?" + urlencode({"file_url": file_url})
 		)
+		allowed = label in ("owner", "assigned teacher")
+		assert (
+			(status == 200 and SENTINEL in body) if allowed else (status != 200 and SENTINEL not in body)
+		), f"{file_get_method} policy mismatch for {label}: HTTP {status}"
 
 		status, file_doc = api(session, "frappe.client.get", {"doctype": "File", "name": file_name})
-		assert (status == 200 and file_doc.get("message", {}).get("file_url") == file_url) if allowed else (
-			status != 200 and not has_payload(file_doc) and file_name not in json.dumps(file_doc)
+		assert (
+			(status == 200 and file_doc.get("message", {}).get("file_url") == file_url)
+			if allowed
+			else (status != 200 and not has_payload(file_doc) and file_name not in json.dumps(file_doc))
 		), f"frappe.client.get File access mismatch for {label}: HTTP {status}"
 
 		status, file_rows = api(
 			session,
 			"frappe.client.get_list",
-			{"doctype": "File", "filters": {"name": file_name}, "fields": ["name", "file_url"], "limit_page_length": 10},
+			{
+				"doctype": "File",
+				"filters": {"name": file_name},
+				"fields": ["name", "file_url"],
+				"limit_page_length": 10,
+			},
 		)
 		visible = any(row.get("name") == file_name for row in file_rows.get("message", []))
-		assert visible == allowed, f"frappe.client.get_list File policy mismatch for {label}: HTTP {status}, visible={visible}"
+		assert (
+			visible == allowed
+		), f"frappe.client.get_list File policy mismatch for {label}: HTTP {status}, visible={visible}"
 
-		status, submission = api(session, "frappe.client.get", {"doctype": "LMS Assignment Submission", "name": submission_name})
-		assert (status == 200 and submission.get("message", {}).get("assignment_attachment") == file_url) if allowed else (
-			status != 200 and not has_payload(submission) and file_url not in json.dumps(submission)
+		status, submission = api(
+			session, "frappe.client.get", {"doctype": "LMS Assignment Submission", "name": submission_name}
+		)
+		assert (
+			(status == 200 and submission.get("message", {}).get("assignment_attachment") == file_url)
+			if allowed
+			else (status != 200 and not has_payload(submission) and file_url not in json.dumps(submission))
 		), f"frappe.client.get submission policy mismatch for {label}: HTTP {status}"
 
 		status, submission_rows = api(
 			session,
 			"frappe.client.get_list",
-			{"doctype": "LMS Assignment Submission", "filters": {"name": submission_name}, "fields": ["name"], "limit_page_length": 10},
+			{
+				"doctype": "LMS Assignment Submission",
+				"filters": {"name": submission_name},
+				"fields": ["name"],
+				"limit_page_length": 10,
+			},
 		)
 		visible = any(row.get("name") == submission_name for row in submission_rows.get("message", []))
-		assert visible == allowed, f"frappe.client.get_list submission policy mismatch for {label}: HTTP {status}, visible={visible}"
+		assert (
+			visible == allowed
+		), f"frappe.client.get_list submission policy mismatch for {label}: HTTP {status}, visible={visible}"
 
 	print("HTTP upload_file(is_private=0) created a private attachment using an ordinary student submission.")
-	print("Guest, another student, and unrelated Course Creator were denied; owner and assigned teacher were allowed.")
+	print(
+		"Guest, another student, and unrelated Course Creator were denied; owner and assigned teacher were allowed."
+	)
 	print("Direct URL, handler download, frappe.client.get/get_list, and /files/ path checks passed.")
 
 

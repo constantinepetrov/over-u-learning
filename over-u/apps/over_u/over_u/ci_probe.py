@@ -25,7 +25,9 @@ def create_http_upload_probe():
 				"instructors": [{"instructor": TEACHER}],
 			}
 		).insert()
-		chapter = frappe.get_doc({"doctype": "Course Chapter", "title": "Upload probe", "course": course.name}).insert()
+		chapter = frappe.get_doc(
+			{"doctype": "Course Chapter", "title": "Upload probe", "course": course.name}
+		).insert()
 		course.append("chapters", {"chapter": chapter.name})
 		course.save()
 		assignment = frappe.get_doc(
@@ -56,9 +58,15 @@ def create_http_upload_probe():
 		course_name = course.name
 	else:
 		assignment = frappe.db.get_value("LMS Assignment", {"title": title}, "name")
-		lesson = frappe.db.get_value("Course Lesson", {"course": course_name, "title": "Upload privacy probe"}, "name")
+		lesson = frappe.db.get_value(
+			"Course Lesson", {"course": course_name, "title": "Upload privacy probe"}, "name"
+		)
 
 	if not frappe.db.exists("LMS Enrollment", {"course": course_name, "member": STUDENTS[0]}):
 		frappe.get_doc({"doctype": "LMS Enrollment", "course": course_name, "member": STUDENTS[0]}).insert()
-	return {"course": course_name, "assignment": assignment.name if hasattr(assignment, "name") else assignment,
-		"lesson": lesson.name if hasattr(lesson, "name") else lesson, "student": STUDENTS[0]}
+	return {
+		"course": course_name,
+		"assignment": assignment.name if hasattr(assignment, "name") else assignment,
+		"lesson": lesson.name if hasattr(lesson, "name") else lesson,
+		"student": STUDENTS[0],
+	}
