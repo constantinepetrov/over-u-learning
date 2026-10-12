@@ -255,6 +255,10 @@ def main():
 		),
 	)
 	owner_after_reopen = checkpoint("after_submission_reopen", owner)
+	if not owner_submission_open:
+		# A permission error may clear the failed request's session cookie. Start a
+		# fresh owner session so file authorization is measured independently.
+		owner = login(student_email)
 
 	status, same_url_payload = api(
 		admin,
