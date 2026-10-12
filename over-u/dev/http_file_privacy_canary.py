@@ -150,32 +150,14 @@ def has_sentinel(body):
 def main():
 	student_email = UPLOAD_PROBE["student"]
 	owner = login(student_email)
-	status, inserted = api(
-		owner,
-		"frappe.client.insert",
-		{
-			"doc": {
-				"doctype": "LMS Assignment Submission",
-				"assignment": UPLOAD_PROBE["assignment"],
-				"member": student_email,
-				"type": "Text",
-				"answer": "Synthetic answer created through the ordinary student document API.",
-			},
-		},
-	)
-	assert status == 200, f"Normal student submission insert failed: HTTP {status}"
-	submission_name = message(inserted).get("name")
-	assert submission_name, "Normal student insert returned no submission name"
-	owner_after_insert = checkpoint("after_submission_insert", owner)
-
 	filename = "over-u-http-private-attachment.txt"
 	boundary, body = multipart(
 		{
-			"doctype": "LMS Assignment Submission",
-			"docname": submission_name,
-			"fieldname": "assignment_attachment",
+			"doctype": "",
+			"docname": "",
+			"fieldname": "",
 			"folder": "Home",
-			"is_private": "0",
+			"is_private": "1",
 			"file_url": "",
 			"file_name": filename,
 			"total_file_size": len(SENTINEL),
@@ -200,27 +182,37 @@ def main():
 			"message": upload_error.get("message"),
 		}
 		raise AssertionError(
-			f"Normal upload_file request failed: HTTP {status}, "
+			f"Normal standalone private upload failed: HTTP {status}, "
 			f"server_error={json.dumps(detail, sort_keys=True)}"
 		)
 	uploaded = message(json.loads(uploaded_body))
-	owner_after_upload = checkpoint("after_upload_file", owner)
+	owner_after_upload = checkpoint("after_standalone_upload", owner)
 	file_url, file_name = uploaded.get("file_url"), uploaded.get("name")
-	assert (
-		int(uploaded.get("is_private") or 0) == 1
-	), "upload_file(is_private=0) created a public homework attachment"
-	assert file_url and file_url.startswith("/private/files/"), "Homework upload did not use private storage"
-	assert (
-		uploaded.get("owner") == student_email
-	), "Uploaded File owner did not match the authenticated learner"
-	assert (
-		uploaded.get("attached_to_doctype") == "LMS Assignment Submission"
-		and uploaded.get("attached_to_name") == submission_name
-		and uploaded.get("attached_to_field") == "assignment_attachment"
-	), "upload_file did not link the private File to the submission field"
+	assert int(uploaded.get("is_private") or 0) == 1, "Normal LMS upload was not private"
+	assert file_url and file_url.startswith("/private/files/"), "Normal LMS upload was not stored privately"
+	assert uploaded.get("owner") == student_email, "Uploaded File owner did not match the learner"
+	assert not uploaded.get("attached_to_doctype") and not uploaded.get("attached_to_name"), (
+		"Standalone LMS upload unexpectedly attached the file before submission creation"
+	)
 
-	# upload_file with doctype, docname, and fieldname is the normal LMS upload
-	# path. Reopen the submission to confirm that the field link persisted.
+	status, inserted = api(
+		owner,
+		"frappe.client.insert",
+		{
+			"doc": {
+				"doctype": "LMS Assignment Submission",
+				"assignment": UPLOAD_PROBE["assignment"],
+				"member": student_email,
+				"type": "PDF",
+				"assignment_attachment": file_url,
+			},
+		},
+	)
+	assert status == 200, f"Normal student submission insert failed: HTTP {status}"
+	submission_name = message(inserted).get("name")
+	assert submission_name, "Normal student insert returned no submission name"
+	owner_after_insert = checkpoint("after_submission_insert", owner)
+
 	status, reopened = api(
 		owner,
 		"frappe.client.get",
@@ -229,7 +221,6 @@ def main():
 	owner_submission_open = status == 200 and message(reopened).get("assignment_attachment") == file_url
 	owner_after_reopen = checkpoint("after_submission_reopen", owner)
 
-	# Administrator is used only to enumerate synthetic duplicate-URL records.
 	admin = login("Administrator", ADMIN_PASS)
 	status, same_url_payload = api(
 		admin,
@@ -243,9 +234,17 @@ def main():
 	)
 	duplicate_rows = rows(same_url_payload) if status == 200 else []
 	duplicate_rows = [{key: row.get(key) for key in FILE_FIELDS} for row in duplicate_rows]
-	assert any(
-		row.get("name") == file_name for row in duplicate_rows
-	), "Administrator File listing did not find the just-uploaded synthetic file"
+	assert len(duplicate_rows) == 1, (
+		f"Expected exactly one synthetic File row for the uploaded URL, got {len(duplicate_rows)}"
+	)
+	file_row = duplicate_rows[0]
+	assert (
+		file_row.get("owner") == student_email
+		and int(file_row.get("is_private") or 0) == 1
+		and file_row.get("attached_to_doctype") == "LMS Assignment Submission"
+		and file_row.get("attached_to_name") == submission_name
+		and file_row.get("attached_to_field") == "assignment_attachment"
+	), "Saved assignment did not own a correctly linked private File row"
 
 	clients = {
 		"owner": (owner, student_email),
