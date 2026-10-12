@@ -106,13 +106,9 @@ def main():
 			},
 		},
 	)
-	assert status == 200, (
-		f"Normal student submission insert failed: HTTP {status}: {inserted}"
-	)
+	assert status == 200, f"Normal student submission insert failed: HTTP {status}: {inserted}"
 	submission_name = inserted.get("message", {}).get("name")
-	assert submission_name, (
-		f"Normal student insert returned no submission name: {inserted}"
-	)
+	assert submission_name, f"Normal student insert returned no submission name: {inserted}"
 
 	filename = "over-u-http-private-attachment.txt"
 	boundary, body = multipart(
@@ -140,7 +136,9 @@ def main():
 	uploaded = json.loads(uploaded_body).get("message", {})
 	file_url = uploaded.get("file_url")
 	file_name = uploaded.get("name")
-	assert int(uploaded.get("is_private") or 0) == 1, f"upload_file(is_private=0) did not force File.is_private=1: {uploaded}"
+	assert (
+		int(uploaded.get("is_private") or 0) == 1
+	), f"upload_file(is_private=0) did not force File.is_private=1: {uploaded}"
 	assert file_url and file_url.startswith(
 		"/private/files/"
 	), f"Homework upload was not stored under /private/files/: {file_url!r}"
