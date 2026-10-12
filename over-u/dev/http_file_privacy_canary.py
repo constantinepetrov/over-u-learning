@@ -191,9 +191,9 @@ def main():
 	assert int(uploaded.get("is_private") or 0) == 1, "Normal LMS upload was not private"
 	assert file_url and file_url.startswith("/private/files/"), "Normal LMS upload was not stored privately"
 	assert uploaded.get("owner") == student_email, "Uploaded File owner did not match the learner"
-	assert not uploaded.get("attached_to_doctype") and not uploaded.get("attached_to_name"), (
-		"Standalone LMS upload unexpectedly attached the file before submission creation"
-	)
+	assert not uploaded.get("attached_to_doctype") and not uploaded.get(
+		"attached_to_name"
+	), "Standalone LMS upload unexpectedly attached the file before submission creation"
 
 	status, inserted = api(
 		owner,
@@ -234,9 +234,9 @@ def main():
 	)
 	duplicate_rows = rows(same_url_payload) if status == 200 else []
 	duplicate_rows = [{key: row.get(key) for key in FILE_FIELDS} for row in duplicate_rows]
-	assert len(duplicate_rows) == 1, (
-		f"Expected exactly one synthetic File row for the uploaded URL, got {len(duplicate_rows)}"
-	)
+	assert (
+		len(duplicate_rows) == 1
+	), f"Expected exactly one synthetic File row for the uploaded URL, got {len(duplicate_rows)}"
 	file_row = duplicate_rows[0]
 	assert (
 		file_row.get("owner") == student_email
