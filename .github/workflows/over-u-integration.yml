@@ -815,6 +815,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Build pinned OCI image
+        id: image_build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -836,7 +837,7 @@ jobs:
       - name: Verify image revision and OCI digest
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           lock=over-u/deploy/versions.lock.json
           revision='${{ github.event.pull_request.head.sha || github.sha }}'
           frappe="$(jq -r '.frappe.commit' "$lock")"
@@ -849,20 +850,32 @@ jobs:
           test "$(git hash-object over-u/deploy/frappe-docker/start.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/start.sh"]' "$lock")"
           mkdir -p /tmp/overu-oci
           tar -xf /tmp/overu-image.oci.tar -C /tmp/overu-oci index.json
-          manifest_digest="$(jq -r '.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64") | .digest' /tmp/overu-oci/index.json | head -n1)"
+          archive_digest="sha256:$(sha256sum /tmp/overu-oci/index.json | cut -d' ' -f1)"
+          action_digest='${{ steps.image_build.outputs.digest }}'
+          printf 'OCI archive digest: %s\nBuildx digest: %s\nIndex descriptors: %s\n' \
+            "$archive_digest" "$action_digest" "$(jq -c '.manifests' /tmp/overu-oci/index.json)"
+          if [ -n "$action_digest" ]; then test "$archive_digest" = "$action_digest"; fi
+          manifest_digest="$(jq -r '.manifests[0].digest' /tmp/overu-oci/index.json)"
           manifest_path="blobs/sha256/${manifest_digest#sha256:}"
           tar -xOf /tmp/overu-image.oci.tar "$manifest_path" > /tmp/overu-manifest.json
           test "$(sha256sum /tmp/overu-manifest.json | cut -d' ' -f1)" = "${manifest_digest#sha256:}"
           config_digest="$(jq -r '.config.digest' /tmp/overu-manifest.json)"
           config_path="blobs/sha256/${config_digest#sha256:}"
           tar -xOf /tmp/overu-image.oci.tar "$config_path" > /tmp/overu-config.json
-          test "$(jq -r '.config.Labels["org.opencontainers.image.revision"]' /tmp/overu-config.json)" = "$revision"
-          test "$(jq -r '.config.Labels["io.overu.build.frappe.revision"]' /tmp/overu-config.json)" = "$frappe"
-          test "$(jq -r '.config.Labels["io.overu.build.payments.revision"]' /tmp/overu-config.json)" = "$payments"
-          test "$(jq -r '.config.Labels["io.overu.build.lms.revision"]' /tmp/overu-config.json)" = "$lms"
-          test "$(jq -r '.config.Labels["io.overu.build.frappe-docker.revision"]' /tmp/overu-config.json)" = "$docker_sha"
-          test "$(jq -r '.config.Labels["io.overu.build.frappe.build-image"]' /tmp/overu-config.json)" = "$frappe_build"
-          test "$(jq -r '.config.Labels["io.overu.build.frappe.base-image"]' /tmp/overu-config.json)" = "$frappe_runtime"
+          check_label() {
+            key="$1"
+            expected="$2"
+            actual="$(jq -r --arg key "$key" '.config.Labels[$key] // ""' /tmp/overu-config.json)"
+            printf 'Label %s: %s\n' "$key" "$actual"
+            test "$actual" = "$expected"
+          }
+          check_label org.opencontainers.image.revision "$revision"
+          check_label io.overu.build.frappe.revision "$frappe"
+          check_label io.overu.build.payments.revision "$payments"
+          check_label io.overu.build.lms.revision "$lms"
+          check_label io.overu.build.frappe-docker.revision "$docker_sha"
+          check_label io.overu.build.frappe.build-image "$frappe_build"
+          check_label io.overu.build.frappe.base-image "$frappe_runtime"
           printf 'Revision: %s\nOCI manifest: %s\nImage config: %s\nFrappe: %s\nFrappe build image: %s\nFrappe runtime image: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
             "$revision" "$manifest_digest" "$config_digest" "$frappe" "$frappe_build" "$frappe_runtime" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
           test -s /tmp/overu-image.oci.tar
