@@ -46,7 +46,7 @@ def create_http_upload_probe():
 
 	_user("over-u-unrelated-teacher@example.com", "Unrelated Synthetic Teacher", ["Course Creator"])
 	school = manifest()
-	title = "OVER U CI private upload probe"
+	title = "OVER U CI private PDF upload probe"
 	assignment_name = frappe.db.exists("LMS Assignment", {"title": title})
 	if assignment_name:
 		assignment = frappe.get_doc("LMS Assignment", assignment_name)
@@ -55,10 +55,10 @@ def create_http_upload_probe():
 			{
 				"doctype": "LMS Assignment",
 				"title": title,
-				"type": "Text",
+				"type": "PDF",
 				"grade_assignment": 1,
 				"course": school["course"],
-				"question": "Submit synthetic text for file privacy testing.",
+				"question": "Upload a synthetic PDF for file privacy testing.",
 				"authors": [{"author": TEACHER}],
 			}
 		).insert()
