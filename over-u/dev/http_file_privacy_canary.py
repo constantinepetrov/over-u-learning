@@ -213,28 +213,10 @@ def main():
 	assert submission_name, "Normal student insert returned no submission name"
 	owner_after_insert = checkpoint("after_submission_insert", owner)
 
-	admin = login("Administrator", ADMIN_PASS)
-	admin_status, admin_submission = api(
-		admin,
-		"frappe.client.get",
-		{"doctype": "LMS Assignment Submission", "name": submission_name},
-	)
-	admin_submission_facts = message(admin_submission)
-	print(
-		"Admin synthetic submission facts:",
-		json.dumps(
-			{
-				"status": admin_status,
-				"name": admin_submission_facts.get("name"),
-				"owner": admin_submission_facts.get("owner"),
-				"member": admin_submission_facts.get("member"),
-				"assignment": admin_submission_facts.get("assignment"),
-				"assignment_attachment": admin_submission_facts.get("assignment_attachment"),
-			},
-			sort_keys=True,
-		),
-	)
-
+	# Re-authenticate after the standard upload/insert flow, then identify the session
+	# immediately before reopening the learner's own submission.
+	owner = login(student_email)
+	checkpoint("before_submission_reopen", owner)
 	status, reopened = api(
 		owner,
 		"frappe.client.get",
@@ -259,6 +241,30 @@ def main():
 		# A permission error may clear the failed request's session cookie. Start a
 		# fresh owner session so file authorization is measured independently.
 		owner = login(student_email)
+
+
+	admin = login("Administrator", ADMIN_PASS)
+	admin_status, admin_submission = api(
+		admin,
+		"frappe.client.get",
+		{"doctype": "LMS Assignment Submission", "name": submission_name},
+	)
+	admin_submission_facts = message(admin_submission)
+	print(
+		"Admin synthetic submission facts:",
+		json.dumps(
+			{
+				"status": admin_status,
+				"name": admin_submission_facts.get("name"),
+				"owner": admin_submission_facts.get("owner"),
+				"member": admin_submission_facts.get("member"),
+				"assignment": admin_submission_facts.get("assignment"),
+				"assignment_attachment": admin_submission_facts.get("assignment_attachment"),
+			},
+			sort_keys=True,
+		),
+	)
+
 
 	status, same_url_payload = api(
 		admin,
