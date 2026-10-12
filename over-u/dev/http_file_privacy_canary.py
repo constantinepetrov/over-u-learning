@@ -186,9 +186,10 @@ def main():
 		if not isinstance(file_doc_message, dict):
 			file_doc_message = {}
 		file_doc_visible = status == 200 and file_doc_message.get("file_url") == file_url
-		assert file_doc_message.get("file_url") in (None, file_url), (
-			f"frappe.client.get File returned a different URL for {label}: HTTP {status}"
-		)
+		assert file_doc_message.get("file_url") in (
+			None,
+			file_url,
+		), f"frappe.client.get File returned a different URL for {label}: HTTP {status}"
 		if not allowed:
 			assert (
 				not file_doc_visible
@@ -211,9 +212,9 @@ def main():
 		if not isinstance(rows, list):
 			rows = []
 		visible = any(row.get("name") == file_name for row in rows)
-		assert not visible or allowed, (
-			f"frappe.client.get_list exposed the private File to {label}: HTTP {status}"
-		)
+		assert (
+			not visible or allowed
+		), f"frappe.client.get_list exposed the private File to {label}: HTTP {status}"
 		if visible:
 			assert all(row.get("file_url") == file_url for row in rows)
 		if not allowed:
