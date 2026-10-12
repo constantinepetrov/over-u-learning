@@ -2,7 +2,8 @@ import frappe
 
 from lms.lms.test_helpers import BaseTestUtils
 from over_u.file_privacy import enforce_assignment_attachment_privacy
-from over_u.school import STUDENTS, manifest
+from over_u.policy import as_member
+from over_u.school import STUDENTS, TEACHER, _user, manifest
 
 
 def insert_synthetic_fixture(doc):
@@ -34,6 +35,52 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 			0,
 		)
 		self.assertEqual(frappe.get_meta("LMS Assignment Submission").make_attachments_public, 0)
+
+	def test_submission_read_access_is_limited_to_owner_and_course_author(self):
+		assignment = frappe.get_doc(
+			{
+				"doctype": "LMS Assignment",
+				"title": "Synthetic scoped attachment assignment",
+				"type": "Document",
+				"grade_assignment": 1,
+				"course": self.school["course"],
+				"question": "Synthetic access boundary fixture.",
+				"authors": [{"author": TEACHER}],
+			}
+		).insert()
+		_user("over-u-unrelated-teacher@example.com", "Unrelated Synthetic Teacher", ["Course Creator"])
+		frappe.set_user(STUDENTS[1])
+		submission = frappe.get_doc(
+			{
+				"doctype": "LMS Assignment Submission",
+				"assignment": assignment.name,
+				"member": STUDENTS[1],
+				"type": "Document",
+				"answer": "Synthetic private answer.",
+			}
+		).insert()
+
+		self.assertTrue(frappe.has_permission(submission.doctype, "read", doc=submission, user=STUDENTS[1]))
+		self.assertTrue(frappe.has_permission(submission.doctype, "read", doc=submission, user=TEACHER))
+		self.assertFalse(frappe.has_permission(submission.doctype, "read", doc=submission, user=STUDENTS[0]))
+		self.assertFalse(
+			frappe.has_permission(
+				submission.doctype,
+				"read",
+				doc=submission,
+				user="over-u-unrelated-teacher@example.com",
+			)
+		)
+		with as_member(STUDENTS[1]):
+			self.assertEqual(
+				frappe.get_list(submission.doctype, filters={"name": submission.name}, pluck="name"),
+				[submission.name],
+			)
+		with as_member("over-u-unrelated-teacher@example.com"):
+			self.assertEqual(
+				frappe.get_list(submission.doctype, filters={"name": submission.name}, pluck="name"),
+				[],
+			)
 
 	def test_explicit_public_upload_for_homework_is_saved_privately(self):
 		frappe.set_user(STUDENTS[1])

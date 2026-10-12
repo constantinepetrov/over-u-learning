@@ -31,6 +31,12 @@ doc_events = {
 	},
 	"LMS Course Progress": {"validate": "over_u.policy.validate_progress"},
 }
+has_permission = {
+	"LMS Assignment Submission": "over_u.policy.assignment_submission_has_permission",
+}
+permission_query_conditions = {
+	"LMS Assignment Submission": "over_u.policy.assignment_submission_query",
+}
 
 website_route_rules = [{"from_route": "/school/<path:app_path>", "to_route": "school"}]
 before_request = ["over_u.localization.guest_language"]
