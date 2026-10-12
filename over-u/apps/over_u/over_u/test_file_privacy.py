@@ -101,6 +101,31 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 		self.assertEqual(file_doc.is_private, 1)
 		self.assertTrue(file_doc.file_url.startswith("/private/files/"))
 
+	def test_private_assignment_file_download_permission_uses_submission_scope(self):
+		_user("over-u-unrelated-teacher@example.com", "Unrelated Synthetic Teacher", ["Course Creator"])
+		frappe.set_user(STUDENTS[1])
+		file_doc = frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": "over-u-private-access-boundary.txt",
+				"content": b"synthetic file download authorization",
+				"is_private": 1,
+				"attached_to_doctype": "LMS Assignment Submission",
+				"attached_to_name": self.submission.name,
+				"attached_to_field": "assignment_attachment",
+			}
+		).insert()
+
+		self.assertTrue(file_doc.is_downloadable())
+		for user, expected in (
+			(TEACHER, True),
+			(STUDENTS[0], False),
+			("over-u-unrelated-teacher@example.com", False),
+			("Guest", False),
+		):
+			frappe.set_user(user)
+			self.assertEqual(file_doc.is_downloadable(), expected, f"Unexpected File access for {user}")
+
 	def test_course_asset_can_remain_public(self):
 		file_doc = frappe.get_doc(
 			{
