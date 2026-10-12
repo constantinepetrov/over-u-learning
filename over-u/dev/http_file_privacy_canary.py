@@ -212,7 +212,8 @@ def main():
 		),
 	}
 	guest = client()
-	actors = [*(label, *entry) for label, entry in clients.items()], ("Guest", guest, "Guest")]
+	actors = [(label, *entry) for label, entry in clients.items()]
+	actors.append(("Guest", guest, "Guest"))
 	public_path = "/files/" + file_url.rsplit("/", 1)[-1]
 	results = {}
 
