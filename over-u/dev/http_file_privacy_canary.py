@@ -90,6 +90,16 @@ def assert_identity(client_, expected):
 	)
 	return probe
 
+def checkpoint(label, client_):
+	probe = probe_identity(client_)
+	detail = {"stage": label, "probe": probe}
+	if probe["http"] != 200:
+		detail["cookie_metadata"] = cookie_metadata(client_)
+	print("Owner session checkpoint:", json.dumps(detail, sort_keys=True))
+	return probe
+
+
+
 
 def login(email, password=PASS):
 	client_ = client()
@@ -157,6 +167,7 @@ def main():
 	assert status == 200, f"Normal student submission insert failed: HTTP {status}"
 	submission_name = message(inserted).get("name")
 	assert submission_name, "Normal student insert returned no submission name"
+	owner_after_insert = checkpoint("after_submission_insert", owner)
 
 	filename = "over-u-http-private-attachment.txt"
 	boundary, body = multipart(
@@ -182,6 +193,7 @@ def main():
 	)
 	assert status == 200, f"Normal upload_file request failed: HTTP {status}"
 	uploaded = message(json.loads(uploaded_body))
+	owner_after_upload = checkpoint("after_upload_file", owner)
 	file_url, file_name = uploaded.get("file_url"), uploaded.get("name")
 	assert (
 		int(uploaded.get("is_private") or 0) == 1
@@ -204,6 +216,7 @@ def main():
 		{"doctype": "LMS Assignment Submission", "name": submission_name},
 	)
 	owner_submission_open = status == 200 and message(reopened).get("assignment_attachment") == file_url
+	owner_after_reopen = checkpoint("after_submission_reopen", owner)
 
 	# Administrator is used only to enumerate synthetic duplicate-URL records.
 	admin = login("Administrator", ADMIN_PASS)
@@ -354,6 +367,17 @@ def main():
 		json.dumps({key: uploaded.get(key) for key in FILE_FIELDS}, sort_keys=True),
 	)
 	print("Same-URL File rows:", json.dumps(duplicate_rows, sort_keys=True))
+	print(
+		"Owner session checkpoints:",
+		json.dumps(
+			{
+				"after_submission_insert": owner_after_insert,
+				"after_upload_file": owner_after_upload,
+				"after_submission_reopen": owner_after_reopen,
+			},
+			sort_keys=True,
+		),
+	)
 	print("HTTP authorization matrix:", json.dumps(results, sort_keys=True))
 	if len(duplicate_rows) != 1:
 		violations.append(f"Ambiguous same-URL File count: {len(duplicate_rows)}")
