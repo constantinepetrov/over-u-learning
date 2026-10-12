@@ -4,7 +4,6 @@ import frappe
 from frappe import _
 from frappe.core.doctype.file.file import File
 
-
 ASSIGNMENT_SUBMISSION = "LMS Assignment Submission"
 
 
@@ -56,9 +55,7 @@ class PrivateAssignmentFile(File):
 					frappe.PermissionError,
 				)
 			if not self.file_url.startswith("/private/files/"):
-				frappe.throw(
-					_("Homework attachments must use private file storage."), frappe.PermissionError
-				)
+				frappe.throw(_("Homework attachments must use private file storage."), frappe.PermissionError)
 			self.is_private = 1
 
 
@@ -66,7 +63,5 @@ def enforce_assignment_attachment_privacy():
 	"""Keep upstream DocType sync from restoring public attachment behavior."""
 	if not frappe.db.exists("DocType", ASSIGNMENT_SUBMISSION):
 		return
-	frappe.db.set_value(
-		"DocType", ASSIGNMENT_SUBMISSION, "make_attachments_public", 0, update_modified=False
-	)
+	frappe.db.set_value("DocType", ASSIGNMENT_SUBMISSION, "make_attachments_public", 0, update_modified=False)
 	frappe.clear_cache(doctype=ASSIGNMENT_SUBMISSION)

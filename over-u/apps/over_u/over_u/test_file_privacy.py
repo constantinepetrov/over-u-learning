@@ -1,4 +1,5 @@
 import frappe
+
 from lms.lms.test_helpers import BaseTestUtils
 
 from over_u.file_privacy import enforce_assignment_attachment_privacy
@@ -21,9 +22,7 @@ class TestAssignmentAttachmentPrivacy(BaseTestUtils):
 		).insert(ignore_permissions=True)
 
 	def test_doctype_metadata_is_kept_private(self):
-		frappe.db.set_value(
-			"DocType", "LMS Assignment Submission", "make_attachments_public", 1
-		)
+		frappe.db.set_value("DocType", "LMS Assignment Submission", "make_attachments_public", 1)
 		enforce_assignment_attachment_privacy()
 		self.assertEqual(
 			frappe.db.get_value("DocType", "LMS Assignment Submission", "make_attachments_public"),
