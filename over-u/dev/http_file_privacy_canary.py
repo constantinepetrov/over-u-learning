@@ -30,7 +30,7 @@ def request(client_, path, data=None, headers=None):
 		with client_.open(Request(BASE + path, data=data, headers=headers or {}), timeout=30) as response:
 			return response.status, response.read(), response.headers
 	except HTTPError as error:
-	return error.code, error.read(), error.headers
+		return error.code, error.read(), error.headers
 	except URLError as error:
 		raise AssertionError(f"HTTP request failed for {path}: {error}") from error
 
