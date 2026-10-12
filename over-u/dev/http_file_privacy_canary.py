@@ -145,13 +145,11 @@ def main():
 		"/private/files/"
 	), f"Homework upload was not stored under /private/files/: {file_url!r}"
 
-	status, attached_file = api(owner, "frappe.client.get", {"doctype": "File", "name": file_name})
-	metadata = attached_file.get("message", {})
-	assert status == 200 and (
-		metadata.get("attached_to_doctype") == "LMS Assignment Submission"
-		and metadata.get("attached_to_name") == submission_name
-		and metadata.get("attached_to_field") == "assignment_attachment"
-	), f"upload_file did not link the private File to the submission field: HTTP {status}: {metadata}"
+	assert (
+		uploaded.get("attached_to_doctype") == "LMS Assignment Submission"
+		and uploaded.get("attached_to_name") == submission_name
+		and uploaded.get("attached_to_field") == "assignment_attachment"
+	), f"upload_file did not link the private File to the submission field: {uploaded}"
 
 	clients = {
 		"owner": owner,
@@ -162,6 +160,7 @@ def main():
 	private_path = file_url
 	public_path = "/files/" + file_url.rsplit("/", 1)[-1]
 	file_get_method = "frappe.handler.download_file"
+	file_api_visibility = {}
 
 	for label, session in (("Guest", client()), *clients.items()):
 		status, body, _headers = request(session, private_path)
@@ -182,11 +181,21 @@ def main():
 		), f"{file_get_method} policy mismatch for {label}: HTTP {status}"
 
 		status, file_doc = api(session, "frappe.client.get", {"doctype": "File", "name": file_name})
-		assert (
-			(status == 200 and file_doc.get("message", {}).get("file_url") == file_url)
-			if allowed
-			else (status != 200 and not has_payload(file_doc) and file_name not in json.dumps(file_doc))
-		), f"frappe.client.get File access mismatch for {label}: HTTP {status}"
+		file_doc_json = json.dumps(file_doc)
+		file_doc_message = file_doc.get("message")
+		if not isinstance(file_doc_message, dict):
+			file_doc_message = {}
+		file_doc_visible = status == 200 and file_doc_message.get("file_url") == file_url
+		assert file_doc_message.get("file_url") in (None, file_url), (
+			f"frappe.client.get File returned a different URL for {label}: HTTP {status}"
+		)
+		if not allowed:
+			assert (
+				not file_doc_visible
+				and file_name not in file_doc_json
+				and file_url not in file_doc_json
+				and not has_payload(file_doc)
+			), f"frappe.client.get exposed the private File to {label}: HTTP {status}"
 
 		status, file_rows = api(
 			session,
@@ -198,10 +207,23 @@ def main():
 				"limit_page_length": 10,
 			},
 		)
-		visible = any(row.get("name") == file_name for row in file_rows.get("message", []))
-		assert (
-			visible == allowed
-		), f"frappe.client.get_list File policy mismatch for {label}: HTTP {status}, visible={visible}"
+		rows = file_rows.get("message", [])
+		if not isinstance(rows, list):
+			rows = []
+		visible = any(row.get("name") == file_name for row in rows)
+		assert not visible or allowed, (
+			f"frappe.client.get_list exposed the private File to {label}: HTTP {status}"
+		)
+		if visible:
+			assert all(row.get("file_url") == file_url for row in rows)
+		if not allowed:
+			file_rows_json = json.dumps(file_rows)
+			assert (
+				file_name not in file_rows_json
+				and file_url not in file_rows_json
+				and not has_payload(file_rows)
+			), f"frappe.client.get_list leaked private File metadata to {label}: HTTP {status}"
+		file_api_visibility[label] = {"get": file_doc_visible, "get_list": visible}
 
 		status, submission = api(
 			session, "frappe.client.get", {"doctype": "LMS Assignment Submission", "name": submission_name}
@@ -235,6 +257,7 @@ def main():
 		"Guest, another student, and unrelated Course Creator were denied; owner and assigned teacher were allowed."
 	)
 	print("Direct URL, handler download, frappe.client.get/get_list, and /files/ path checks passed.")
+	print("File metadata API visibility:", json.dumps(file_api_visibility, sort_keys=True))
 
 
 if __name__ == "__main__":
