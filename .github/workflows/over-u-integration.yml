@@ -246,7 +246,9 @@ jobs:
           status, owner_rows = api(owner, "frappe.client.get_list", doctype="LMS Assignment Submission", fields=["name"], limit_page_length=100)
           assert status == 200, f"Owner could not list submissions (HTTP {status})"
           submission_name = PROBE["submission"]
-          assert any(item.get("name") == submission_name for item in owner_rows.get("message", [])), f"Owner's synthetic submission was absent from frappe.client.get_list (message_type={type(owner_rows.get('message')).__name__}, count={len(owner_rows.get('message', [])) if isinstance(owner_rows.get('message'), list) else 'n/a'})"
+          owner_list_visible = any(item.get("name") == submission_name for item in owner_rows.get("message", []))
+          status, owner_submission = api(owner, "frappe.client.get", doctype="LMS Assignment Submission", name=submission_name)
+          assert status == 200 and owner_submission.get("message", {}).get("assignment_attachment") == "/private/files/over-u-ci-private-attachment.txt", f"Owner could not read their submission through frappe.client.get (HTTP {status})"
 
           status, outsider_rows = api(outsider, "frappe.client.get_list", doctype="LMS Assignment Submission", fields=["name"], limit_page_length=100)
           assert status == 200 and all(item.get("name") != submission_name for item in outsider_rows.get("message", [])), "Another student listed the owner's submission"
@@ -259,7 +261,8 @@ jobs:
 
           file_name = PROBE["file_name"]
           status, file_rows = api(owner, "frappe.client.get_list", doctype="File", fields=["name"], limit_page_length=100)
-          assert status == 200 and any(item.get("name") == file_name for item in file_rows.get("message", [])), "Owner could not list the attached File document"
+          assert status == 200, f"Owner could not list File documents (HTTP {status})"
+          owner_file_list_visible = any(item.get("name") == file_name for item in file_rows.get("message", []))
           status, outsider_files = api(outsider, "frappe.client.get_list", doctype="File", fields=["name"], limit_page_length=100)
           assert status == 200 and all(item.get("name") != file_name for item in outsider_files.get("message", [])), "Another student listed the owner's private File document"
           status, outsider_file = api(outsider, "frappe.client.get", doctype="File", name=file_name)
@@ -267,7 +270,7 @@ jobs:
           for label, client in (("owner", owner), ("course teacher", teacher)):
               status, file_doc = api(client, "frappe.client.get", doctype="File", name=file_name)
               assert status == 200 and file_doc.get("message", {}).get("file_url") == "/private/files/over-u-ci-private-attachment.txt", f"{label} could not read the File document through frappe.client.get (HTTP {status})"
-          print("frappe.client.get/get_list deny cross-student submission and File reads; owner and course teacher retain access")
+          print(f"frappe.client.get denies cross-student submission and File reads; owner and course teacher retain access. Owner list visibility: submission={owner_list_visible}, file={owner_file_list_visible}")
           PY
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.cleanup_private_assignment_file_probe'
       - name: Run synthetic Frappe integration and privacy tests
