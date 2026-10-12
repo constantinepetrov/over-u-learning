@@ -237,6 +237,7 @@ def main():
 	actors.append(("Guest", guest, "Guest"))
 	public_path = "/files/" + file_url.rsplit("/", 1)[-1]
 	results = {}
+	session_violations = []
 
 	for label, session, identity in actors:
 		# Probe after setup and immediately before each file route. A failing probe
@@ -258,16 +259,16 @@ def main():
 			probe = {"http": None, "identity": "Guest"} if label == "Guest" else probe_identity(session)
 			identity_checks.append({"before": route_name, **probe})
 			if label != "Guest" and probe != {"http": 200, "identity": identity}:
+				detail = {"actor": label, "before": route_name, "probe": probe}
+				session_violations.append(json.dumps(detail, sort_keys=True))
 				print(
 					"Session probe failure:",
 					json.dumps(
 						{
-							"actor": label,
-						"before": route_name,
-						"probe": probe,
-						"cookie_metadata": cookie_metadata(session),
-					},
-					 sort_keys=True,
+							**detail,
+							"cookie_metadata": cookie_metadata(session),
+						},
+						sort_keys=True,
 					),
 				)
 			status, body, _headers = route()
@@ -327,7 +328,7 @@ def main():
 			"public_files_url": (public_status, has_sentinel(public_body)),
 		}
 		results[label] = private_results
-	violations = []
+	violations = list(session_violations)
 	if not owner_submission_open:
 		violations.append("owner submission attachment reference did not survive reopen")
 	for label, method_results in results.items():
