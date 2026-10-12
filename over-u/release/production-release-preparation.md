@@ -7,9 +7,10 @@ This document is a plan for a separately authorized release. No production VM, d
 Run from an approved, read-only IAP session. Record only version strings, booleans, counts, and opaque identifiers needed to reproduce checks. Do not print passwords, cookies, lesson text, assignment answers, or file contents.
 
 1. Record VM state, deployed Git SHAs, container image digests, Frappe/LMS/over_u versions, site name, migration state, asset build timestamp, disk and memory summaries.
-2. Read the effective `LMS Settings.make_attachments_public` value and confirm it is false. Inspect only the `File.is_private` flag and attachment relationship metadata for a known synthetic probe file. Do not enumerate or download learner submissions.
-3. For a production HTTP privacy check, use an already-existing synthetic canary attachment only. Check its direct URL as Guest, as an unrelated synthetic learner, as the owner, and as an authorized course teacher. Require denial for the first two and authorized response for the latter two; compare a synthetic marker hash rather than displaying response bodies. If no synthetic canary exists, stop and request separate approval before creating one. Delete the canary only under that separate approval.
-4. Keep this audit read-only: no login reset, user/role edits, setting changes, migrations, writes, restarts, backup creation, or file download.
+2. Check the **LMS Assignment Submission DocType metadata**, NOT `LMS Settings`. Read the effective runtime `frappe.get_meta("LMS Assignment Submission").make_attachments_public` and the stored `DocType.make_attachments_public` value for that DocType. Both must be false/0; any discrepancy is a release blocker until explained. Confirm installed code and metadata migrations agree. Do not change either value during this audit.
+3. Count (aggregate counts only; no student names, filenames, file URLs, answers, or contents) legacy `File` rows attached to `LMS Assignment Submission` where `is_private=0`, along with any other known homework-attachment association patterns. A safe current DocType flag does NOT retroactively privatize previously public uploads. Any positive or indeterminate count blocks learner submissions until a separately approved remediation, complete off-VM backup, and HTTP retest are finished. Inspect only `File.is_private` and attachment relationship metadata for an already-existing synthetic probe file.
+4. For a production HTTP privacy check, use an already-existing synthetic canary attachment only. Check its direct URL as Guest, as an unrelated synthetic learner, as the owner, and as an authorized course teacher. Require denial for the first two and authorized response for the latter two; compare a synthetic marker hash rather than displaying response bodies. If no synthetic canary exists, stop and request separate approval before creating one. Delete the canary only under that separate approval. A successful canary check does not supersede the legacy-public-file count.
+5. Keep this audit read-only: no login reset, user/role edits, setting changes, migrations, writes, restarts, backup creation, or file download.
 
 ## Backup and restore rehearsal
 
@@ -30,6 +31,7 @@ Run from an approved, read-only IAP session. Record only version strings, boolea
 ## Current release gates
 
 - Production read-only audit: not performed in this phase.
+- Effective `LMS Assignment Submission` metadata and legacy public homework-attachment count in production: unknown; block learner submissions until verified.
 - Production backup and full restore rehearsal: not performed in this phase.
 - Deployment, migration, user/settings changes, and PR merge: not authorized.
 - CI and isolated synthetic checks are evidence for the candidate only, not proof of production state.
