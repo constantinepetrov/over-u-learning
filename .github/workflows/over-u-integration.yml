@@ -793,7 +793,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Set up Docker Buildx
@@ -807,6 +807,8 @@ jobs:
           lock=over-u/deploy/versions.lock.json
           {
             echo "frappe=$(jq -r '.frappe.commit' "$lock")"
+            echo "frappe_build=$(jq -r '.frappe.build_image' "$lock")"
+            echo "frappe_runtime=$(jq -r '.frappe.runtime_image' "$lock")"
             echo "payments=$(jq -r '.payments.commit' "$lock")"
             echo "lms=$(jq -r '.lms.commit' "$lock")"
             echo "frappe_docker=$(jq -r '.frappe_docker.commit' "$lock")"
@@ -821,8 +823,10 @@ jobs:
           push: false
           outputs: type=oci,dest=/tmp/overu-image.oci.tar
           build-args: |
-            SOURCE_REVISION=${{ github.event.pull_request.head.sha }}
+            SOURCE_REVISION=${{ github.event.pull_request.head.sha || github.sha }}
             FRAPPE_COMMIT=${{ steps.pins.outputs.frappe }}
+            FRAPPE_BUILD_IMAGE=${{ steps.pins.outputs.frappe_build }}
+            FRAPPE_BASE_IMAGE=${{ steps.pins.outputs.frappe_runtime }}
             PAYMENTS_COMMIT=${{ steps.pins.outputs.payments }}
             LMS_COMMIT=${{ steps.pins.outputs.lms }}
             FRAPPE_DOCKER_COMMIT=${{ steps.pins.outputs.frappe_docker }}
@@ -834,11 +838,13 @@ jobs:
         run: |
           set -euo pipefail
           lock=over-u/deploy/versions.lock.json
-          revision='${{ github.event.pull_request.head.sha }}'
+          revision='${{ github.event.pull_request.head.sha || github.sha }}'
           frappe="$(jq -r '.frappe.commit' "$lock")"
           payments="$(jq -r '.payments.commit' "$lock")"
           lms="$(jq -r '.lms.commit' "$lock")"
           docker_sha="$(jq -r '.frappe_docker.commit' "$lock")"
+          frappe_build="$(jq -r '.frappe.build_image' "$lock")"
+          frappe_runtime="$(jq -r '.frappe.runtime_image' "$lock")"
           test "$(git hash-object over-u/deploy/frappe-docker/main-entrypoint.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/main-entrypoint.sh"]' "$lock")"
           test "$(git hash-object over-u/deploy/frappe-docker/start.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/start.sh"]' "$lock")"
           mkdir -p /tmp/overu-oci
@@ -855,6 +861,8 @@ jobs:
           test "$(jq -r '.config.Labels["io.overu.build.payments.revision"]' /tmp/overu-config.json)" = "$payments"
           test "$(jq -r '.config.Labels["io.overu.build.lms.revision"]' /tmp/overu-config.json)" = "$lms"
           test "$(jq -r '.config.Labels["io.overu.build.frappe-docker.revision"]' /tmp/overu-config.json)" = "$docker_sha"
-          printf 'Revision: %s\nOCI manifest: %s\nImage config: %s\nFrappe: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
-            "$revision" "$manifest_digest" "$config_digest" "$frappe" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
+          test "$(jq -r '.config.Labels["io.overu.build.frappe.build-image"]' /tmp/overu-config.json)" = "$frappe_build"
+          test "$(jq -r '.config.Labels["io.overu.build.frappe.base-image"]' /tmp/overu-config.json)" = "$frappe_runtime"
+          printf 'Revision: %s\nOCI manifest: %s\nImage config: %s\nFrappe: %s\nFrappe build image: %s\nFrappe runtime image: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
+            "$revision" "$manifest_digest" "$config_digest" "$frappe" "$frappe_build" "$frappe_runtime" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
           test -s /tmp/overu-image.oci.tar
