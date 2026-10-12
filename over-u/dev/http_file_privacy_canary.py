@@ -151,6 +151,18 @@ def main():
 		and uploaded.get("attached_to_field") == "assignment_attachment"
 	), f"upload_file did not link the private File to the submission field: {uploaded}"
 
+	status, parent = api(
+		owner,
+		"frappe.client.get",
+		{"doctype": "LMS Assignment Submission", "name": submission_name},
+	)
+	assert status == 200, (
+		f"Student cannot read their own submission after upload: HTTP {status}: {parent}"
+	)
+	assert parent.get("message", {}).get("member") == student_email, (
+		f"Submission owner mismatch after upload: {parent}"
+	)
+
 	clients = {
 		"owner": owner,
 		"other student": login("student2@over-u.example.com"),
@@ -167,7 +179,12 @@ def main():
 		allowed = label in ("owner", "assigned teacher")
 		assert (
 			(status == 200 and SENTINEL in body) if allowed else (status != 200 and SENTINEL not in body)
-		), f"Direct private URL policy mismatch for {label}: HTTP {status}"
+		), (
+			f"Direct private URL policy mismatch for {label}: HTTP {status}; "
+			f"response={body[:500]!r}; uploaded_owner={uploaded.get('owner')!r}; "
+			f"attached_to={uploaded.get('attached_to_doctype')!r}/"
+			f"{uploaded.get('attached_to_name')!r}"
+		)
 
 		status, body, _headers = request(session, public_path)
 		assert status != 200 or SENTINEL not in body, f"{label} fetched the homework through /files/"
