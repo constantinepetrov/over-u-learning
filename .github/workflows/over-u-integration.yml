@@ -976,7 +976,7 @@ jobs:
           docker run --rm --user 0:0 \
             -v overu-production-smoke-assets:/assets \
             --entrypoint /bin/bash "overu-production:${revision}" -lc \
-            'cp -a /home/frappe/frappe-bench/assets/. /assets/'
+            'cp -aL /home/frappe/frappe-bench/assets/. /assets/'
           docker run -d --name overu-smoke-web --network overu-production-smoke \
             -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
             -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
@@ -1018,6 +1018,9 @@ jobs:
             sleep 2
           done
           curl --fail --silent -H 'Host: over-u.localhost' http://127.0.0.1:18000/login >/dev/null
+          curl --fail --silent -H 'Host: over-u.localhost' \
+            http://127.0.0.1:18000/assets/lms/frontend/index.html >/tmp/overu-production-smoke-lms-index.html
+          rg -q '/assets/lms/frontend/assets/index-' /tmp/overu-production-smoke-lms-index.html
 
       - name: Install isolated browser smoke-test tools
         run: |
