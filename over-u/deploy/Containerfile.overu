@@ -39,6 +39,7 @@ RUN : "${CACHE_BUST}" && \
   git clone https://github.com/constantinepetrov/over-u-learning.git apps/lms && \
   git -C apps/lms fetch --depth=1 origin "${LMS_COMMIT}" && \
   git -C apps/lms checkout --detach FETCH_HEAD && \
+  test "$(git -C apps/lms rev-parse HEAD)" = "${LMS_COMMIT}" && \
   printf '{"socketio_port":9000}' > sites/common_site_config.json && \
   find apps -mindepth 1 -path '*/.git' -type d -prune -exec rm -rf {} +
 
@@ -53,6 +54,7 @@ RUN cd /home/frappe/frappe-bench && \
   rm -rf /home/frappe/frontend/node_modules/@framework/ui && \
   ln -s /home/frappe/frappe-bench/apps/frappe/ui /home/frappe/frontend/node_modules/@framework/ui && \
   bench build && \
+  cd apps/lms && yarn build && cd /home/frappe/frappe-bench && \
   rm -rf sites/assets/lms sites/assets/over_u && \
   ln -s /home/frappe/frappe-bench/apps/lms/lms/public sites/assets/lms && \
   ln -s /home/frappe/frappe-bench/apps/over_u/over_u/public sites/assets/over_u && \
