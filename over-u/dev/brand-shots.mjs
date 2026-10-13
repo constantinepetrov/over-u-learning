@@ -53,6 +53,24 @@ try {
 	await shot("03-courses", "/lms/courses");
 	await shot("04-course-new", "/lms/courses/new");
 	await shot("05-course-page", "/lms/courses/over-u");
+	try {
+		await page.goto(`${base}/lms/courses/over-u`, { waitUntil: "networkidle" });
+		await page.getByText("Редактор курса").first().click({ timeout: 8000 });
+		await page.waitForTimeout(2500);
+		await page.screenshot({ path: `${out}/05b-course-editor.png` });
+		shots.push("05b-course-editor");
+	} catch (error) {
+		console.log(`course editor shot failed: ${error.message}`);
+	}
+	await shot("05c-lesson", "/lms/courses/over-u/learn/1-1", 4000);
+	try {
+		await page.getByRole("button", { name: /Редактировать|Edit/ }).first().click({ timeout: 6000 });
+		await page.waitForTimeout(3000);
+		await page.screenshot({ path: `${out}/05d-lesson-edit.png` });
+		shots.push("05d-lesson-edit");
+	} catch (error) {
+		console.log(`lesson edit shot failed: ${error.message}`);
+	}
 	await shot("06-quizzes", "/lms/quizzes");
 	await shot("07-assignments", "/lms/assignments");
 	await shot("08-batches", "/lms/batches");
