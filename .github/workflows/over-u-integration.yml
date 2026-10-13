@@ -862,6 +862,8 @@ jobs:
           docker_sha="$(jq -r '.frappe_docker.commit' "$lock")"
           frappe_build="$(jq -r '.frappe.build_image' "$lock")"
           frappe_runtime="$(jq -r '.frappe.runtime_image' "$lock")"
+          containerfile_lms="$(sed -n 's/^ARG LMS_COMMIT=//p' over-u/deploy/Containerfile.overu | head -n 1)"
+          test "$containerfile_lms" = "$lms"
           test "$(git hash-object over-u/deploy/frappe-docker/main-entrypoint.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/main-entrypoint.sh"]' "$lock")"
           test "$(git hash-object over-u/deploy/frappe-docker/start.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/start.sh"]' "$lock")"
           mkdir -p /tmp/overu-oci
@@ -902,3 +904,87 @@ jobs:
           printf 'Revision: %s\nOCI image index: %s\nOCI image manifest: %s\nImage config: %s\nFrappe: %s\nFrappe build image: %s\nFrappe runtime image: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
             "$revision" "$index_digest" "$manifest_digest" "$config_digest" "$frappe" "$frappe_build" "$frappe_runtime" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
           test -s /tmp/overu-image.oci.tar
+
+      - name: Load the exact OCI image into the local Docker engine
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq skopeo
+          revision='${{ github.event.pull_request.head.sha || github.sha }}'
+          skopeo copy oci-archive:/tmp/overu-image.oci.tar "docker-daemon:overu-production:${revision}"
+          docker image inspect "overu-production:${revision}" --format '{{json .Config.Labels}}' | tee /tmp/overu-production-labels.json
+          test "$(jq -r '."org.opencontainers.image.revision"' /tmp/overu-production-labels.json)" = "$revision"
+
+      - name: Start isolated services for production image smoke test
+        run: |
+          set -euo pipefail
+          revision='${{ github.event.pull_request.head.sha || github.sha }}'
+          docker network create overu-production-smoke
+          docker volume create overu-production-smoke-sites
+          docker run -d --name overu-smoke-db --network overu-production-smoke --network-alias mariadb \
+            -e MARIADB_ROOT_PASSWORD=synthetic-ci-db-password \
+            mariadb:10.11 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+          docker run -d --name overu-smoke-redis --network overu-production-smoke --network-alias redis \
+            redis:7-alpine redis-server --save '' --appendonly no
+          for attempt in $(seq 1 60); do
+            if docker exec overu-smoke-db healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          docker exec overu-smoke-db healthcheck.sh --connect --innodb_initialized
+          docker run --rm --network overu-production-smoke \
+            -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            -e OVER_U_DB_PASSWORD=synthetic-ci-db-password \
+            -e OVER_U_ADMIN_PASSWORD=synthetic-ci-admin-password \
+            --entrypoint /bin/bash "overu-production:${revision}" -lc '
+              set -euo pipefail
+              cd /home/frappe/frappe-bench
+              bench new-site over-u.localhost --db-root-username root \
+                --mariadb-root-password "$OVER_U_DB_PASSWORD" --admin-password "$OVER_U_ADMIN_PASSWORD" \
+                --no-mariadb-socket --db-host mariadb --db-port 3306
+              bench set-redis-cache-host redis://redis:6379
+              bench set-redis-queue-host redis://redis:6379
+              bench set-redis-socketio-host redis://redis:6379
+              bench --site over-u.localhost install-app payments
+              bench --site over-u.localhost install-app lms
+              bench --site over-u.localhost install-app over_u
+              OVER_U_DEMO_PASSWORD=synthetic-ci-author-password bench --site over-u.localhost execute over_u.school.seed
+            '
+          docker run -d --name overu-smoke-web --network overu-production-smoke \
+            -p 127.0.0.1:18000:8000 \
+            -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            -e DB_HOST=mariadb -e DB_PORT=3306 \
+            -e REDIS_CACHE=redis://redis:6379 -e REDIS_QUEUE=redis://redis:6379 \
+            -e REDIS_SOCKETIO=redis://redis:6379 \
+            "overu-production:${revision}"
+          for attempt in $(seq 1 60); do
+            if curl --silent --output /dev/null --write-out '%{http_code}' \
+              -H 'Host: over-u.localhost' http://127.0.0.1:18000/login | grep -qx 200; then break; fi
+            sleep 2
+          done
+          curl --fail --silent -H 'Host: over-u.localhost' http://127.0.0.1:18000/login >/dev/null
+
+      - name: Verify branded Course Studio in the production image
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/over-u-playwright/node_modules/.bin/playwright" install --with-deps chromium
+          OVER_U_BASE_URL=http://over-u.localhost:18000 \
+          OVER_U_SMOKE_USER=teacher@over-u.example.com \
+          OVER_U_SMOKE_PASSWORD=synthetic-ci-author-password \
+            node over-u/dev/production-image-smoke.mjs | tee /tmp/overu-production-image-smoke.json
+          cat /tmp/overu-production-image-smoke.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save production image browser proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-production-image-proof-${{ github.event.pull_request.head.sha || github.sha }}
+          path: /tmp/overu-production-image-lms.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop isolated production image smoke services
+        if: always()
+        run: |
+          docker rm -f overu-smoke-web overu-smoke-redis overu-smoke-db 2>/dev/null || true
+          docker volume rm overu-production-smoke-sites 2>/dev/null || true
+          docker network rm overu-production-smoke 2>/dev/null || true
