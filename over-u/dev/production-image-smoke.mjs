@@ -87,9 +87,8 @@ try {
 		origin: window.location.origin,
 	}));
 	console.log("Production image browser runtime:", JSON.stringify(runtimeMode));
-	assert.equal(
-		runtimeMode.devServer,
-		false,
+	assert.ok(
+		!runtimeMode.devServer,
 		"Production image must render with dev_server disabled"
 	);
 	const heading = page.locator(".author-hero h1");
