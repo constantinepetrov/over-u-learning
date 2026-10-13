@@ -985,10 +985,21 @@ jobs:
             -e REDIS_CACHE=redis://redis:6379 -e REDIS_QUEUE=redis://redis:6379 \
             -e REDIS_SOCKETIO=redis://redis:6379 \
             "overu-production:${revision}"
+          docker run -d --name overu-smoke-socketio --network overu-production-smoke \
+            -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            --entrypoint node "overu-production:${revision}" \
+            /home/frappe/frappe-bench/apps/frappe/socketio.js
           cat > /tmp/overu-production-smoke-nginx.conf <<'EOF'
           server {
             listen 8080;
             client_max_body_size 50m;
+            location /socket.io {
+              proxy_pass http://overu-smoke-socketio:9000;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "Upgrade";
+              proxy_set_header Host $host;
+            }
             location /assets/ {
               alias /usr/share/nginx/html/;
               expires 1y;
@@ -1097,7 +1108,7 @@ jobs:
       - name: Stop isolated production image smoke services
         if: always()
         run: |
-          docker rm -f overu-smoke-frontend overu-smoke-web overu-smoke-redis overu-smoke-db 2>/dev/null || true
+          docker rm -f overu-smoke-frontend overu-smoke-socketio overu-smoke-web overu-smoke-redis overu-smoke-db 2>/dev/null || true
           docker volume rm overu-production-smoke-sites 2>/dev/null || true
           docker volume rm overu-production-smoke-assets 2>/dev/null || true
           docker network rm overu-production-smoke 2>/dev/null || true

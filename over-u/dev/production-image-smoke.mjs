@@ -21,11 +21,18 @@ const browser = await chromium.launch({
 	],
 });
 const errors = [];
+const requestFailures = [];
 try {
 	const page = await browser.newPage({
 		viewport: { width: 1440, height: 1000 },
 	});
 	page.on("pageerror", (error) => errors.push(error.message));
+	page.on("requestfailed", (request) => {
+		requestFailures.push({
+			url: request.url(),
+			failure: request.failure()?.errorText || "unknown",
+		});
+	});
 	page.on("console", (message) => {
 		if (message.type() === "error") errors.push(message.text());
 	});
@@ -101,16 +108,15 @@ try {
 		assets.some((url) => url.includes("/lms/frontend/assets/")),
 		"Built LMS frontend assets must be served"
 	);
-	assert.deepEqual(
-		errors,
-		[],
-		`Production image browser errors: ${errors.join("; ")}`
-	);
-
 	await page.screenshot({
 		path: "/tmp/overu-production-image-lms.png",
 		fullPage: true,
 	});
+	assert.deepEqual(
+		errors,
+		[],
+		`Production image browser errors: ${JSON.stringify({ errors, requestFailures })}`
+	);
 	console.log(
 		JSON.stringify(
 			{
