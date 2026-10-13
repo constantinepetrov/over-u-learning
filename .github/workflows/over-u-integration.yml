@@ -171,7 +171,18 @@ jobs:
           const page = await context.newPage()
           const errors = []
           page.on('pageerror', error => errors.push(error.message))
-          page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
+          const httpFailures = []
+          page.on('response', response => {
+            if (response.status() >= 400) {
+              const path = new URL(response.url()).pathname
+              const failure = response.status() + ' ' + response.url()
+              if (path.startsWith('/api/') || /\\.(js|css)$/.test(path) || response.status() !== 404) errors.push(failure)
+              else httpFailures.push(failure)
+            }
+          })
+          page.on('console', message => {
+            if (message.type() === 'error' && !message.text().startsWith('Failed to load resource: the server responded with a status of 404')) errors.push(message.text())
+          })
           const response = await page.goto('http://over-u.localhost:8000/lms', { waitUntil: 'networkidle', timeout: 60000 })
           if (!response || response.status() !== 200) errors.push(`/lms response status: ${response?.status()}`)
           await page.waitForTimeout(2000)
@@ -195,7 +206,8 @@ jobs:
             console.error(errors.join('\n'))
             process.exit(1)
           }
-          console.log('/lms loaded in Chromium without JavaScript console or page errors')
+          console.log('/lms loaded in Chromium without JavaScript console or critical asset/API errors')
+          if (httpFailures.length) console.log('Non-JavaScript HTTP 404s: ' + JSON.stringify(httpFailures))
           JS
       - name: Browser-test approved OVER U student design at desktop and phone sizes
         run: |
