@@ -159,6 +159,7 @@ try {
 		`Production image browser errors: ${JSON.stringify({
 			errors,
 			requestFailures,
+			socketInitiators,
 		})}`
 	);
 	if (httpFailures.length)
