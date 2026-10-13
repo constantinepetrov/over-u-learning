@@ -1,4 +1,5 @@
 import { boot, t } from "./i18n.js";
+import { welcomeCard } from "./guide.js";
 import {
 	escape as e,
 	icon,
@@ -64,7 +65,7 @@ export function shell(content, home, section = "home") {
       <nav class="ou-header-nav" aria-label="${t(
 			"ui_009"
 		)}">${navLinks}${authorLink}</nav>
-      <div class="ou-header-account"><span class="ou-profile-name">${e(
+      <div class="ou-header-account"><button type="button" class="ou-help" data-action="guide" aria-label="Как это работает" title="Как это работает">?</button><span class="ou-profile-name">${e(
 			name
 		)}<small>${
 		boot.author_tools ? "Автор / преподаватель" : t("ui_011")
@@ -171,7 +172,7 @@ function brandHero(course = null) {
 export function homeView(home) {
 	const courses = home.courses;
 	if (!courses.length)
-		return `${brandHero()}<div class="page-heading"><span class="eyebrow">${t(
+		return `${brandHero()}${welcomeCard()}<div class="page-heading"><span class="eyebrow">${t(
 			"ui_006"
 		)}</span><h1>${t("ui_027")}</h1></div><section class="empty"><h2>${t(
 			"ui_028"
@@ -216,7 +217,7 @@ export function homeView(home) {
 	)}</section>`;
 	return `${brandHero(
 		course
-	)}<div class="page-heading"><div class="program-identity"><strong>${t(
+	)}${welcomeCard()}<div class="page-heading"><div class="program-identity"><strong>${t(
 		"ui_150"
 	)}</strong><span>LIFELONG ENERGY · BUSINESS HAPPINESS</span></div><span class="eyebrow">${t(
 		"ui_040"
@@ -621,7 +622,7 @@ export function profileView(home) {
 		"ui_111"
 	)}</p><button class="button secondary" data-action="logout">${t(
 		"ui_149"
-	)}</button><div id="logout-feedback" role="alert"></div></div></section>`;
+	)}</button><div id="logout-feedback" role="alert"></div></div></section><section class="profile-panel"><div><h2>Пароль и подсказки</h2><p class="help">Забыли пароль или хотите его сменить? Это можно сделать самостоятельно.</p><div class="profile-actions"><a class="button secondary" href="/update-password">Сменить пароль</a><button class="button secondary" type="button" data-action="guide">Как это работает</button></div></div></section>`;
 }
 export function teacherAssignmentsView(rows) {
 	return `<div class="page-heading"><span class="eyebrow">${t(

@@ -43,6 +43,7 @@ permission_query_conditions = {
 
 website_route_rules = [{"from_route": "/school/<path:app_path>", "to_route": "school"}]
 before_request = ["over_u.localization.guest_language"]
+on_login = ["over_u.session.on_login"]
 after_request = ["over_u.localization.preload_lms_translations"]
 after_build = "over_u.build.after_build"
 app_include_js = ["/assets/over_u/localization/desk.js"]

@@ -47,6 +47,10 @@ try {
 		timeout: 60000,
 	});
 	log.notes.push(`logged-out /school -> ${page.url()}`);
+	await page.goto(`${base}/login`, {
+		waitUntil: "networkidle",
+		timeout: 60000,
+	});
 	await shoot(page, "d01-login", null, 1500);
 	await page.fill("#login_email", username);
 	await page.fill("#login_password", password);
@@ -64,12 +68,25 @@ try {
 	await shoot(page, "d03-school-home", "/school");
 	await shoot(page, "d04-learning", "/school/learning");
 	await shoot(page, "d05-course", "/school/courses/over-u");
-	await shoot(page, "d06-lesson-1-1", "/school/courses/over-u/lessons/1.1");
-	await shoot(
-		page,
-		"d07-lesson-1-2-locked",
-		"/school/courses/over-u/lessons/1.2"
-	);
+	await page.goto(`${base}/school/courses/over-u`, {
+		waitUntil: "networkidle",
+		timeout: 60000,
+	});
+	const hrefs = await page
+		.locator("a.lesson-row")
+		.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
+	log.notes.push(`lesson hrefs: ${hrefs.join(", ")}`);
+	if (hrefs[0]) await shoot(page, "d06-lesson-first", hrefs[0], 3500);
+	if (hrefs[1]) await shoot(page, "d07-lesson-locked", hrefs[1]);
+	await shoot(page, "d06b-home-guide", "/school", 1500);
+	try {
+		await page.click(".ou-help");
+		await page.waitForTimeout(500);
+		await page.screenshot({ path: `${out}/d06c-guide-dialog.png` });
+		log.shots.push("d06c-guide-dialog");
+	} catch (error) {
+		log.notes.push(`guide dialog: ${error.message}`);
+	}
 	await shoot(page, "d08-assignments", "/school/assignments");
 	await shoot(page, "d09-results", "/school/results");
 	await shoot(page, "d10-profile", "/school/profile");
@@ -96,7 +113,7 @@ try {
 	await mp.waitForLoadState("networkidle").catch(() => {});
 	await shoot(mp, "m02-after-login", null, 3000);
 	await shoot(mp, "m03-school-home", "/school");
-	await shoot(mp, "m04-lesson-1-1", "/school/courses/over-u/lessons/1.1");
+	await shoot(mp, "m04-course", "/school/courses/over-u");
 	await shoot(mp, "m05-profile", "/school/profile");
 } finally {
 	await browser.close();

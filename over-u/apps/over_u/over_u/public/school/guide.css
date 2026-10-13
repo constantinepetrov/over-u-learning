@@ -1,0 +1,19 @@
+.ou-welcome { margin: 0 0 40px; padding: 26px 28px; background: #fffefa; border: 1px solid #deded4; border-radius: 24px; box-shadow: 0 12px 34px rgba(42, 47, 39, .06); }
+.ou-welcome-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.ou-welcome h2 { font: 400 30px/1.1 "Iowan Old Style", Georgia, serif; letter-spacing: -.02em; margin: 4px 0 0; }
+.ou-guide-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 22px; }
+.ou-guide-steps li { display: flex; gap: 12px; align-items: flex-start; }
+.ou-guide-steps strong { display: block; font-size: 14px; }
+.ou-guide-steps p { margin: 3px 0 0; font-size: 13px; line-height: 1.55; color: #68736b; }
+.ou-guide-num { flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #e8eee7; color: #214d3c; font-weight: 700; font-size: 13px; }
+.ou-help { display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid #deded4; background: #fffefa; color: #214d3c; font-weight: 700; font-size: 17px; cursor: pointer; }
+.ou-help:hover { background: #e8eee7; }
+.ou-guide-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(24, 33, 28, .5); }
+.ou-guide-dialog { width: min(100%, 720px); max-height: 90vh; overflow: auto; background: #fffefa; border-radius: 26px; padding: 28px; box-shadow: 0 30px 80px rgba(20, 30, 22, .35); }
+.ou-guide-dialog .ou-guide-steps { grid-template-columns: 1fr; gap: 16px; }
+.ou-guide-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.ou-guide-top h2 { font: 400 32px/1.1 "Iowan Old Style", Georgia, serif; letter-spacing: -.02em; margin: 0; }
+.ou-guide-close { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #deded4; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; }
+.ou-guide-actions { margin-top: 22px; display: flex; justify-content: flex-end; }
+.profile-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+@media (max-width: 900px) { .ou-guide-steps { grid-template-columns: 1fr; } .ou-welcome { padding: 20px; } .ou-help { width: 38px; height: 38px; } }
