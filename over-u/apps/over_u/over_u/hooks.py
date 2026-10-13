@@ -10,6 +10,7 @@ after_install = [
 	"over_u.submission_permissions.ensure_student_write_permission",
 	"over_u.localization.migrate_existing_users",
 	"over_u.file_privacy.enforce_assignment_attachment_privacy",
+	"over_u.branding.apply_logo",
 ]
 after_migrate = [
 	"over_u.install.configure",
