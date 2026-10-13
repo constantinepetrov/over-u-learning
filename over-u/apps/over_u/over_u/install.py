@@ -20,5 +20,8 @@ def configure():
 
 	# Learners land in the OVER U school after sign-in; authors keep the Studio.
 	# Frappe picks the landing page from the first role that has a home page.
+	for role in ("Course Creator", "Moderator", "Batch Evaluator"):
+		if frappe.db.exists("Role", role):
+			frappe.db.set_value("Role", role, "home_page", "lms", update_modified=False)
 	if frappe.db.exists("Role", "LMS Student"):
 		frappe.db.set_value("Role", "LMS Student", "home_page", "school", update_modified=False)
