@@ -37,32 +37,32 @@ html {
 }
 
 /* Solid primary buttons are orange pills, as in the approved preview. */
-#app button[class*='bg-surface-gray-10'] {
+button[class*='bg-surface-gray-10'] {
 	background-color: #e94e15;
 	border-radius: 999px;
 	color: #fff;
 	box-shadow: 0 8px 18px rgba(233, 78, 21, 0.18);
 }
-#app button[class*='bg-surface-gray-10']:hover:not(:disabled) {
+button[class*='bg-surface-gray-10']:hover:not(:disabled) {
 	background-color: #ce4310;
 }
 /* Outline / subtle buttons are quiet pills. */
-#app button[class*='border-outline'],
-#app button[class*='bg-surface-white'][class*='border'] {
+button[class*='border-outline'],
+button[class*='bg-surface-white'][class*='border'] {
 	border-radius: 999px;
 }
 
 /* Cards, inputs, dialogs: the larger radius of the approved language. */
-#app [class*='rounded-lg'],
-#app [class*='rounded-xl'] {
+[class*='rounded-lg'],
+[class*='rounded-xl'] {
 	border-radius: 18px;
 }
-#app input[type='text'],
-#app input[type='email'],
-#app input[type='password'],
-#app input[type='search'],
-#app textarea,
-#app select {
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+textarea,
+select {
 	border-radius: 12px;
 }
 [role='dialog'] {
@@ -70,23 +70,23 @@ html {
 }
 
 /* Page titles read in the brand serif. */
-#app h1,
-#app [class*='text-2xl'][class*='font-semibold'] {
+h1,
+[class*='text-2xl'][class*='font-semibold'] {
 	font-family: var(--ou-serif);
 	font-weight: 400;
 	letter-spacing: -0.02em;
 }
 
 /* Sidebar active item: pale green with forest text. */
-#app nav [class*='bg-surface-selected'],
-#app nav [class*='bg-surface-gray-3'] {
+nav [class*='bg-surface-selected'],
+nav [class*='bg-surface-gray-3'] {
 	background-color: #e8eee7;
 	color: #214d3c;
 }
 
 /* Links and focus follow the brand. */
-#app a:focus-visible,
-#app button:focus-visible {
+a:focus-visible,
+button:focus-visible {
 	outline: 2px solid #e94e15;
 	outline-offset: 2px;
 }
