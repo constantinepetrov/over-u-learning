@@ -10,7 +10,7 @@ repos:
         files: "lms.*"
         exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
       - id: check-yaml
-        exclude: ^over-u/deploy/compose\\.overu\\.yaml$
+        exclude: ^over-u/deploy/compose[.]overu[.]yaml$
       - id: check-merge-conflict
       - id: check-ast
       - id: check-json
