@@ -115,7 +115,10 @@ try {
 	assert.deepEqual(
 		errors,
 		[],
-		`Production image browser errors: ${JSON.stringify({ errors, requestFailures })}`
+		`Production image browser errors: ${JSON.stringify({
+			errors,
+			requestFailures,
+		})}`
 	);
 	console.log(
 		JSON.stringify(
