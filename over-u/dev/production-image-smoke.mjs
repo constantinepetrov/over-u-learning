@@ -33,6 +33,19 @@ try {
 			failure: request.failure()?.errorText || "unknown",
 		});
 	});
+	const cdp = await page.context().newCDPSession(page);
+	await cdp.send("Network.enable");
+	const socketInitiators = [];
+	cdp.on("Network.requestWillBeSent", ({ request, initiator }) => {
+		if (!request.url.includes(":9000/socket.io")) return;
+		socketInitiators.push({
+			frames: (initiator.stack?.callFrames || []).slice(0, 4).map((frame) => ({
+				url: frame.url,
+				line: frame.lineNumber,
+				column: frame.columnNumber,
+			})),
+		});
+	});
 	const httpFailures = [];
 	page.on("response", (response) => {
 		if (response.status() >= 400) {
