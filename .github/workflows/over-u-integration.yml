@@ -1020,7 +1020,7 @@ jobs:
           curl --fail --silent -H 'Host: over-u.localhost' http://127.0.0.1:18000/login >/dev/null
           curl --fail --silent -H 'Host: over-u.localhost' \
             http://127.0.0.1:18000/assets/lms/frontend/index.html >/tmp/overu-production-smoke-lms-index.html
-          rg -q '/assets/lms/frontend/assets/index-' /tmp/overu-production-smoke-lms-index.html
+          grep -q '/assets/lms/frontend/assets/index-' /tmp/overu-production-smoke-lms-index.html
 
       - name: Install isolated browser smoke-test tools
         run: |
