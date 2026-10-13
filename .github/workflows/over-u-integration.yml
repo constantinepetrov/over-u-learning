@@ -1109,6 +1109,24 @@ jobs:
             node over-u/dev/production-image-smoke.mjs | tee /tmp/overu-production-image-smoke.json
           cat /tmp/overu-production-image-smoke.json >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Capture branded page screenshots from the production image
+        if: always()
+        continue-on-error: true
+        run: |
+          OVER_U_BASE_URL=https://over-u.localhost \
+          OVER_U_SMOKE_USER=teacher@over-u.example.com \
+          OVER_U_SMOKE_PASSWORD=synthetic-ci-author-password \
+            node over-u/dev/brand-shots.mjs
+
+      - name: Save branded page screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-brand-shots-${{ github.event.pull_request.head.sha || github.sha }}
+          path: /tmp/overu-brand-shots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Save production image browser proof
         if: always()
         uses: actions/upload-artifact@v4

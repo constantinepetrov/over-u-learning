@@ -1,0 +1,40 @@
+/* OVER U brand for Frappe's server-rendered login and website pages. */
+:root {
+  --ou-paper:#f6f4ee; --ou-surface:#fffefa; --ou-ink:#202722; --ou-muted:#68736b;
+  --ou-line:#deded4; --ou-forest:#214d3c; --ou-forest-hover:#173d2e; --ou-orange:#e94e15;
+}
+body { background:var(--ou-paper); color:var(--ou-ink); }
+.for-login, .for-forgot, .for-signup, .for-login-with-email-link { background:var(--ou-paper); }
+.page-card, .login-content.page-card {
+  background:var(--ou-surface); border:1px solid var(--ou-line); border-radius:28px;
+  box-shadow:0 18px 50px rgba(42,47,39,.08); padding:34px 34px 28px; max-width:440px;
+}
+.page-card-head { text-align:left; border:0; }
+.page-card-head .app-logo, .page-card-head img.app-logo {
+  content:url("/assets/over_u/school/assets/logo-orange.png");
+  width:auto; height:72px; object-fit:contain; margin:0 0 14px; background:none;
+}
+.page-card-head h4, .page-card-head h4.login-title, .login-content h4 {
+  font:400 34px/1.1 'Iowan Old Style',Georgia,'Times New Roman',serif;
+  letter-spacing:-.03em; color:var(--ou-ink); margin:0 0 6px;
+}
+.page-card-head::after {
+  content:"LIFELONG ENERGY · BUSINESS HAPPINESS"; display:block; margin:4px 0 8px;
+  font-size:10px; font-weight:750; letter-spacing:.16em; color:var(--ou-orange);
+}
+.login-content .form-control, .login-content input.form-control {
+  border-radius:14px; border:1px solid var(--ou-line); background:#fff; min-height:46px; box-shadow:none;
+}
+.login-content .form-control:focus { border-color:var(--ou-forest); box-shadow:0 0 0 3px rgba(33,77,60,.12); }
+.login-content label, .form-label { color:var(--ou-muted); font-size:12px; font-weight:650; }
+.btn-primary, .btn-login, .btn-primary:focus {
+  background:var(--ou-forest)!important; border:0!important; border-radius:999px!important;
+  min-height:48px; font-weight:700; color:#fff!important;
+}
+.btn-primary:hover { background:var(--ou-forest-hover)!important; }
+.btn-default, .btn-login-option, .login-content .btn-light {
+  border-radius:999px!important; border:1px solid var(--ou-line)!important; background:#fff!important; min-height:46px;
+}
+.login-content a, .page-card a { color:var(--ou-forest); }
+.sign-up-message, .login-content .text-muted { color:var(--ou-muted)!important; }
+footer.web-footer, .web-footer { color:var(--ou-muted); }

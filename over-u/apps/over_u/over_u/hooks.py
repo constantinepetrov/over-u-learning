@@ -45,6 +45,7 @@ before_request = ["over_u.localization.guest_language"]
 after_request = ["over_u.localization.preload_lms_translations"]
 after_build = "over_u.build.after_build"
 app_include_js = ["/assets/over_u/localization/desk.js"]
+web_include_css = ["/assets/over_u/brand/login.css"]
 # Native extension point for the one stock list column that skips __().
 doctype_list_js = {"User": "public/localization/user-list.js"}
 
