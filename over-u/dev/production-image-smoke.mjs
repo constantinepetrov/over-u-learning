@@ -17,6 +17,7 @@ const { chromium } = await import(
 const browser = await chromium.launch({
 	args: [
 		"--no-sandbox",
+		"--ignore-certificate-errors",
 		"--host-resolver-rules=MAP over-u.localhost 127.0.0.1",
 	],
 });
