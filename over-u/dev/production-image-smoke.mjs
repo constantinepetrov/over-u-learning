@@ -25,6 +25,7 @@ const requestFailures = [];
 try {
 	const page = await browser.newPage({
 		viewport: { width: 1440, height: 1000 },
+		ignoreHTTPSErrors: true,
 	});
 	page.on("pageerror", (error) => errors.push(error.message));
 	page.on("requestfailed", (request) => {
