@@ -25,7 +25,10 @@ const page = await browser.newPage({
 const shots = [];
 async function shot(name, url, wait = 2500) {
 	try {
-		await page.goto(`${base}${url}`, { waitUntil: "networkidle", timeout: 60000 });
+		await page.goto(`${base}${url}`, {
+			waitUntil: "networkidle",
+			timeout: 60000,
+		});
 		await page.waitForTimeout(wait);
 		await page.screenshot({ path: `${out}/${name}.png`, fullPage: false });
 		shots.push(name);
