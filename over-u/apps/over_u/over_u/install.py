@@ -11,3 +11,8 @@ def configure():
         "insert_after": "enforce_lesson_completion",
         "description": "Complete assignment lessons only after teacher review with Pass.",
     }]})
+
+    # Learners land in the OVER U school after sign-in; authors keep the Studio.
+    # Frappe picks the landing page from the first role that has a home page.
+    if frappe.db.exists("Role", "LMS Student"):
+        frappe.db.set_value("Role", "LMS Student", "home_page", "school", update_modified=False)
