@@ -988,6 +988,11 @@ jobs:
           done
           curl --fail --silent -H 'Host: over-u.localhost' http://127.0.0.1:18000/login >/dev/null
 
+      - name: Install isolated browser smoke-test tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/over-u-playwright" --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.0
+          "$RUNNER_TEMP/over-u-playwright/node_modules/.bin/playwright" install chromium
+
       - name: Verify branded Course Studio in the production image
         run: |
           set -euo pipefail
