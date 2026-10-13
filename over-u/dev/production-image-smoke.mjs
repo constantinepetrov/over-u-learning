@@ -67,7 +67,7 @@ try {
 			loggedInUser: identity.message || null,
 			appMounted: Boolean(document.querySelector("#app")),
 			bodyText: document.body.innerText.slice(0, 1600),
-			lmsAssets: [...document.querySelectorAll('script[src],link[href]')]
+			lmsAssets: [...document.querySelectorAll("script[src],link[href]")]
 				.map((node) => node.src || node.href)
 				.filter((url) => url.includes("/assets/")),
 		};
@@ -78,7 +78,10 @@ try {
 			fullPage: true,
 		});
 		throw new Error(
-			`Branded Course Studio is missing: ${JSON.stringify({ ...diagnostic, javascriptErrors: errors })}`
+			`Branded Course Studio is missing: ${JSON.stringify({
+				...diagnostic,
+				javascriptErrors: errors,
+			})}`
 		);
 	}
 	assert.match(await heading.innerText(), /Студия курсов/);
