@@ -11,7 +11,7 @@
   },
   "lms": {
     "repository": "https://github.com/constantinepetrov/over-u-learning",
-    "commit": "369e5bc6863f792f4ffe15541fae6ad9302d19e8"
+    "commit": "3b91e1c0f840f7c5d270c235a2df6396e58e5e37"
   },
   "frappe_docker": {
     "repository": "https://github.com/frappe/frappe_docker",
