@@ -927,8 +927,17 @@ jobs:
           openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
             -keyout /tmp/overu-smoke-mariadb-tls/server.key \
             -out /tmp/overu-smoke-mariadb-tls/server.crt \
-            -subj '/CN=mariadb'
+            -subj '/CN=mariadb' \
+            -addext 'basicConstraints=critical,CA:TRUE' \
+            -addext 'keyUsage=critical,digitalSignature,keyEncipherment,keyCertSign' \
+            -addext 'subjectAltName=DNS:mariadb'
           chmod 644 /tmp/overu-smoke-mariadb-tls/server.key /tmp/overu-smoke-mariadb-tls/server.crt
+          cat > /tmp/overu-smoke-mariadb-tls/my.cnf <<'EOF'
+          [client]
+          ssl-ca=/run/mariadb-tls/server.crt
+          ssl-verify-server-cert=0
+          EOF
+          chmod 644 /tmp/overu-smoke-mariadb-tls/my.cnf
           docker run -d --name overu-smoke-db --network overu-production-smoke --network-alias mariadb \
             -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
             -e MARIADB_ROOT_PASSWORD=synthetic-ci-db-password \
@@ -945,6 +954,8 @@ jobs:
           docker exec overu-smoke-db healthcheck.sh --connect --innodb_initialized
           docker run --rm --network overu-production-smoke \
             -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
+            -v /tmp/overu-smoke-mariadb-tls/my.cnf:/home/frappe/.my.cnf:ro \
             -e OVER_U_DB_PASSWORD=synthetic-ci-db-password \
             -e OVER_U_ADMIN_PASSWORD=synthetic-ci-admin-password \
             --entrypoint /bin/bash "overu-production:${revision}" -lc '
@@ -964,6 +975,8 @@ jobs:
           docker run -d --name overu-smoke-web --network overu-production-smoke \
             -p 127.0.0.1:18000:8000 \
             -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
+            -v /tmp/overu-smoke-mariadb-tls/my.cnf:/home/frappe/.my.cnf:ro \
             -e DB_HOST=mariadb -e DB_PORT=3306 \
             -e REDIS_CACHE=redis://redis:6379 -e REDIS_QUEUE=redis://redis:6379 \
             -e REDIS_SOCKETIO=redis://redis:6379 \
