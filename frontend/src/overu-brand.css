@@ -14,8 +14,6 @@
 	--surface-gray-3: #e8eee7;
 	--surface-gray-4: #deded4;
 	--surface-gray-5: #cfd2c6;
-	--surface-gray-6: #2d6350;
-	--surface-gray-7: #214d3c;
 	--ink-gray-1: #f6f4ee;
 	--ink-gray-2: #eef0ea;
 	--ink-gray-3: #a9b1aa;
@@ -39,13 +37,13 @@ html {
 }
 
 /* Solid primary buttons are orange pills, as in the approved preview. */
-#app button[class*='bg-surface-gray-7'] {
+#app button[class*='bg-surface-gray-10'] {
 	background-color: #e94e15;
 	border-radius: 999px;
 	color: #fff;
 	box-shadow: 0 8px 18px rgba(233, 78, 21, 0.18);
 }
-#app button[class*='bg-surface-gray-7']:hover:not(:disabled) {
+#app button[class*='bg-surface-gray-10']:hover:not(:disabled) {
 	background-color: #ce4310;
 }
 /* Outline / subtle buttons are quiet pills. */
