@@ -57,7 +57,30 @@ try {
 	});
 	assert.equal(response?.status(), 200, "/lms must return HTTP 200");
 	const heading = page.locator(".author-hero h1");
-	await heading.waitFor({ state: "visible", timeout: 45000 });
+	await page.waitForTimeout(3000);
+	const diagnostic = await page.evaluate(async () => {
+		const identity = await fetch("/api/method/frappe.auth.get_logged_user")
+			.then((response) => response.json())
+			.catch(() => ({}));
+		return {
+			url: location.href,
+			loggedInUser: identity.message || null,
+			appMounted: Boolean(document.querySelector("#app")),
+			bodyText: document.body.innerText.slice(0, 1600),
+			lmsAssets: [...document.querySelectorAll('script[src],link[href]')]
+				.map((node) => node.src || node.href)
+				.filter((url) => url.includes("/assets/")),
+		};
+	});
+	if (!(await heading.isVisible().catch(() => false))) {
+		await page.screenshot({
+			path: "/tmp/overu-production-image-lms.png",
+			fullPage: true,
+		});
+		throw new Error(
+			`Branded Course Studio is missing: ${JSON.stringify({ ...diagnostic, javascriptErrors: errors })}`
+		);
+	}
 	assert.match(await heading.innerText(), /Студия курсов/);
 	await page.locator(".author-hero-create").waitFor({ state: "visible" });
 	await page
