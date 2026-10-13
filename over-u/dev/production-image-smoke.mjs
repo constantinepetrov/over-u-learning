@@ -54,7 +54,9 @@ try {
 			message.type() === "error" &&
 			!message
 				.text()
-				.startsWith(\n\t\t\t\t"Failed to load resource: the server responded with a status of 404"\n\t\t\t)
+				.startsWith(
+				"Failed to load resource: the server responded with a status of 404"
+			)
 		) {
 			errors.push(message.text());
 		}
