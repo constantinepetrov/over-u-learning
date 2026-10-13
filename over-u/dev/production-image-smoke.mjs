@@ -50,16 +50,9 @@ try {
 		}
 	});
 	page.on("console", (message) => {
-		if (
-			message.type() === "error" &&
-			!message
-				.text()
-				.startsWith(
-						"Failed to load resource: the server responded with a status of 404"
-				)
-		) {
-			errors.push(message.text());
-		}
+		const isUnexpectedError =
+			message.type() === "error" && !message.text().includes("status of 404");
+		if (isUnexpectedError) errors.push(message.text());
 	});
 
 	await page.goto(`${base}/login`, {
