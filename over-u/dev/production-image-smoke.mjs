@@ -56,7 +56,7 @@ try {
 				.text()
 				.startsWith(
 					"Failed to load resource: the server responded with a status of 404"
-			)
+				)
 		) {
 			errors.push(message.text());
 		}
@@ -145,7 +145,8 @@ try {
 			requestFailures,
 		})}`
 	);
-	if (httpFailures.length) console.log("Non-JavaScript HTTP 404s: " + JSON.stringify(httpFailures));
+	if (httpFailures.length)
+		console.log("Non-JavaScript HTTP 404s: " + JSON.stringify(httpFailures));
 	console.log(
 		JSON.stringify(
 			{
