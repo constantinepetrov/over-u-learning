@@ -87,7 +87,11 @@ try {
 		origin: window.location.origin,
 	}));
 	console.log("Production image browser runtime:", JSON.stringify(runtimeMode));
-	assert.equal(runtimeMode.devServer, false, "Production image must render with dev_server disabled");
+	assert.equal(
+		runtimeMode.devServer,
+		false,
+		"Production image must render with dev_server disabled"
+	);
 	const heading = page.locator(".author-hero h1");
 	await page.waitForTimeout(3000);
 	const diagnostic = await page.evaluate(async () => {
