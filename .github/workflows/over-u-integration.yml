@@ -851,6 +851,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=overu-production-image
 
       - name: Verify image revision and OCI digest
+        id: verify
         shell: bash
         run: |
           set -euxo pipefail
@@ -903,6 +904,7 @@ jobs:
           check_label io.overu.build.frappe.base-image "$frappe_runtime"
           printf 'Revision: %s\nOCI image index: %s\nOCI image manifest: %s\nImage config: %s\nFrappe: %s\nFrappe build image: %s\nFrappe runtime image: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
             "$revision" "$index_digest" "$manifest_digest" "$config_digest" "$frappe" "$frappe_build" "$frappe_runtime" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "index_digest=$index_digest" >> "$GITHUB_OUTPUT"
           test -s /tmp/overu-image.oci.tar
 
       - name: Load the exact OCI image into the local Docker engine
@@ -981,6 +983,54 @@ jobs:
           path: /tmp/overu-production-image-lms.png
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Encrypt deployment image for the existing IAP key
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_dir="$RUNNER_TEMP/overu-encrypted-image"
+          mkdir -p "$artifact_dir"
+          key_material="$(openssl rand -hex 64)"
+          enc_key="${key_material:0:64}"
+          mac_key="${key_material:64:64}"
+          printf '%s%s' "$enc_key" "$mac_key" > /tmp/overu-key-material
+          printf '%s' "$enc_key" > /tmp/overu-encryption-passphrase
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 -md sha256 \
+            -in /tmp/overu-image.oci.tar \
+            -out "$artifact_dir/overu-production-image.oci.tar.enc" \
+            -pass file:/tmp/overu-encryption-passphrase
+          openssl dgst -sha256 -mac HMAC -macopt "hexkey:$mac_key" -binary \
+            "$artifact_dir/overu-production-image.oci.tar.enc" \
+            > "$artifact_dir/overu-production-image.hmac"
+          openssl pkeyutl -encrypt -pubin \
+            -inkey over-u/deploy/release-image-recipient.pem \
+            -in /tmp/overu-key-material \
+            -out "$artifact_dir/overu-production-image.key.enc" \
+            -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+            -pkeyopt rsa_mgf1_md:sha256
+          archive_sha="$(sha256sum /tmp/overu-image.oci.tar | awk '{print $1}')"
+          encrypted_sha="$(sha256sum "$artifact_dir/overu-production-image.oci.tar.enc" | awk '{print $1}')"
+          cat > "$artifact_dir/overu-production-image.manifest" <<EOF
+          source_revision=${{ github.event.pull_request.head.sha || github.sha }}
+          lms_revision=$(jq -r '.lms.commit' over-u/deploy/versions.lock.json)
+          oci_index_digest=${{ steps.verify.outputs.index_digest }}
+          oci_archive_sha256=$archive_sha
+          encrypted_archive_sha256=$encrypted_sha
+          encryption=AES-256-CBC-PBKDF2-HMAC-SHA256+RSA-OAEP-SHA256
+          recipient=existing-Mac-IAP-SSH-RSA-key
+          EOF
+          rm -f /tmp/overu-image.oci.tar /tmp/overu-key-material /tmp/overu-encryption-passphrase
+          cat "$artifact_dir/overu-production-image.manifest" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Store encrypted deployment image artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-production-image-encrypted-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/overu-encrypted-image/*
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Stop isolated production image smoke services
         if: always()
