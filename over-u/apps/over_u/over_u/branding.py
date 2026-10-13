@@ -1,26 +1,38 @@
-from pathlib import Path
-
 import frappe
 
+MARK_URL = "/assets/over_u/brand/mark.png"
 FILE_NAME = "over-u-mark.png"
 
 
 def _mark_file_url():
-	existing = frappe.db.get_value("File", {"file_name": FILE_NAME, "is_private": 0}, "file_url")
-	if existing:
-		return existing
-	content = Path(frappe.get_app_path("over_u", "public", "brand", "mark.png")).read_bytes()
-	doc = frappe.get_doc(
-		{"doctype": "File", "file_name": FILE_NAME, "content": content, "is_private": 0}
-	).insert(ignore_permissions=True)
-	return doc.file_url
+	"""Register the bundled mark as a File row that points at the app asset.
+
+	LMS reads the site logo through File rows (get_file_info). The image itself
+	ships inside the app and is served from /assets, so no upload to the files
+	volume is needed; db_insert skips the upload hooks that would try to read
+	/assets/... as a stored upload.
+	"""
+	if frappe.db.exists("File", {"file_url": MARK_URL}):
+		return MARK_URL
+	doc = frappe.new_doc("File")
+	doc.update(
+		{
+			"file_name": FILE_NAME,
+			"file_url": MARK_URL,
+			"file_type": "PNG",
+			"is_private": 0,
+			"is_folder": 0,
+			"folder": "Home",
+		}
+	)
+	doc.set_new_name()
+	doc.set_user_and_timestamp()
+	doc.db_insert()
+	return MARK_URL
 
 
 def apply_logo():
-	"""Use the OVER U mark as the site logo and favicon (sidebar header, browser tab).
-
-	LMS reads these through File rows, so the image is stored as a regular public file.
-	"""
+	"""Use the OVER U mark as the site logo and favicon (sidebar header, browser tab)."""
 	url = _mark_file_url()
 	frappe.db.set_single_value("Website Settings", "app_logo", url)
 	frappe.db.set_single_value("Website Settings", "banner_image", url)
