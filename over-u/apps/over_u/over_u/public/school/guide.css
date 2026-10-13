@@ -17,3 +17,6 @@
 .ou-guide-actions { margin-top: 22px; display: flex; justify-content: flex-end; }
 .profile-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 @media (max-width: 900px) { .ou-guide-steps { grid-template-columns: 1fr; } .ou-welcome { padding: 20px; } .ou-help { width: 38px; height: 38px; } }
+.lesson-help { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 22px; padding: 18px 22px; background: #fffefa; border: 1px solid #deded4; border-radius: 20px; }
+.lesson-help h2 { font-size: 16px; margin: 0 0 4px; }
+.lesson-help p { margin: 0; font-size: 13px; color: #68736b; }

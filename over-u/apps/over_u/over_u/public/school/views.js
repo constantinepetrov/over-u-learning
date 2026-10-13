@@ -490,6 +490,16 @@ function homeworkView(data, drafts) {
 			: ""
 	}</section>`;
 }
+function discussionLink(data) {
+	if (data.locked) return "";
+	// The stock lesson page carries the course discussion (questions and answers).
+	const stock = location.pathname
+		.replace("/school/courses/", "/lms/courses/")
+		.replace("/lessons/", "/learn/");
+	return `<section class="lesson-help" aria-label="Вопросы к уроку"><div><h2>Есть вопрос по уроку?</h2><p>Задайте его в обсуждении: преподаватель и другие ученики смогут ответить.</p></div><a class="button secondary" href="${e(
+		stock
+	)}">Вопросы и обсуждение</a></section>`;
+}
 export function lessonView(data, drafts) {
 	const c = data.course,
 		l = data.lesson;
@@ -546,7 +556,9 @@ export function lessonView(data, drafts) {
 		l.chapter_title
 	)} · ${kinds[l.kind]}</span><h1>${e(
 		l.title.replace(/^\d+\.\d+\s*/, "")
-	)}</h1></div>${article}</div><aside class="learn-outline"><div class="outline-heading"><h2>${e(
+	)}</h1></div>${article}${discussionLink(
+		data
+	)}</div><aside class="learn-outline"><div class="outline-heading"><h2>${e(
 		c.title.replace(/^OVER U\s*[—–-]\s*/, "")
 	)}</h2>${progress(c)}</div>${outline(c, true, l.number)}</aside></div>`;
 }
