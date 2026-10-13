@@ -64,7 +64,10 @@ try {
 	}
 	await shot("05c-lesson", "/lms/courses/over-u/learn/1-1", 4000);
 	try {
-		await page.getByRole("button", { name: /Редактировать|Edit/ }).first().click({ timeout: 6000 });
+		await page
+			.getByRole("button", { name: /Редактировать|Edit/ })
+			.first()
+			.click({ timeout: 6000 });
 		await page.waitForTimeout(3000);
 		await page.screenshot({ path: `${out}/05d-lesson-edit.png` });
 		shots.push("05d-lesson-edit");

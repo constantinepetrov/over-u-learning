@@ -23,5 +23,6 @@ def apply_logo():
 	"""
 	url = _mark_file_url()
 	frappe.db.set_single_value("Website Settings", "app_logo", url)
+	frappe.db.set_single_value("Website Settings", "banner_image", url)
 	frappe.db.set_single_value("Website Settings", "favicon", url)
 	frappe.clear_cache()
