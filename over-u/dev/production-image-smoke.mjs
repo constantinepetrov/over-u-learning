@@ -33,8 +33,31 @@ try {
 			failure: request.failure()?.errorText || "unknown",
 		});
 	});
+	const httpFailures = [];
+	page.on("response", (response) => {
+		if (response.status() >= 400) {
+			const path = new URL(response.url()).pathname;
+			const failure = response.status() + " " + response.url();
+			if (
+				path.startsWith("/api/") ||
+				/\\.(js|css)$/.test(path) ||
+				response.status() !== 404
+			) {
+				errors.push(failure);
+			} else {
+				httpFailures.push(failure);
+			}
+		}
+	});
 	page.on("console", (message) => {
-		if (message.type() === "error") errors.push(message.text());
+		if (
+			message.type() === "error" &&
+			!message
+				.text()
+				.startsWith("Failed to load resource: the server responded with a status of 404")
+		) {
+			errors.push(message.text());
+		}
 	});
 
 	await page.goto(`${base}/login`, {
@@ -120,6 +143,7 @@ try {
 			requestFailures,
 		})}`
 	);
+	if (httpFailures.length) console.log("Non-JavaScript HTTP 404s: " + JSON.stringify(httpFailures));
 	console.log(
 		JSON.stringify(
 			{
