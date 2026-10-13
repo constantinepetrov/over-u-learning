@@ -981,7 +981,7 @@ jobs:
             -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
             -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
             -v /tmp/overu-smoke-mariadb-tls/my.cnf:/home/frappe/.my.cnf:ro \
-            -e DB_HOST=mariadb -e DB_PORT=3306 \
+            -e DEV_SERVER=0 -e DB_HOST=mariadb -e DB_PORT=3306 \
             -e REDIS_CACHE=redis://redis:6379 -e REDIS_QUEUE=redis://redis:6379 \
             -e REDIS_SOCKETIO=redis://redis:6379 \
             "overu-production:${revision}"
