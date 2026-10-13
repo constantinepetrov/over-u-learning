@@ -1118,6 +1118,26 @@ jobs:
           OVER_U_SMOKE_PASSWORD=synthetic-ci-author-password \
             node over-u/dev/brand-shots.mjs
 
+      - name: Walk the student journey in the production image
+        if: always()
+        continue-on-error: true
+        run: |
+          OVER_U_BASE_URL=https://over-u.localhost \
+          OVER_U_STUDENT_USER=student1@over-u.example.com \
+          OVER_U_STUDENT_PASSWORD=synthetic-ci-author-password \
+            node over-u/dev/student-walk.mjs | tee /tmp/overu-student-walk.json
+
+      - name: Save student journey screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-student-walk-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            /tmp/overu-student-walk/*.png
+            /tmp/overu-student-walk.json
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Save branded page screenshots
         if: always()
         uses: actions/upload-artifact@v4
