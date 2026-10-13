@@ -923,9 +923,19 @@ jobs:
           revision='${{ github.event.pull_request.head.sha || github.sha }}'
           docker network create overu-production-smoke
           docker volume create overu-production-smoke-sites
+          mkdir -p /tmp/overu-smoke-mariadb-tls
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout /tmp/overu-smoke-mariadb-tls/server.key \
+            -out /tmp/overu-smoke-mariadb-tls/server.crt \
+            -subj '/CN=mariadb'
+          chmod 644 /tmp/overu-smoke-mariadb-tls/server.key /tmp/overu-smoke-mariadb-tls/server.crt
           docker run -d --name overu-smoke-db --network overu-production-smoke --network-alias mariadb \
+            -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
             -e MARIADB_ROOT_PASSWORD=synthetic-ci-db-password \
-            mariadb:10.11 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+            mariadb:10.11 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci \
+              --ssl-ca=/run/mariadb-tls/server.crt \
+              --ssl-cert=/run/mariadb-tls/server.crt \
+              --ssl-key=/run/mariadb-tls/server.key
           docker run -d --name overu-smoke-redis --network overu-production-smoke --network-alias redis \
             redis:7-alpine redis-server --save '' --appendonly no
           for attempt in $(seq 1 60); do
