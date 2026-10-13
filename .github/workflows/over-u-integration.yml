@@ -170,7 +170,6 @@ jobs:
           }
           const page = await context.newPage()
           const errors = []
-          const noncriticalHttp404s = []
           page.on('pageerror', error => errors.push(error.message))
           const httpFailures = []
           page.on('response', response => {
@@ -299,6 +298,7 @@ jobs:
           await mkdir(output, {recursive: true})
           const browser = await chromium.launch({headless: true})
           const errors = []
+          const noncriticalHttp404s = []
           const user = 'teacher@over-u.example.com'
           const password = process.env.OVER_U_DEMO_PASSWORD
 
