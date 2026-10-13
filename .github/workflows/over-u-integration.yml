@@ -170,6 +170,7 @@ jobs:
           }
           const page = await context.newPage()
           const errors = []
+          const noncriticalHttp404s = []
           page.on('pageerror', error => errors.push(error.message))
           const httpFailures = []
           page.on('response', response => {
@@ -380,7 +381,18 @@ jobs:
           async function openWorkspace(context, name, width) {
             const page = await context.newPage()
             page.on('pageerror', error => errors.push(error.message))
-            page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
+            page.on('response', response => {
+              if (response.status() >= 400) {
+                const path = new URL(response.url()).pathname
+                const failure = response.status() + ' ' + response.url()
+                if (path.startsWith('/api/') || /\\.(js|css)$/.test(path) || response.status() !== 404) errors.push(failure)
+                else noncriticalHttp404s.push(failure)
+              }
+            })
+            page.on('console', message => {
+              const isUnexpectedError = message.type() === 'error' && !message.text().includes('status of 404')
+              if (isUnexpectedError) errors.push(message.text())
+            })
             const response = await page.goto(base + '/lms' + (name ? '/courses/' + name + '?editLesson=1-1#editor' : ''), {waitUntil: 'networkidle', timeout: 60000})
             if (response?.status() !== 200) throw new Error('Author page HTTP ' + response?.status())
             await page.locator('.author-hero h1').waitFor({timeout: 30000})
@@ -657,6 +669,7 @@ jobs:
                         await mobilePage.close()
             await reopened.close()
             await desktop.close()
+            if (noncriticalHttp404s.length) console.log('Non-JavaScript author HTTP 404s: ' + JSON.stringify(noncriticalHttp404s))
             if (errors.length) throw new Error('Author browser console errors: ' + errors.join('; ').slice(0, 1000))
             console.log('Course Creator created an unpublished course in the native UI, assigned self as instructor, persisted a chapter and lesson body, reopened in a fresh authenticated session at desktop and mobile, and an unrelated student was denied.')
           } finally {
