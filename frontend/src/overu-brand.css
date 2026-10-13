@@ -38,13 +38,20 @@ html {
 	background-color: #f6f4ee;
 }
 
-/* Solid primary buttons become forest-green pills. */
+/* Solid primary buttons are orange pills, as in the approved preview. */
 #app button[class*='bg-surface-gray-7'] {
+	background-color: #e94e15;
 	border-radius: 999px;
 	color: #fff;
+	box-shadow: 0 8px 18px rgba(233, 78, 21, 0.18);
 }
 #app button[class*='bg-surface-gray-7']:hover:not(:disabled) {
-	background-color: #173d2e;
+	background-color: #ce4310;
+}
+/* Outline / subtle buttons are quiet pills. */
+#app button[class*='border-outline'],
+#app button[class*='bg-surface-white'][class*='border'] {
+	border-radius: 999px;
 }
 
 /* Cards, inputs, dialogs: the larger radius of the approved language. */
