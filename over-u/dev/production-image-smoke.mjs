@@ -81,6 +81,13 @@ try {
 		timeout: 60000,
 	});
 	assert.equal(response?.status(), 200, "/lms must return HTTP 200");
+	const runtimeMode = await page.evaluate(() => ({
+		devServer: window.dev_server,
+		siteName: window.site_name,
+		origin: window.location.origin,
+	}));
+	console.log("Production image browser runtime:", JSON.stringify(runtimeMode));
+	assert.equal(runtimeMode.devServer, false, "Production image must render with dev_server disabled");
 	const heading = page.locator(".author-hero h1");
 	await page.waitForTimeout(3000);
 	const diagnostic = await page.evaluate(async () => {
