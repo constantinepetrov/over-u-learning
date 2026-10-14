@@ -24,6 +24,7 @@ def get_context(context):
 		"api_version": 1,
 		"teacher_tools": can_review_assignments(),
 		"author_tools": can_author_courses(),
+		"chat_url": frappe.conf.get("over_u_chat_url") or "",
 		**school_messages(),
 	}
 	return context

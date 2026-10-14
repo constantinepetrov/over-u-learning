@@ -1,5 +1,5 @@
 import { boot, t } from "./i18n.js";
-import { welcomeCard } from "./guide.js";
+import { welcomeCard, chatBanner } from "./guide.js";
 import {
 	escape as e,
 	icon,
@@ -172,7 +172,7 @@ function brandHero(course = null) {
 export function homeView(home) {
 	const courses = home.courses;
 	if (!courses.length)
-		return `${brandHero()}${welcomeCard()}<div class="page-heading"><span class="eyebrow">${t(
+		return `${brandHero()}${welcomeCard()}${chatBanner()}<div class="page-heading"><span class="eyebrow">${t(
 			"ui_006"
 		)}</span><h1>${t("ui_027")}</h1></div><section class="empty"><h2>${t(
 			"ui_028"
@@ -217,7 +217,7 @@ export function homeView(home) {
 	)}</section>`;
 	return `${brandHero(
 		course
-	)}${welcomeCard()}<div class="page-heading"><div class="program-identity"><strong>${t(
+	)}${welcomeCard()}${chatBanner()}<div class="page-heading"><div class="program-identity"><strong>${t(
 		"ui_150"
 	)}</strong><span>LIFELONG ENERGY · BUSINESS HAPPINESS</span></div><span class="eyebrow">${t(
 		"ui_040"

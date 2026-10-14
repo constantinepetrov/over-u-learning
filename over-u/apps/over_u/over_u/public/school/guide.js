@@ -1,6 +1,7 @@
 // Student guide: an inline welcome card on the home page and a help dialog.
 // Self-contained on purpose: it never blocks the page on first load.
 import { escape as e } from "./components.js";
+import { boot } from "./i18n.js";
 
 const STORAGE_KEY = "ou_guide_dismissed_v1";
 
@@ -97,4 +98,12 @@ export function openGuide() {
 	document.addEventListener("keydown", onKey);
 	document.body.appendChild(overlay);
 	overlay.querySelector("[data-guide-close]").focus();
+}
+
+export function chatBanner() {
+	const url = (boot.chat_url || "").trim();
+	if (!/^https:\/\/(chat\.whatsapp\.com|wa\.me|t\.me)\//.test(url)) return "";
+	return `<section class="ou-chat" aria-label="Общий чат группы"><div><h2>Общий чат группы</h2><p>Здесь можно задать вопрос, поделиться успехами и пообщаться с другими участниками курса.</p></div><a class="button primary" href="${e(
+		url
+	)}" target="_blank" rel="noopener noreferrer">Открыть чат в WhatsApp</a></section>`;
 }
