@@ -1,0 +1,75 @@
+/* OVER U brand for Frappe's server-rendered login. Layout follows the approved
+   preview: art panel on the left, form on the right, stacked on phones. */
+:root {
+  --ou-paper:#f6f4ee; --ou-surface:#fffefa; --ou-ink:#202722; --ou-muted:#68736b;
+  --ou-line:#deded4; --ou-forest:#214d3c; --ou-forest-hover:#173d2e;
+  --ou-orange:#e94e15; --ou-orange-hover:#ce4310;
+  --ou-serif:'Iowan Old Style',Georgia,'Times New Roman',serif;
+}
+html:has(.for-login), body:has(.for-login), body { background:var(--ou-paper)!important; color:var(--ou-ink); }
+
+/* Art panel (only on pages that contain the login form). */
+body:has(.for-login)::before {
+  content:""; position:fixed; z-index:0; top:0; bottom:0; left:0; width:55%;
+  background:linear-gradient(0deg,rgba(24,51,40,.62),rgba(24,51,40,.05) 75%),
+    url("/assets/over_u/brand/login-lake.jpg") 68% center/cover no-repeat, var(--ou-forest);
+}
+body:has(.for-login)::after {
+  content:"Энерголетие"; position:fixed; z-index:1; left:38px; bottom:62px; color:#fff;
+  font:400 46px/1.1 var(--ou-serif); letter-spacing:-.03em;
+}
+html:has(.for-login)::after {
+  content:"LIFELONG ENERGY · BUSINESS HAPPINESS"; position:fixed; z-index:1; left:38px; bottom:35px;
+  color:rgba(255,255,255,.85); font:600 11px/1.5 sans-serif; letter-spacing:.16em;
+}
+section.for-login, section.for-forgot, section.for-signup, section.for-login-with-email-link {
+  position:relative; z-index:2; margin-left:55%; min-height:100vh; width:45%; box-sizing:border-box;
+  padding:max(34px,14vh) 34px 34px; background:transparent;
+}
+section.signup-disabled { display:none!important; }
+
+.page-card, .login-content.page-card {
+  background:transparent; border:0; box-shadow:none; max-width:390px; width:100%;
+  margin:0 auto; padding:0;
+}
+.page-card-head { text-align:center; border:0; padding:0; }
+.page-card-head .app-logo, .page-card-head img.app-logo {
+  content:url("/assets/over_u/brand/logo.png");
+  display:block!important; width:auto!important; height:94px!important; max-height:none!important; object-fit:contain; margin:0 auto 18px; background:none;
+}
+.page-card-head h4, .page-card-head h4.login-title, .login-content h4 {
+  font:400 40px/1.1 var(--ou-serif); letter-spacing:-.035em; color:var(--ou-ink); margin:0 0 8px; text-align:center;
+}
+.page-card-subtitle { text-align:center; font-size:12px; }
+.page-card-head, .page-card-head .page-card-head-text { align-items:center!important; text-align:center; }
+.login-content .form-control, .login-content input.form-control {
+  border-radius:14px; border:1px solid var(--ou-line); background:#fff; min-height:46px; box-shadow:none;
+}
+.login-content .form-control:focus { border-color:var(--ou-forest); box-shadow:0 0 0 3px rgba(33,77,60,.12); }
+.login-content label, .form-label { color:var(--ou-ink); font-size:11px; font-weight:700; }
+.es-button[data-variant="solid"], .btn-primary {
+  background:var(--ou-orange)!important; border:0!important; border-radius:999px!important; color:#fff!important;
+  min-height:48px; font-weight:700; box-shadow:0 8px 18px rgba(233,78,21,.18);
+}
+.es-button[data-variant="solid"]:hover, .btn-primary:hover { background:var(--ou-orange-hover)!important; }
+.es-button:not([data-variant="solid"]) { border-radius:999px!important; border:1px solid var(--ou-line)!important; background:transparent!important; color:var(--ou-forest)!important; min-height:46px; }
+.btn-default, .btn-login-option, .login-content .btn-light {
+  border-radius:999px!important; border:1px solid var(--ou-line)!important; background:transparent!important; min-height:46px;
+}
+.login-content a, .page-card a { color:var(--ou-forest); }
+.sign-up-message, .login-content .text-muted { color:var(--ou-muted)!important; }
+.web-footer, footer.web-footer { position:relative; z-index:2; color:var(--ou-muted); margin-left:55%; }
+
+@media (max-width: 860px) {
+  body:has(.for-login)::before { width:100%; bottom:auto; height:200px; }
+  body:has(.for-login)::after { left:22px; bottom:auto; top:110px; font-size:32px; }
+  html:has(.for-login)::after { left:22px; bottom:auto; top:160px; }
+  section.for-login, section.for-forgot, section.for-signup, section.for-login-with-email-link { margin-left:0; width:100%; margin-top:200px; min-height:auto; padding:28px 22px; }
+  .web-footer, footer.web-footer { margin-left:0; }
+}
+
+/* First-time hint under the login form. */
+section.for-login .page-card-actions::after {
+  content:"Первый раз здесь? Откройте личную ссылку из приглашения, задайте пароль и затем войдите.";
+  display:block; margin-top:8px; text-align:center; font-size:12px; line-height:1.5; color:var(--ou-muted);
+}

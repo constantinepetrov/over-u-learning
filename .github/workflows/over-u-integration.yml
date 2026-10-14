@@ -2,9 +2,9 @@ name: OVER U isolated integration
 
 on:
   push:
-    branches: [feature/overu-brand-design]
+    branches: [feature/overu-brand-design, feature/overu-approved-ui-integration]
   pull_request:
-    branches: [feature/overu-brand-design]
+    branches: [feature/overu-brand-design, feature/overu-approved-ui-integration]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   frontend:
-    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.base_ref == 'feature/overu-brand-design'
+    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.ref == 'refs/heads/feature/overu-approved-ui-integration' || github.base_ref == 'feature/overu-brand-design' || github.base_ref == 'feature/overu-approved-ui-integration'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -50,7 +50,7 @@ jobs:
 
 
   server:
-    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.base_ref == 'feature/overu-brand-design'
+    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.ref == 'refs/heads/feature/overu-approved-ui-integration' || github.base_ref == 'feature/overu-brand-design' || github.base_ref == 'feature/overu-approved-ui-integration'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -146,6 +146,8 @@ jobs:
               assert response.status == 200, f"asset {asset} returned {response.status}"
           print(f"/lms returned 200 and {len(parser.urls)} frontend assets returned 200")
           PY
+      - name: Run homework file privacy unit tests
+        run: docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_file_privacy'
       - name: Install isolated browser smoke-test tools
         run: |
           npm install --prefix "$RUNNER_TEMP/over-u-playwright" --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.0
@@ -158,39 +160,551 @@ jobs:
           const browser = await chromium.launch({ headless: true })
           const context = await browser.newContext()
           const login = await context.request.post('http://over-u.localhost:8000/api/method/login', {
-            form: { usr: 'Administrator', pwd: process.env.OVER_U_ADMIN_PASSWORD },
+            // Exercise the role-specific author workspace with the same
+            // synthetic Course Creator used by the author editor round-trip.
+            form: { usr: 'teacher@over-u.example.com', pwd: process.env.OVER_U_DEMO_PASSWORD },
           })
-          if (login.status() !== 200 || (await login.json()).message !== 'Logged In') {
-            throw new Error('Synthetic administrator login failed')
+          const auth = await login.json().catch(() => ({}))
+          if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
+            throw new Error(`Synthetic Course Creator login failed: HTTP ${login.status()}`)
           }
           const page = await context.newPage()
           const errors = []
           page.on('pageerror', error => errors.push(error.message))
-          page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
+          const httpFailures = []
+          page.on('response', response => {
+            if (response.status() >= 400) {
+              const path = new URL(response.url()).pathname
+              const failure = response.status() + ' ' + response.url()
+              if (path.startsWith('/api/') || /\\.(js|css)$/.test(path) || response.status() !== 404) errors.push(failure)
+              else httpFailures.push(failure)
+            }
+          })
+          page.on('console', message => {
+            if (message.type() === 'error' && !message.text().startsWith('Failed to load resource: the server responded with a status of 404')) errors.push(message.text())
+          })
           const response = await page.goto('http://over-u.localhost:8000/lms', { waitUntil: 'networkidle', timeout: 60000 })
           if (!response || response.status() !== 200) errors.push(`/lms response status: ${response?.status()}`)
           await page.waitForTimeout(2000)
           const mounted = await page.locator('#app').count()
           if (!mounted) errors.push('Vue app mount not found')
+          if (errors.length) {
+            const body = await page.locator('body').innerText().catch(() => '')
+            console.error('Page text at failure:', body.slice(0, 1200))
+            const stack = errors.find(value => value.includes('/assets/lms/frontend/assets/'))
+            const match = stack?.match(/(\/assets\/lms\/frontend\/assets\/[^:\s]+\.js):(\d+):(\d+)/)
+            if (match) {
+              const script = await context.request.get('http://over-u.localhost:8000' + match[1])
+              const lines = (await script.text()).split('\n')
+              const line = lines[Number(match[2]) - 1] || ''
+              const column = Number(match[3])
+              console.error('Failing bundle context:', line.slice(Math.max(0, column - 500), column + 500))
+            }
+          }
           await browser.close()
           if (errors.length) {
             console.error(errors.join('\n'))
             process.exit(1)
           }
-          console.log('/lms loaded in Chromium without JavaScript console or page errors')
+          console.log('/lms loaded in Chromium without JavaScript console or critical asset/API errors')
+          if (httpFailures.length) console.log('Non-JavaScript HTTP 404s: ' + JSON.stringify(httpFailures))
           JS
+      - name: Browser-test approved OVER U student design at desktop and phone sizes
+        run: |
+          node --input-type=module <<'JS'
+          import { pathToFileURL } from 'node:url'
+          import { mkdir } from 'node:fs/promises'
+          const { chromium } = await import(pathToFileURL(`${process.env.RUNNER_TEMP}/over-u-playwright/node_modules/playwright/index.mjs`))
+          const output = `${process.env.RUNNER_TEMP}/over-u-brand-screenshots`
+          await mkdir(output, {recursive: true})
+          const browser = await chromium.launch({headless: true})
+          try {
+            for (const [name, width, height] of [['desktop', 1440, 900], ['mobile', 390, 844]]) {
+              const context = await browser.newContext({ viewport: {width, height}, deviceScaleFactor: 1 })
+              const login = await context.request.post('http://over-u.localhost:8000/api/method/login', {
+                form: { usr: 'student1@over-u.example.com', pwd: process.env.OVER_U_DEMO_PASSWORD }
+              })
+              const auth = await login.json().catch(() => ({}))
+              // Frappe returns "No App" on successful Website User login and
+              // "Logged In" on successful System User login. Check the session
+              // identity as well as the response to reject anonymous sessions.
+              if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
+                // Only report status and error category. CI credentials and cookies stay masked.
+                const reason = String(auth.exc_type || auth.message || 'unexpected response').slice(0, 120)
+                throw new Error(`Synthetic student login failed: HTTP ${login.status()}, reason=${reason}`)
+              }
+              const identityResponse = await context.request.get('http://over-u.localhost:8000/api/method/frappe.auth.get_logged_user')
+              const identity = await identityResponse.json().catch(() => ({}))
+              if (identityResponse.status() !== 200 || identity.message !== 'student1@over-u.example.com') {
+                throw new Error('Synthetic student session identity mismatch')
+              }
+              const page = await context.newPage()
+              const errors = []
+              page.on('pageerror', error => errors.push(error.message))
+              const response = await page.goto('http://over-u.localhost:8000/school', {
+                waitUntil: 'networkidle', timeout: 60000
+              })
+              if (response?.status() !== 200) throw new Error(`/school HTTP ${response?.status()}`)
+              await page.locator('.ou-brand-hero h1').waitFor({timeout: 25000})
+              // Always retain a real-render screenshot even if a later layout
+              // assertion fails; the existing artifact step uploads it on failure.
+              await page.screenshot({path: `${output}/student-${name}-${width}.png`, fullPage: true})
+              const hero = await page.locator('.ou-brand-hero h1').innerText()
+              if (!hero.includes('Энерголетие')) throw new Error('Approved hero is missing')
+              if (await page.locator('.navigation').count()) throw new Error('Old vertical sidebar is still present')
+              if (await page.locator('.ou-header-nav').count() !== 1) throw new Error('New horizontal navigation missing')
+              if (await page.locator('.progress-ring').count() !== 1) throw new Error('Live Frappe course progress ring missing')
+              if (await page.locator('.ou-hero-progress').count() !== 1) throw new Error('Visible live progress ring missing from hero')
+              const ring = await page.locator('.progress-ring svg').boundingBox()
+              const digits = await page.locator('.progress-ring strong').boundingBox()
+              if (!ring || !digits) throw new Error('Progress ring geometry missing')
+              const rx = ring.x + ring.width / 2, ry = ring.y + ring.height / 2
+              const tx = digits.x + digits.width / 2, ty = digits.y + digits.height / 2
+              if (Math.abs(rx - tx) > 3 || Math.abs(ry - ty) > 12) {
+                throw new Error(`Progress ring alignment wrong at ${width}px: ${rx-tx}, ${ry-ty}`)
+              }
+              if (!await page.locator('.ou-brand-hero-image img').evaluate(img => img.complete && img.naturalWidth > 0)) {
+                throw new Error('Branded landscape failed to load')
+              }
+              const geometry = await page.evaluate(() => ({
+                viewport: innerWidth,
+                documentWidth: document.documentElement.scrollWidth,
+                desktopNavVisible: getComputedStyle(document.querySelector('.ou-header-nav')).display !== 'none',
+                mobileNavVisible: getComputedStyle(document.querySelector('.ou-mobile-nav')).display !== 'none',
+                mobileNavLabelsFit: [...document.querySelectorAll('.ou-mobile-nav a')].length > 0 && [...document.querySelectorAll('.ou-mobile-nav a')].every(item => item.scrollWidth <= item.clientWidth + 2 && getComputedStyle(item).whiteSpace === 'nowrap')
+              }))
+              if (geometry.documentWidth > width + 2) throw new Error(`Horizontal overflow at ${width}: ${JSON.stringify(geometry)}`)
+              if (width === 390 && !geometry.mobileNavLabelsFit) throw new Error('Mobile navigation labels wrap or overflow at 390px')
+              if (geometry.desktopNavVisible === (width === 390) || geometry.mobileNavVisible !== (width === 390)) {
+                throw new Error(`Wrong responsive menu at ${width}: ${JSON.stringify(geometry)}`)
+              }
+              if (errors.length) throw new Error(`JavaScript errors at ${width}: ${errors.join('; ')}`)
+              await page.screenshot({path: `${output}/student-${name}-${width}.png`,fullPage:true})
+              console.log(`/school approved brand ${name} ${width}x${height}: hero, nav, real ring, image, geometry OK`)
+              await context.close()
+            }
+          } finally {
+            await browser.close()
+          }
+          JS
+      - name: Browser-test Course Creator draft round-trip and settled author UI
+        run: |
+          node --input-type=module <<'JS'
+          import { pathToFileURL } from 'node:url'
+          import { mkdir } from 'node:fs/promises'
+          const { chromium } = await import(pathToFileURL(process.env.RUNNER_TEMP + '/over-u-playwright/node_modules/playwright/index.mjs'))
+          const base = 'http://over-u.localhost:8000'
+          const output = process.env.RUNNER_TEMP + '/over-u-brand-screenshots'
+          await mkdir(output, {recursive: true})
+          const browser = await chromium.launch({headless: true})
+          const errors = []
+          const noncriticalHttp404s = []
+          const user = 'teacher@over-u.example.com'
+          const password = process.env.OVER_U_DEMO_PASSWORD
+
+          async function authenticatedContext(width, height, loginUser = user) {
+            const context = await browser.newContext({viewport: {width, height}, deviceScaleFactor: 1})
+            const login = await context.request.post(base + '/api/method/login', {form: {usr: loginUser, pwd: password}})
+            const auth = await login.json().catch(() => ({}))
+            if (login.status() !== 200 || !['No App', 'Logged In'].includes(auth.message)) {
+              throw new Error('Synthetic Course Creator login failed, HTTP ' + login.status())
+            }
+            const identity = await context.request.get(base + '/api/method/frappe.auth.get_logged_user')
+            if (identity.status() !== 200 || (await identity.json()).message !== loginUser) {
+              throw new Error('Synthetic session identity mismatch')
+            }
+            return context
+          }
+
+          async function getAs(context, endpoint, params) {
+            return context.request.get(base + endpoint + '?' + new URLSearchParams(params).toString())
+          }
+
+          async function waitForSettledForm(page, mobile, width) {
+            const fields = page.locator('[data-testid="new-course-fields"]')
+            await fields.waitFor({state: 'visible', timeout: 30000})
+            const shell = mobile ? page.locator('[data-testid="form-shell-page"]') : page.locator('[role="dialog"]').filter({has: fields})
+            await shell.waitFor({state: 'visible', timeout: 15000})
+            await page.waitForFunction(() => {
+              const shell = document.querySelector('[data-testid="form-shell-page"]') || [...document.querySelectorAll('[role="dialog"]')].find(el => el.querySelector('[data-testid="new-course-fields"]'))
+              if (!shell) return false
+              const opacity = Number.parseFloat(getComputedStyle(shell).opacity || '1')
+              const transitionsDone = shell.getAnimations({subtree: true}).every(animation => animation.playState !== 'running')
+              return opacity >= 0.99 && transitionsDone
+            }, null, {timeout: 15000})
+            const visuals = await shell.evaluate(el => {
+              const color = getComputedStyle(el).backgroundColor
+              const alphaPart = color.includes(',') ? color.split(',').at(-1).replace(')', '').trim() : color.includes('/') ? color.split('/').at(-1).replace(')', '').trim() : '1'
+              const alpha = color === 'transparent' ? 0 : Number.parseFloat(alphaPart)
+              const fields = el.querySelector('[data-testid="new-course-fields"]')
+              const input = fields?.querySelector('input')
+              return {
+                background: color,
+                alpha,
+                fields: Boolean(fields),
+                inputVisible: Boolean(input && input.getBoundingClientRect().width > 0 && getComputedStyle(input).visibility === 'visible'),
+                inputColor: input ? getComputedStyle(input).color : '',
+                pageWidth: document.documentElement.scrollWidth,
+                viewportWidth: innerWidth,
+                inert: Boolean(document.querySelector('#app')?.inert || document.querySelector('#app')?.getAttribute('aria-hidden') === 'true')
+              }
+            })
+            if (!visuals.fields || visuals.alpha < 0.98) throw new Error('Author form surface is not opaque after transition: ' + JSON.stringify(visuals))
+            if (!visuals.inputVisible || !visuals.inputColor) throw new Error('Author form fields are not visibly readable')
+            if (visuals.pageWidth > width + 2) throw new Error('Author form has horizontal overflow: ' + JSON.stringify(visuals))
+            if (mobile && !visuals.inert) throw new Error('Mobile form did not inert the underlying application')
+            await shell.locator('input').first().focus()
+            const focused = await page.evaluate(() => {
+              const shell = document.querySelector('[data-testid="form-shell-page"]') || [...document.querySelectorAll('[role="dialog"]')].find(el => el.querySelector('[data-testid="new-course-fields"]'))
+              return Boolean(shell?.contains(document.activeElement))
+            })
+            if (!focused) throw new Error('Keyboard focus escaped the author form')
+            if (mobile) {
+              const body = page.locator('[data-testid="form-shell-body"]')
+              await body.evaluate(el => { el.scrollTop = el.scrollHeight })
+              const save = page.getByTestId('new-course-save')
+              await save.scrollIntoViewIfNeeded()
+              if (!await save.isVisible()) throw new Error('Save action is unreachable while scrolling the mobile form')
+              await body.evaluate(el => { el.scrollTop = 0 })
+              await shell.locator('input').first().focus()
+            } else {
+              const underlyingHit = await page.evaluate(() => {
+                const point = document.elementFromPoint(innerWidth - 4, Math.floor(innerHeight / 2))
+                return Boolean(point && (point.id === 'app' || point.closest('#app')))
+              })
+              if (underlyingHit) throw new Error('Desktop dialog backdrop does not intercept interaction with the page behind it')
+            }
+            await page.waitForTimeout(250)
+            return shell
+          }
+
+          async function openWorkspace(context, name, width) {
+            const page = await context.newPage()
+            page.on('pageerror', error => errors.push(error.message))
+            page.on('response', response => {
+              if (response.status() >= 400) {
+                const path = new URL(response.url()).pathname
+                const failure = response.status() + ' ' + response.url()
+                if (path.startsWith('/api/') || /\\.(js|css)$/.test(path) || response.status() !== 404) errors.push(failure)
+                else noncriticalHttp404s.push(failure)
+              }
+            })
+            page.on('console', message => {
+              const isUnexpectedError = message.type() === 'error' && !message.text().includes('status of 404')
+              if (isUnexpectedError) errors.push(message.text())
+            })
+            const response = await page.goto(base + '/lms' + (name ? '/courses/' + name + '?editLesson=1-1#editor' : ''), {waitUntil: 'networkidle', timeout: 60000})
+            if (response?.status() !== 200) throw new Error('Author page HTTP ' + response?.status())
+            await page.locator('.author-hero h1').waitFor({timeout: 30000})
+            if (!(await page.locator('.author-hero h1').innerText()).includes('Студия курсов')) {
+              throw new Error('Branded Course Creator workspace did not load')
+            }
+            await page.screenshot({path: output + '/author-workspace-' + width + '.png', fullPage: true})
+            return page
+          }
+
+          try {
+            const desktop = await authenticatedContext(1440, 900)
+            const page = await openWorkspace(desktop, null, 1440)
+            await page.locator('.author-course').first().waitFor({timeout: 25000})
+            await page.locator('.author-hero-create').click()
+            await waitForSettledForm(page, false, 1440)
+            await page.screenshot({path: output + '/author-new-course-desktop-1440.png', fullPage: true})
+
+            const fields = page.getByTestId('new-course-fields')
+            const title = 'OVER U CI draft ' + Date.now()
+            await fields.locator('input:visible').first().fill(title)
+            const instructors = fields.locator('[data-slot="trigger"][aria-haspopup="listbox"]').last()
+            await instructors.click()
+            const picker = page.locator('[data-slot="content-body"] [data-slot="input"]')
+            await picker.fill(user)
+            const ownOption = page.locator('[data-slot="content-body"] [role="option"]').filter({hasText: user}).first()
+            await ownOption.waitFor({state: 'visible', timeout: 20000})
+            await ownOption.click()
+            await page.keyboard.press('Escape')
+            await fields.locator('textarea:visible').first().fill('Synthetic unpublished authoring round-trip.')
+            await fields.locator('div.ProseMirror[contenteditable="true"]').fill('Synthetic course description for isolated CI.')
+            await page.getByTestId('new-course-save').click()
+            await page.waitForURL(new RegExp('/lms/courses/(?!new(?:$|[/#]))[^/]+$'), {timeout: 30000})
+            const courseName = new URL(page.url()).pathname.split('/').pop()
+            const getDoc = async (doctype, name) => {
+              const response = await getAs(desktop, '/api/method/frappe.client.get', {doctype, name})
+              const body = await response.json().catch(() => ({}))
+              if (response.status() !== 200 || body.exc) throw new Error('Cannot verify persisted ' + doctype + ' through the author session')
+              return body.message
+            }
+            const getCourseDetails = async () => {
+              const response = await getAs(desktop, '/api/method/lms.lms.utils.get_course_details', {course: courseName})
+              const body = await response.json().catch(() => ({}))
+              if (response.status() !== 200 || body.exc || !body.message?.name) { const summary = {status: response.status(), exc_type: body.exc_type || null, message_type: typeof body.message, message_keys: body.message && typeof body.message === 'object' ? Object.keys(body.message) : [], message_name: body.message?.name || null}; throw new Error('The native course-details API did not return the author draft: ' + JSON.stringify(summary)) }
+              return body.message
+            }
+            const persistedCourse = await getCourseDetails()
+            if (Number(persistedCourse.published) !== 0 || !persistedCourse.title.includes('OVER U CI draft')) {
+              throw new Error('Course was not persisted as an unpublished draft')
+            }
+            const instructorRows = persistedCourse.instructors || []
+            if (!instructorRows.some(row => (row.instructor || row.value || row.name || row.email || row) === user)) throw new Error('The Course Creator was not saved as the course instructor')
+
+            // Select the native editor through its supported route hash. The
+            // accessible label is localized, while the tab key remains stable.
+            await page.goto(base + '/lms/courses/' + courseName + '#editor', {waitUntil: 'networkidle', timeout: 60000})
+            await page.waitForFunction(() => location.hash === '#editor')
+            const addChapterButton = page.locator('button:has(.lucide-plus)').last()
+            await addChapterButton.waitFor({state: 'visible', timeout: 20000})
+            await addChapterButton.click()
+            const chapterDialog = page.locator('[data-dismissable-layer]').filter({has: page.locator('label', {hasText: 'Title'})})
+            await chapterDialog.waitFor({state: 'visible', timeout: 15000})
+            const chapterTitle = 'CI Chapter ' + Date.now()
+            await chapterDialog.locator('label').filter({hasText: 'Title'}).locator('xpath=..').locator('input').fill(chapterTitle)
+            const chapterSaved = page.waitForResponse(response => response.url().includes('/api/method/lms.lms.api.upsert_chapter') && response.status() === 200)
+            await chapterDialog.getByTestId('chapter-save').click()
+            await chapterSaved
+            await page.getByText(chapterTitle, {exact: true}).waitFor({state: 'visible', timeout: 20000})
+            const chapterRow = page.locator('.chapter-item').filter({hasText: chapterTitle})
+            const chapterToggle = chapterRow.locator('button').first()
+            if (await chapterToggle.getAttribute('aria-expanded') !== 'true') await chapterToggle.click()
+            // The synthetic author has Russian locale, so anchor on the native
+            // add icon instead of a translated accessible label.
+            const addLessonButton = chapterRow.locator('button:has(.lucide-plus)').last()
+            await addLessonButton.waitFor({state: 'visible', timeout: 15000})
+            await addLessonButton.click()
+            const lessonTitle = 'CI Lesson ' + Date.now()
+            const titleField = page.locator('textarea.lesson-title')
+            await titleField.waitFor({state: 'visible', timeout: 20000})
+            await titleField.fill(lessonTitle)
+            const body = page.locator('.bn-editor:visible [contenteditable="true"]').first()
+            await body.waitFor({state: 'visible', timeout: 15000})
+            await body.fill('Synthetic lesson body saved by the native EditorJS interface.')
+            await page.waitForResponse(response => response.url().includes('/api/method/frappe.client.set_value') && response.status() === 200, {timeout: 20000})
+            await page.waitForTimeout(1200)
+            const outlineResponse = await getAs(desktop, '/api/method/lms.lms.utils.get_course_outline', {course: courseName, progress: '0'})
+            const outlineBody = await outlineResponse.json().catch(() => ({}))
+            if (outlineResponse.status() !== 200 || outlineBody.exc) throw new Error('Course outline persistence check failed')
+            const chapters = outlineBody.message || []
+            const chapter = chapters.find(row => row.title === chapterTitle)
+            const lessonRow = chapter?.lessons?.find(row => row.title === lessonTitle)
+            if (!chapter || !lessonRow) throw new Error('Chapter or lesson did not persist in the course outline')
+            const persistedLesson = await getDoc('Course Lesson', lessonRow.name)
+            if (!(persistedLesson.content || '').includes('Synthetic lesson body saved by the native EditorJS interface')) {
+              throw new Error('Lesson body did not persist through the native editor')
+            }
+
+            const contentEditor = page.locator('.bn-editor:visible').last()
+            const waitForLessonSave = () => page.waitForResponse(
+              response => response.url().includes('/api/method/frappe.client.set_value'),
+              {timeout: 30000}
+            )
+            async function addEditorTool(toolName) {
+              const lastBlock = contentEditor.locator('.ce-block').last()
+              await lastBlock.scrollIntoViewIfNeeded()
+              await lastBlock.hover()
+              const plus = contentEditor.locator('.ce-toolbar__plus:visible').last()
+              await plus.waitFor({state: 'visible', timeout: 12000})
+              await plus.click()
+              const item = page.locator('.ce-popover-item[data-item-name="' + toolName + '"]').last()
+              await item.waitFor({state: 'visible', timeout: 12000})
+              await item.click()
+            }
+            async function readLessonBlocks() {
+              const lessonDoc = await getDoc('Course Lesson', lessonRow.name)
+              try {
+                return JSON.parse(lessonDoc.content || '{}').blocks || []
+              } catch {
+                throw new Error('Native editor saved malformed lesson content')
+              }
+            }
+            const videoChooser = page.waitForEvent('filechooser', {timeout: 20000})
+              .then(value => ({value}), error => ({error}))
+            await addEditorTool('upload')
+            const selectedVideoChooser = await videoChooser
+            if (selectedVideoChooser.error) throw selectedVideoChooser.error
+            const videoSave = waitForLessonSave().then(value => ({value}), error => ({error}))
+            const videoUpload = page.waitForResponse(
+              response => response.url().includes('/api/method/upload_file'),
+              {timeout: 60000}
+            ).then(value => ({value}), error => ({error}))
+            await selectedVideoChooser.value.setFiles(process.cwd() + '/frontend/public/Quiz.mp4')
+            const [videoResponseResult, videoSavedResult] = await Promise.all([videoUpload, videoSave])
+            if (videoResponseResult.error) throw videoResponseResult.error
+            if (videoSavedResult.error) throw videoSavedResult.error
+            const videoResponse = videoResponseResult.value
+            const videoPayload = await videoResponse.json().catch(() => ({}))
+            const videoFile = videoPayload.message || {}
+            if (!videoResponse.ok() || !videoFile.file_url || Number(videoFile.is_private) !== 1) {
+              throw new Error('Native video upload did not return a private file')
+            }
+            const videoSaved = videoSavedResult.value
+            if (!videoSaved.ok()) throw new Error('Video block save request failed')
+            let blocks = await readLessonBlocks()
+            const videoBlock = blocks.find(block => block.type === 'upload' &&
+              (block.data?.file_url || '').toLowerCase().endsWith('.mp4'))
+            if (!videoBlock || !String(videoBlock.data.file_url).startsWith('/private/files/')) {
+              throw new Error('Private video block did not persist in the lesson')
+            }
+
+            function syntheticPdf() {
+              const stream = 'BT /F1 12 Tf 10 50 Td (Synthetic OVER U CI PDF) Tj ET\n'
+              const objects = [
+                '<< /Type /Catalog /Pages 2 0 R >>',
+                '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+                '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+                '<< /Length ' + Buffer.byteLength(stream) + ' >>\nstream\n' + stream + 'endstream',
+                '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+              ]
+              let pdf = '%PDF-1.4\n'
+              const offsets = [0]
+              for (let index = 0; index < objects.length; index++) {
+                offsets.push(Buffer.byteLength(pdf))
+                pdf += (index + 1) + ' 0 obj\n' + objects[index] + '\nendobj\n'
+              }
+              const xrefOffset = Buffer.byteLength(pdf)
+              pdf += 'xref\n0 6\n0000000000 65535 f \n'
+              for (const offset of offsets.slice(1)) pdf += String(offset).padStart(10, '0') + ' 00000 n \n'
+              pdf += 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF\n'
+              return Buffer.from(pdf)
+            }
+            const pdfChooser = page.waitForEvent('filechooser', {timeout: 20000})
+              .then(value => ({value}), error => ({error}))
+            await addEditorTool('upload')
+            const selectedPdfChooser = await pdfChooser
+            if (selectedPdfChooser.error) throw selectedPdfChooser.error
+            const pdfSave = waitForLessonSave().then(value => ({value}), error => ({error}))
+            const pdfUpload = page.waitForResponse(
+              response => response.url().includes('/api/method/upload_file'),
+              {timeout: 30000}
+            ).then(value => ({value}), error => ({error}))
+            await selectedPdfChooser.value.setFiles({
+              name: 'over-u-ci-synthetic.pdf',
+              mimeType: 'application/pdf',
+              buffer: syntheticPdf(),
+            })
+            const [pdfResponseResult, pdfSavedResult] = await Promise.all([pdfUpload, pdfSave])
+            if (pdfResponseResult.error) throw pdfResponseResult.error
+            if (pdfSavedResult.error) throw pdfSavedResult.error
+            const pdfResponse = pdfResponseResult.value
+            const pdfPayload = await pdfResponse.json().catch(() => ({}))
+            const pdfFile = pdfPayload.message || {}
+            if (!pdfResponse.ok() || !pdfFile.file_url || Number(pdfFile.is_private) !== 1) {
+              throw new Error('Native PDF upload did not return a private file')
+            }
+            const pdfSaved = pdfSavedResult.value
+            if (!pdfSaved.ok()) throw new Error('PDF block save request failed')
+            blocks = await readLessonBlocks()
+            const pdfBlock = blocks.find(block => block.type === 'upload' &&
+              (String(block.data?.file_type || '').toLowerCase().includes('pdf') ||
+                String(block.data?.file_url || '').toLowerCase().endsWith('.pdf')))
+            if (!pdfBlock || !String(pdfBlock.data.file_url).startsWith('/private/files/')) {
+              throw new Error('Private PDF block did not persist in the lesson')
+            }
+
+            async function addAssessment(toolName, title, fieldName) {
+              await addEditorTool(toolName)
+              const dialog = page.locator('[data-dismissable-layer]').filter({has: page.locator('input')}).last()
+              await dialog.waitFor({state: 'visible', timeout: 15000})
+              const input = dialog.locator('input').first()
+              await input.click()
+              await input.fill(title)
+              const option = page.locator('[data-slot="content-body"] [role="option"]').filter({hasText: title}).last()
+              await option.waitFor({state: 'visible', timeout: 20000})
+              await option.click()
+              const saveButton = dialog.getByRole('button').filter({hasText: /Save|Сохранить/i}).last()
+              await saveButton.waitFor({state: 'visible', timeout: 10000})
+              const saved = waitForLessonSave().then(value => ({value}), error => ({error}))
+              await saveButton.click()
+              const savedResult = await saved
+              if (savedResult.error) throw savedResult.error
+              const response = savedResult.value
+              if (!response.ok()) throw new Error('Native ' + toolName + ' block save failed')
+              blocks = await readLessonBlocks()
+              if (!blocks.some(block => block.type === toolName && block.data?.[fieldName])) {
+                throw new Error('Native ' + toolName + ' selection did not persist')
+              }
+            }
+            await addAssessment('quiz', 'OVER U CI — Черновой тест автора', 'quiz')
+            await addAssessment('assignment', 'OVER U CI — Черновое задание автора', 'assignment')
+            if (Number((await getCourseDetails()).published) !== 0) throw new Error('Media or assessment authoring published the course unexpectedly')
+
+            const previewLink = page.locator('a[href*="studentView=1"]').last()
+            await previewLink.waitFor({state: 'visible', timeout: 15000})
+            await previewLink.click()
+            await page.waitForURL(url => url.search.includes('studentView=1'), {timeout: 20000})
+            await page.getByRole('heading', {name: lessonTitle, exact: true}).waitFor({state: 'visible', timeout: 20000})
+            await page.screenshot({path: output + '/author-draft-preview-desktop-1440.png', fullPage: true})
+            await page.goto(base + '/lms/courses/' + courseName + '?editLesson=1-1#editor', {waitUntil: 'networkidle', timeout: 60000})
+            await page.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
+            const expectedBlockTypes = ['upload', 'upload', 'quiz', 'assignment']
+            const persistedTypes = (await readLessonBlocks()).map(block => block.type)
+            for (const type of expectedBlockTypes) {
+              const index = persistedTypes.indexOf(type)
+              if (index < 0) throw new Error('Draft lost a native ' + type + ' block before reload')
+              persistedTypes.splice(index, 1)
+            }
+            if (Number((await getCourseDetails()).published) !== 0) throw new Error('Authoring flow published the course unexpectedly')
+            await page.screenshot({path: output + '/author-draft-editor-desktop-1440.png', fullPage: true})
+
+            await page.reload({waitUntil: 'networkidle'})
+            await page.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
+            if (await page.locator('textarea.lesson-title').inputValue() !== lessonTitle) throw new Error('Lesson title did not survive page reload')
+            const editorText = await page.locator('.bn-editor:visible').last().innerText()
+            if (!editorText.includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Lesson body did not survive page reload')
+
+            const reopened = await authenticatedContext(390, 844)
+            const mobilePage = await openWorkspace(reopened, null, 390)
+            await mobilePage.locator('.author-course').filter({hasText: title}).waitFor({state: 'visible', timeout: 30000})
+            await mobilePage.locator('.author-hero-create').click()
+            const mobileShell = await waitForSettledForm(mobilePage, true, 390)
+            await mobilePage.screenshot({path: output + '/author-new-course-mobile-390.png', fullPage: true})
+            await mobilePage.goto(base + '/lms/courses/' + courseName + '?editLesson=1-1#editor', {waitUntil: 'networkidle', timeout: 60000})
+            await mobilePage.locator('textarea.lesson-title').waitFor({state: 'visible', timeout: 30000})
+            if (await mobilePage.locator('textarea.lesson-title').inputValue() !== lessonTitle) throw new Error('Fresh authenticated mobile context did not reopen the persisted lesson')
+            if (!(await mobilePage.locator('.bn-editor:visible').last().innerText()).includes('Synthetic lesson body saved by the native EditorJS interface')) throw new Error('Fresh authenticated mobile context lost lesson body')
+            await mobilePage.screenshot({path: output + '/author-draft-editor-mobile-390.png', fullPage: true})
+
+            const outsider = await authenticatedContext(390, 844, 'student2@over-u.example.com')
+            const denied = await getAs(outsider, '/api/method/frappe.client.get', {doctype: 'LMS Course', name: courseName})
+            const deniedBody = await denied.json().catch(() => ({}))
+            if (denied.status() === 200 && !deniedBody.exc && deniedBody.message) throw new Error('Another author read a private draft they do not own')
+            await outsider.close()
+                        await mobilePage.close()
+            await reopened.close()
+            await desktop.close()
+            if (noncriticalHttp404s.length) console.log('Non-JavaScript author HTTP 404s: ' + JSON.stringify(noncriticalHttp404s))
+            if (errors.length) throw new Error('Author browser console errors: ' + errors.join('; ').slice(0, 1000))
+            console.log('Course Creator created an unpublished course in the native UI, assigned self as instructor, persisted a chapter and lesson body, reopened in a fresh authenticated session at desktop and mobile, and an unrelated student was denied.')
+          } finally {
+            await browser.close()
+          }
+          JS
+      - name: Save synthetic design proof screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: over-u-brand-proof
+          path: ${{ runner.temp }}/over-u-brand-screenshots/*.png
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Check direct private assignment-file access
         run: |
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe'
+          probe_result=$(docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_private_assignment_file_probe')
+          submission=$(printf '%s\n' "$probe_result" | sed -n 's/^OVER_U_CI_PROBE_SUBMISSION=//p' | tail -n 1)
+          if [ -z "$submission" ]; then
+            printf '%s\n' "$probe_result"
+            echo "bench execute did not emit the synthetic submission marker" >&2
+            exit 1
+          fi
+          echo "OVER_U_CI_PROBE_SUBMISSION=$submission" >> "$GITHUB_ENV"
+          export OVER_U_CI_PROBE_SUBMISSION="$submission"
           python3 - <<'PY'
           import http.cookiejar
+          import json
           import os
+          import uuid
           from urllib.error import HTTPError
           from urllib.parse import urlencode
           from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
 
           BASE = "http://over-u.localhost:8000"
-          FILE = BASE + "/private/files/over-u-ci-private-attachment.txt"
           SENTINEL = b"OVER_U_SYNTHETIC_PRIVATE_ATTACHMENT"
 
           class NoRedirect(HTTPRedirectHandler):
@@ -200,38 +714,101 @@ jobs:
           def opener():
               return build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar()), NoRedirect)
 
-          def get(client):
+          def get(client, url):
               try:
-                  with client.open(Request(FILE), timeout=30) as response:
+                  with client.open(Request(url), timeout=30) as response:
                       return response.status, response.read()
               except HTTPError as error:
                   return error.code, error.read()
 
-          guest_status, guest_body = get(opener())
-          assert guest_status != 200 and SENTINEL not in guest_body, f"Guest received the private attachment (HTTP {guest_status})"
+          def get_download_api(client, file_url):
+              query = urlencode({"file_url": file_url})
+              return get(client, BASE + "/api/method/frappe.handler.download_file?" + query)
 
-          def login(user):
+          def login(user, password=None):
               client = opener()
-              data = urlencode({"usr": user, "pwd": os.environ["OVER_U_DEMO_PASSWORD"]}).encode()
+              data = urlencode({"usr": user, "pwd": password or os.environ["OVER_U_DEMO_PASSWORD"]}).encode()
               with client.open(Request(BASE + "/api/method/login", data=data), timeout=30) as response:
                   assert response.status == 200, f"Synthetic login failed for {user}"
               return client
 
-          outsider_status, outsider_body = get(login("student2@over-u.example.com"))
+          owner = login("student1@over-u.example.com")
+          # Use the assigned instructor to attach the synthetic file. The demo
+          # homework lesson is deliberately locked until the learner completes
+          # earlier lessons, which is unrelated to this file-privacy probe.
+          teacher = login("teacher@over-u.example.com")
+          boundary = "----over-u-" + uuid.uuid4().hex
+          fields = {
+              "is_private": "0",
+              "doctype": "LMS Assignment Submission",
+              "docname": os.environ["OVER_U_CI_PROBE_SUBMISSION"],
+              "fieldname": "assignment_attachment",
+          }
+          body = bytearray()
+          for name, value in fields.items():
+              body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n".encode())
+          body.extend(f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"over-u-ci-private-attachment.txt\"\r\nContent-Type: text/plain\r\n\r\n".encode())
+          body.extend(SENTINEL)
+          body.extend(f"\r\n--{boundary}--\r\n".encode())
+          request = Request(
+              BASE + "/api/method/upload_file",
+              data=bytes(body),
+              headers={"Content-Type": "multipart/form-data; boundary=" + boundary},
+          )
+          try:
+              with teacher.open(request, timeout=30) as response:
+                  uploaded = json.loads(response.read().decode())["message"]
+          except HTTPError as error:
+              detail = error.read().decode(errors="replace")[:500]
+              raise AssertionError(f"Assigned teacher could not upload the synthetic attachment: HTTP {error.code}: {detail}") from error
+          assert int(uploaded["is_private"]) == 1, "upload_file(is_private=0) created a public homework attachment"
+          assert uploaded["file_url"].startswith("/private/files/"), "Homework upload was not stored in private/files"
+          FILE = BASE + uploaded["file_url"]
+          PUBLIC_FILE = BASE + "/files/" + uploaded["file_url"].rsplit("/", 1)[-1]
+
+          guest = opener()
+          guest_status, guest_body = get(guest, FILE)
+          assert guest_status != 200 and SENTINEL not in guest_body, f"Guest received the private attachment (HTTP {guest_status})"
+          api_guest_status, api_guest_body = get_download_api(guest, uploaded["file_url"])
+          assert api_guest_status != 200 and SENTINEL not in api_guest_body, "Guest downloaded homework through the Frappe file API"
+
+          outsider = login("student2@over-u.example.com")
+          outsider_status, outsider_body = get(outsider, FILE)
           assert outsider_status != 200 and SENTINEL not in outsider_body, f"Another student received the private attachment (HTTP {outsider_status})"
+          api_outsider_status, api_outsider_body = get_download_api(outsider, uploaded["file_url"])
+          assert api_outsider_status != 200 and SENTINEL not in api_outsider_body, "Another student downloaded homework through the Frappe file API"
 
-          owner_status, owner_body = get(login("student1@over-u.example.com"))
+          owner_status, owner_body = get(owner, FILE)
           assert owner_status == 200 and SENTINEL in owner_body, f"Owner could not download their attachment (HTTP {owner_status})"
+          api_owner_status, api_owner_body = get_download_api(owner, uploaded["file_url"])
+          assert api_owner_status == 200 and SENTINEL in api_owner_body, "Owner could not download homework through the Frappe file API"
 
-          teacher_status, teacher_body = get(login("teacher@over-u.example.com"))
+          teacher_status, teacher_body = get(teacher, FILE)
           assert teacher_status == 200 and SENTINEL in teacher_body, f"Course teacher could not review the attachment (HTTP {teacher_status})"
-          print("Direct attachment URL denied to Guest and another student, allowed to owner and course teacher")
+          api_teacher_status, api_teacher_body = get_download_api(teacher, uploaded["file_url"])
+          assert api_teacher_status == 200 and SENTINEL in api_teacher_body, "Course teacher could not download homework through the Frappe file API"
+          unrelated_teacher = login("over-u-unrelated-teacher@example.com")
+          unrelated_teacher_status, unrelated_teacher_body = get(unrelated_teacher, FILE)
+          assert unrelated_teacher_status != 200 and SENTINEL not in unrelated_teacher_body, "An unrelated Course Creator received the attachment"
+          api_unrelated_status, api_unrelated_body = get_download_api(unrelated_teacher, uploaded["file_url"])
+          assert api_unrelated_status != 200 and SENTINEL not in api_unrelated_body, "An unrelated Course Creator downloaded homework through the Frappe file API"
+
+          public_status, public_body = get(guest, PUBLIC_FILE)
+          assert public_status != 200 and SENTINEL not in public_body, "Private homework bytes were reachable through /files/"
+          print("HTTP upload with is_private=0 was stored privately; direct URL denied to Guest, another student, unrelated Course Creator and /files path; allowed to owner and assigned teacher")
           PY
-          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.cleanup_private_assignment_file_probe'
+      - name: Verify regular student upload and File API access matrix
+        run: |
+          upload_probe="$(docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost execute over_u.ci_probe.create_http_upload_probe')"
+          printf '%s\n' "$upload_probe"
+          export OVER_U_UPLOAD_PROBE="$upload_probe"
+          python3 over-u/dev/http_file_privacy_canary.py
       - name: Run synthetic Frappe integration and privacy tests
         run: |
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_student_api'
           docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_desk_users'
+          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module over_u.test_author_workspace'
+          docker compose -p over-u-ci -f over-u/dev/compose.yml exec -T frappe bash -lc 'cd /home/frappe/frappe-bench && bench --site over-u.localhost run-tests --module lms.tests.security.test_course_authoring_scope'
           # The single upstream same-transaction upload test passes its assertions but
           # Frappe's rollback callback then tries to move a file already removed by its
           # earlier insert callback. The HTTP probe above exercises the same access matrix
@@ -249,3 +826,388 @@ jobs:
       - name: Remove temporary CA copy
         if: always()
         run: sudo rm -f over-u/dev/.ci-ca-bundle.pem
+
+  production-image:
+    if: github.ref == 'refs/heads/feature/overu-brand-design' || github.ref == 'refs/heads/feature/overu-approved-ui-integration' || github.base_ref == 'feature/overu-brand-design' || github.base_ref == 'feature/overu-approved-ui-integration'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Read pinned versions
+        id: pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          lock=over-u/deploy/versions.lock.json
+          {
+            echo "frappe=$(jq -r '.frappe.commit' "$lock")"
+            echo "frappe_build=$(jq -r '.frappe.build_image' "$lock")"
+            echo "frappe_runtime=$(jq -r '.frappe.runtime_image' "$lock")"
+            echo "payments=$(jq -r '.payments.commit' "$lock")"
+            echo "lms=$(jq -r '.lms.commit' "$lock")"
+            echo "frappe_docker=$(jq -r '.frappe_docker.commit' "$lock")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build pinned OCI image
+        id: image_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: over-u/deploy/Containerfile.overu
+          platforms: linux/amd64
+          push: false
+          outputs: type=oci,dest=/tmp/overu-image.oci.tar
+          build-args: |
+            SOURCE_REVISION=${{ github.event.pull_request.head.sha || github.sha }}
+            FRAPPE_COMMIT=${{ steps.pins.outputs.frappe }}
+            FRAPPE_BUILD_IMAGE=${{ steps.pins.outputs.frappe_build }}
+            FRAPPE_BASE_IMAGE=${{ steps.pins.outputs.frappe_runtime }}
+            PAYMENTS_COMMIT=${{ steps.pins.outputs.payments }}
+            LMS_COMMIT=${{ steps.pins.outputs.lms }}
+            FRAPPE_DOCKER_COMMIT=${{ steps.pins.outputs.frappe_docker }}
+          cache-from: type=gha,scope=overu-production-image
+          cache-to: type=gha,mode=max,scope=overu-production-image
+
+      - name: Verify image revision and OCI digest
+        id: verify
+        shell: bash
+        run: |
+          set -euxo pipefail
+          lock=over-u/deploy/versions.lock.json
+          revision='${{ github.event.pull_request.head.sha || github.sha }}'
+          frappe="$(jq -r '.frappe.commit' "$lock")"
+          payments="$(jq -r '.payments.commit' "$lock")"
+          lms="$(jq -r '.lms.commit' "$lock")"
+          docker_sha="$(jq -r '.frappe_docker.commit' "$lock")"
+          frappe_build="$(jq -r '.frappe.build_image' "$lock")"
+          frappe_runtime="$(jq -r '.frappe.runtime_image' "$lock")"
+          containerfile_lms="$(sed -n 's/^ARG LMS_COMMIT=//p' over-u/deploy/Containerfile.overu | head -n 1)"
+          test "$containerfile_lms" = "$lms"
+          test "$(git hash-object over-u/deploy/frappe-docker/main-entrypoint.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/main-entrypoint.sh"]' "$lock")"
+          test "$(git hash-object over-u/deploy/frappe-docker/start.sh)" = "$(jq -r '.frappe_docker.vendored_files["resources/core/start.sh"]' "$lock")"
+          mkdir -p /tmp/overu-oci
+          tar -xf /tmp/overu-image.oci.tar -C /tmp/overu-oci index.json
+          action_digest='${{ steps.image_build.outputs.digest }}'
+          index_digest="$(jq -r '.manifests[0].digest' /tmp/overu-oci/index.json)"
+          printf 'OCI index descriptor: %s\nBuildx digest: %s\nIndex descriptors: %s\n' \
+            "$index_digest" "$action_digest" "$(jq -c '.manifests' /tmp/overu-oci/index.json)"
+          if [ -n "$action_digest" ]; then test "$index_digest" = "$action_digest"; fi
+          manifest_digest="$index_digest"
+          config_digest=""
+          for depth in 1 2 3; do
+            manifest_path="blobs/sha256/${manifest_digest#sha256:}"
+            tar -xOf /tmp/overu-image.oci.tar "$manifest_path" > /tmp/overu-manifest.json
+            test "$(sha256sum /tmp/overu-manifest.json | cut -d' ' -f1)" = "${manifest_digest#sha256:}"
+            config_digest="$(jq -r '.config.digest // empty' /tmp/overu-manifest.json)"
+            if [ -n "$config_digest" ]; then break; fi
+            manifest_digest="$(jq -r '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64")][0].digest // empty' /tmp/overu-manifest.json)"
+            test -n "$manifest_digest"
+          done
+          test -n "$config_digest"
+          config_path="blobs/sha256/${config_digest#sha256:}"
+          tar -xOf /tmp/overu-image.oci.tar "$config_path" > /tmp/overu-config.json
+          check_label() {
+            key="$1"
+            expected="$2"
+            actual="$(jq -r --arg key "$key" '.config.Labels[$key] // ""' /tmp/overu-config.json)"
+            printf 'Label %s: %s\n' "$key" "$actual"
+            test "$actual" = "$expected"
+          }
+          check_label org.opencontainers.image.revision "$revision"
+          check_label io.overu.build.frappe.revision "$frappe"
+          check_label io.overu.build.payments.revision "$payments"
+          check_label io.overu.build.lms.revision "$lms"
+          check_label io.overu.build.frappe-docker.revision "$docker_sha"
+          check_label io.overu.build.frappe.build-image "$frappe_build"
+          check_label io.overu.build.frappe.base-image "$frappe_runtime"
+          printf 'Revision: %s\nOCI image index: %s\nOCI image manifest: %s\nImage config: %s\nFrappe: %s\nFrappe build image: %s\nFrappe runtime image: %s\nPayments: %s\nLMS: %s\nfrappe_docker: %s\n' \
+            "$revision" "$index_digest" "$manifest_digest" "$config_digest" "$frappe" "$frappe_build" "$frappe_runtime" "$payments" "$lms" "$docker_sha" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "index_digest=$index_digest" >> "$GITHUB_OUTPUT"
+          test -s /tmp/overu-image.oci.tar
+
+      - name: Load the exact OCI image into the local Docker engine
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq skopeo
+          revision='${{ github.event.pull_request.head.sha || github.sha }}'
+          skopeo copy oci-archive:/tmp/overu-image.oci.tar "docker-daemon:overu-production:${revision}"
+          docker image inspect "overu-production:${revision}" --format '{{json .Config.Labels}}' | tee /tmp/overu-production-labels.json
+          test "$(jq -r '."org.opencontainers.image.revision"' /tmp/overu-production-labels.json)" = "$revision"
+
+      - name: Start isolated services for production image smoke test
+        run: |
+          set -euo pipefail
+          revision='${{ github.event.pull_request.head.sha || github.sha }}'
+          docker network create overu-production-smoke
+          docker volume create overu-production-smoke-sites
+          docker volume create overu-production-smoke-assets
+          mkdir -p /tmp/overu-smoke-mariadb-tls
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout /tmp/overu-smoke-mariadb-tls/server.key \
+            -out /tmp/overu-smoke-mariadb-tls/server.crt \
+            -subj '/CN=mariadb' \
+            -addext 'basicConstraints=critical,CA:TRUE' \
+            -addext 'keyUsage=critical,digitalSignature,keyEncipherment,keyCertSign' \
+            -addext 'subjectAltName=DNS:mariadb'
+          chmod 644 /tmp/overu-smoke-mariadb-tls/server.key /tmp/overu-smoke-mariadb-tls/server.crt
+          cat > /tmp/overu-smoke-mariadb-tls/my.cnf <<'EOF'
+          [client]
+          ssl-ca=/run/mariadb-tls/server.crt
+          ssl-verify-server-cert=0
+          EOF
+          chmod 644 /tmp/overu-smoke-mariadb-tls/my.cnf
+          docker run -d --name overu-smoke-db --network overu-production-smoke --network-alias mariadb \
+            -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
+            -e MARIADB_ROOT_PASSWORD=synthetic-ci-db-password \
+            mariadb:10.11 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci \
+              --ssl-ca=/run/mariadb-tls/server.crt \
+              --ssl-cert=/run/mariadb-tls/server.crt \
+              --ssl-key=/run/mariadb-tls/server.key
+          docker run -d --name overu-smoke-redis --network overu-production-smoke --network-alias redis \
+            redis:7-alpine redis-server --save '' --appendonly no
+          for attempt in $(seq 1 60); do
+            if docker exec overu-smoke-db healthcheck.sh --connect --innodb_initialized >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          docker exec overu-smoke-db healthcheck.sh --connect --innodb_initialized
+          docker run --rm --network overu-production-smoke \
+            -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
+            -v /tmp/overu-smoke-mariadb-tls/my.cnf:/home/frappe/.my.cnf:ro \
+            -e OVER_U_DB_PASSWORD=synthetic-ci-db-password \
+            -e OVER_U_ADMIN_PASSWORD=synthetic-ci-admin-password \
+            --entrypoint /bin/bash "overu-production:${revision}" -lc '
+              set -euo pipefail
+              cd /home/frappe/frappe-bench
+              bench new-site over-u.localhost --db-root-username root \
+                --mariadb-root-password "$OVER_U_DB_PASSWORD" --admin-password "$OVER_U_ADMIN_PASSWORD" \
+                --no-mariadb-socket --db-host mariadb --db-port 3306
+              bench set-redis-cache-host redis://redis:6379
+              bench set-redis-queue-host redis://redis:6379
+              bench set-redis-socketio-host redis://redis:6379
+              bench --site over-u.localhost install-app payments
+              bench --site over-u.localhost install-app lms
+              bench --site over-u.localhost install-app over_u
+              OVER_U_DEMO_PASSWORD=synthetic-ci-author-password bench --site over-u.localhost execute over_u.school.seed
+            '
+          docker run --rm --user 0:0 \
+            -v overu-production-smoke-assets:/assets \
+            --entrypoint /bin/bash "overu-production:${revision}" -lc \
+            'cp -aL /home/frappe/frappe-bench/assets/. /assets/'
+          docker run -d --name overu-smoke-web --network overu-production-smoke \
+            -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            -v /tmp/overu-smoke-mariadb-tls:/run/mariadb-tls:ro \
+            -v /tmp/overu-smoke-mariadb-tls/my.cnf:/home/frappe/.my.cnf:ro \
+            -e DEV_SERVER=0 -e DB_HOST=mariadb -e DB_PORT=3306 \
+            -e REDIS_CACHE=redis://redis:6379 -e REDIS_QUEUE=redis://redis:6379 \
+            -e REDIS_SOCKETIO=redis://redis:6379 \
+            "overu-production:${revision}"
+          docker run -d --name overu-smoke-socketio --network overu-production-smoke \
+            -v overu-production-smoke-sites:/home/frappe/frappe-bench/sites \
+            --entrypoint node "overu-production:${revision}" \
+            /home/frappe/frappe-bench/apps/frappe/socketio.js
+          cat > /tmp/overu-production-smoke-nginx.conf <<'EOF'
+          server {
+            listen 8080;
+            client_max_body_size 50m;
+            location /socket.io {
+              proxy_pass http://overu-smoke-socketio:9000;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "Upgrade";
+              proxy_set_header Host $host;
+            }
+            location /assets/ {
+              alias /usr/share/nginx/html/;
+              expires 1y;
+              add_header Cache-Control "public, immutable";
+            }
+            location / {
+              proxy_pass http://overu-smoke-web:8000;
+              proxy_set_header Host $host;
+              proxy_set_header X-Frappe-Site-Name $host;
+              proxy_set_header X-Forwarded-Host $host;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+            }
+          }
+          server {
+            listen 8443 ssl;
+            ssl_certificate /etc/nginx/tls/server.crt;
+            ssl_certificate_key /etc/nginx/tls/server.key;
+            client_max_body_size 50m;
+            location /socket.io {
+              proxy_pass http://overu-smoke-socketio:9000;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "Upgrade";
+              proxy_set_header Host $host;
+            }
+            location /assets/ {
+              alias /usr/share/nginx/html/;
+              expires 1y;
+              add_header Cache-Control "public, immutable";
+            }
+            location / {
+              proxy_pass http://overu-smoke-web:8000;
+              proxy_set_header Host $host;
+              proxy_set_header X-Frappe-Site-Name $host;
+              proxy_set_header X-Forwarded-Host $host;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+            }
+          }
+          EOF
+          mkdir -p /tmp/overu-smoke-web-tls
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout /tmp/overu-smoke-web-tls/server.key -out /tmp/overu-smoke-web-tls/server.crt \
+            -subj '/CN=over-u.localhost' -addext 'subjectAltName=DNS:over-u.localhost'
+          chmod 644 /tmp/overu-smoke-web-tls/server.key /tmp/overu-smoke-web-tls/server.crt
+          docker run -d --name overu-smoke-frontend --network overu-production-smoke \
+            -p 127.0.0.1:18000:8080 \
+            -p 127.0.0.1:443:8443 \
+            -v /tmp/overu-smoke-web-tls:/etc/nginx/tls:ro \
+            -v overu-production-smoke-assets:/usr/share/nginx/html:ro \
+            -v /tmp/overu-production-smoke-nginx.conf:/etc/nginx/conf.d/default.conf:ro \
+            nginx:alpine
+          for attempt in $(seq 1 60); do
+            if curl --silent --output /dev/null --write-out '%{http_code}' \
+              -H 'Host: over-u.localhost' http://127.0.0.1:18000/login | grep -qx 200; then break; fi
+            sleep 2
+          done
+          curl --fail --silent -H 'Host: over-u.localhost' http://127.0.0.1:18000/login >/dev/null
+          curl --fail --silent -H 'Host: over-u.localhost' \
+            http://127.0.0.1:18000/assets/lms/frontend/index.html >/tmp/overu-production-smoke-lms-index.html
+          grep -q '/assets/lms/frontend/assets/index-' /tmp/overu-production-smoke-lms-index.html
+
+      - name: Install isolated browser smoke-test tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/over-u-playwright" --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.0
+          "$RUNNER_TEMP/over-u-playwright/node_modules/.bin/playwright" install chromium
+
+      - name: Verify branded Course Studio in the production image
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/over-u-playwright/node_modules/.bin/playwright" install --with-deps chromium
+          OVER_U_BASE_URL=https://over-u.localhost \
+          OVER_U_SMOKE_USER=teacher@over-u.example.com \
+          OVER_U_SMOKE_PASSWORD=synthetic-ci-author-password \
+            node over-u/dev/production-image-smoke.mjs | tee /tmp/overu-production-image-smoke.json
+          cat /tmp/overu-production-image-smoke.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Capture branded page screenshots from the production image
+        if: always()
+        continue-on-error: true
+        run: |
+          OVER_U_BASE_URL=https://over-u.localhost \
+          OVER_U_SMOKE_USER=teacher@over-u.example.com \
+          OVER_U_SMOKE_PASSWORD=synthetic-ci-author-password \
+            node over-u/dev/brand-shots.mjs
+
+      - name: Walk the student journey in the production image
+        if: always()
+        continue-on-error: true
+        run: |
+          OVER_U_BASE_URL=https://over-u.localhost \
+          OVER_U_STUDENT_USER=student1@over-u.example.com \
+          OVER_U_STUDENT_PASSWORD=synthetic-ci-author-password \
+            node over-u/dev/student-walk.mjs | tee /tmp/overu-student-walk.json
+
+      - name: Save student journey screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-student-walk-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            /tmp/overu-student-walk/*.png
+            /tmp/overu-student-walk.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Save branded page screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-brand-shots-${{ github.event.pull_request.head.sha || github.sha }}
+          path: /tmp/overu-brand-shots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Save production image browser proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-production-image-proof-${{ github.event.pull_request.head.sha || github.sha }}
+          path: /tmp/overu-production-image-lms.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Encrypt deployment image for the existing IAP key
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_dir="$RUNNER_TEMP/overu-encrypted-image"
+          mkdir -p "$artifact_dir"
+          key_material="$(openssl rand -hex 64)"
+          enc_key="${key_material:0:64}"
+          mac_key="${key_material:64:64}"
+          printf '%s%s' "$enc_key" "$mac_key" > /tmp/overu-key-material
+          printf '%s' "$enc_key" > /tmp/overu-encryption-passphrase
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 -md sha256 \
+            -in /tmp/overu-image.oci.tar \
+            -out "$artifact_dir/overu-production-image.oci.tar.enc" \
+            -pass file:/tmp/overu-encryption-passphrase
+          openssl dgst -sha256 -mac HMAC -macopt "hexkey:$mac_key" -binary \
+            "$artifact_dir/overu-production-image.oci.tar.enc" \
+            > "$artifact_dir/overu-production-image.hmac"
+          openssl pkeyutl -encrypt -pubin \
+            -inkey over-u/deploy/release-image-recipient.pem \
+            -in /tmp/overu-key-material \
+            -out "$artifact_dir/overu-production-image.key.enc" \
+            -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+            -pkeyopt rsa_mgf1_md:sha256
+          archive_sha="$(sha256sum /tmp/overu-image.oci.tar | awk '{print $1}')"
+          encrypted_sha="$(sha256sum "$artifact_dir/overu-production-image.oci.tar.enc" | awk '{print $1}')"
+          cat > "$artifact_dir/overu-production-image.manifest" <<EOF
+          source_revision=${{ github.event.pull_request.head.sha || github.sha }}
+          lms_revision=$(jq -r '.lms.commit' over-u/deploy/versions.lock.json)
+          oci_index_digest=${{ steps.verify.outputs.index_digest }}
+          oci_archive_sha256=$archive_sha
+          encrypted_archive_sha256=$encrypted_sha
+          encryption=AES-256-CBC-PBKDF2-HMAC-SHA256+RSA-OAEP-SHA256
+          recipient=existing-Mac-IAP-SSH-RSA-key
+          EOF
+          rm -f /tmp/overu-image.oci.tar /tmp/overu-key-material /tmp/overu-encryption-passphrase
+          cat "$artifact_dir/overu-production-image.manifest" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Store encrypted deployment image artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overu-production-image-encrypted-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/overu-encrypted-image/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop isolated production image smoke services
+        if: always()
+        run: |
+          docker rm -f overu-smoke-frontend overu-smoke-socketio overu-smoke-web overu-smoke-redis overu-smoke-db 2>/dev/null || true
+          docker volume rm overu-production-smoke-sites 2>/dev/null || true
+          docker volume rm overu-production-smoke-assets 2>/dev/null || true
+          docker network rm overu-production-smoke 2>/dev/null || true
