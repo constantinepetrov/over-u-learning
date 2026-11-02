@@ -1,5 +1,6 @@
 import { boot, t } from "./i18n.js";
 import { welcomeCard, chatBanner } from "./guide.js";
+import { feedView, ratingView } from "./community.js";
 import {
 	escape as e,
 	icon,
@@ -21,6 +22,7 @@ export function shell(content, home, section = "home") {
 			? [["task", "/school/teacher", t("ui_151"), "teacher"]]
 			: []),
 		["results", "/school/results", t("ui_004"), "results"],
+		["trophy", "/school/rating", t("ui_186"), "rating"],
 		["user", "/school/profile", t("ui_005"), "profile"],
 	];
 	const name = home?.user?.name || t("ui_006");
@@ -65,7 +67,11 @@ export function shell(content, home, section = "home") {
       <nav class="ou-header-nav" aria-label="${t(
 			"ui_009"
 		)}">${navLinks}${authorLink}</nav>
-      <div class="ou-header-account"><button type="button" class="ou-help" data-action="guide" aria-label="Как это работает" title="Как это работает">?</button><span class="ou-profile-name">${e(
+      <div class="ou-header-account">${
+		home?.points != null
+			? `<a class="ou-points" href="/school/rating" data-nav title="${t("ui_205")}">${t("ui_204", home.points)}</a>`
+			: ""
+	}<button type="button" class="ou-help" data-action="guide" aria-label="Как это работает" title="Как это работает">?</button><span class="ou-profile-name">${e(
 			name
 		)}<small>${
 		boot.author_tools ? "Автор / преподаватель" : t("ui_011")
@@ -500,7 +506,7 @@ function discussionLink(data) {
 		stock
 	)}">Вопросы и обсуждение</a></section>`;
 }
-export function lessonView(data, drafts) {
+export function lessonView(data, drafts, feed) {
 	const c = data.course,
 		l = data.lesson;
 	let article;
@@ -523,7 +529,7 @@ export function lessonView(data, drafts) {
 			data.quiz ? quizView(data, drafts) : ""
 		}${
 			data.assignment ? homeworkView(data, drafts) : ""
-		}</div><div class="lesson-footer">${
+		}${data.assignment ? feedView(feed, drafts) : ""}</div><div class="lesson-footer">${
 			l.complete
 				? `<span class="completed-mark">${icon("check")}${t(
 						"ui_091"
@@ -712,3 +718,5 @@ export function errorView(error) {
 		error.status === 401 ? t("ui_113") : button(t("ui_064"), "retry")
 	}</section>`;
 }
+
+export const ratingPage = (data, period) => ratingView(data, period);

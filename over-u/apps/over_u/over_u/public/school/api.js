@@ -2,14 +2,15 @@ import {t, language} from './i18n.js'
 // The only browser module that knows the server adapter's endpoint names.
 const boot = JSON.parse(document.getElementById('school-boot').textContent)
 const methods = new Set(['home', 'course', 'lesson', 'complete_lesson', 'submit_quiz', 'submit_assignment', 'teacher_assignments', 'teacher_assignment', 'review_assignment'])
+const community = new Set(['feed', 'post_message', 'react', 'moderate', 'leaderboard'])
 export class SchoolError extends Error {
   constructor(message, status) { super(message); this.status = status }
 }
 async function request(method, args = {}) {
-  if (!methods.has(method)) throw new SchoolError(t('ui_136'), 400)
+  if (!methods.has(method) && !community.has(method)) throw new SchoolError(t('ui_136'), 400)
   let response
   try {
-    response = await fetch(`/api/method/over_u.student_api.${method}`, {
+    response = await fetch(`/api/method/over_u.${community.has(method) ? 'community_api' : 'student_api'}.${method}`, {
       method: 'POST', credentials: 'same-origin',
       headers: {'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': boot.csrf_token},
       body: JSON.stringify(args),
@@ -42,6 +43,11 @@ export const api = {
   teacherAssignments: () => request('teacher_assignments'),
   teacherAssignment: submission => request('teacher_assignment', {submission}),
   reviewAssignment: (submission, status, comments) => request('review_assignment', {submission, status, comments}),
+  feed: (course, number) => request('feed', {course, number}),
+  post: (course, number, text, reply_to = '') => request('post_message', {course, number, text, reply_to}),
+  react: (course, number, message, kind) => request('react', {course, number, message, kind}),
+  moderate: (course, number, message, action) => request('moderate', {course, number, message, action}),
+  leaderboard: (course, period) => request('leaderboard', {course, period}),
   logout: async () => {
     let response
     try {

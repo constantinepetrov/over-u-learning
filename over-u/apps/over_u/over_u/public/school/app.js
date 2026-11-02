@@ -10,6 +10,7 @@ import {
 	assignmentsView,
 	resultsView,
 	profileView,
+	ratingPage,
 	teacherAssignmentsView,
 	teacherAssignmentView,
 	loadingView,
@@ -24,9 +25,12 @@ const drafts = {
 	quizAnswers: new Map(),
 	homeworkAnswers: new Map(),
 	homeworkEditing: new Set(),
+	feedText: new Map(),
 };
 let home,
 	data,
+	feed = null,
+	period = "all",
 	route,
 	sequence = 0,
 	lastPath = "",
@@ -50,7 +54,7 @@ function parseRoute() {
 		return { view: "lesson", course: parts[1], number: parts[3] };
 	if (
 		parts.length === 1 &&
-		["learning", "assignments", "results", "profile"].includes(parts[0])
+		["learning", "assignments", "results", "profile", "rating"].includes(parts[0])
 	)
 		return { view: parts[0] };
 	if (parts.length === 1 && parts[0] === "teacher")
@@ -80,11 +84,12 @@ function showData(focus = false) {
 		assignments: assignmentsView,
 		results: resultsView,
 		profile: profileView,
+		rating: () => ratingPage(data, period),
 		teacher: teacherAssignmentsView,
 	};
 	const content =
 		route.view === "lesson"
-			? lessonView(data, drafts)
+			? lessonView(data, drafts, feed)
 			: route.view === "course"
 			? courseView(data)
 			: route.view === "teacher-detail"
@@ -105,6 +110,7 @@ function showData(focus = false) {
 					results: t("ui_004"),
 					profile: t("ui_005"),
 					teacher: t("ui_152"),
+					rating: t("ui_186"),
 			  }[route.view];
 	document.title = `${title} — OVER U`;
 }
@@ -123,10 +129,19 @@ async function loadRoute({ refresh = false } = {}) {
 				? await api.teacherAssignments()
 				: route.view === "teacher-detail"
 				? await api.teacherAssignment(route.submission)
+				: route.view === "rating"
+				? nextHome.courses[0]
+					? await api.leaderboard(nextHome.courses[0].id, period)
+					: { enabled: false }
+				: null;
+		const nextFeed =
+			route.view === "lesson" && next.assignment && !next.locked
+				? await api.feed(route.course, route.number).catch(() => null)
 				: null;
 		if (ticket !== sequence) return;
 		home = nextHome;
 		data = next;
+		feed = nextFeed;
 		showData(!refresh);
 		lastPath = location.pathname;
 	} catch (error) {
@@ -159,6 +174,32 @@ root.addEventListener("click", async (event) => {
 	if (action === "retry" || action === "refresh-status")
 		return loadRoute({ refresh: true });
 	if (action === "guide") return openGuide();
+	if (action === "rating-period") {
+		period = control.dataset.period === "week" ? "week" : "all";
+		return loadRoute({ refresh: true });
+	}
+	if (["feed-react", "feed-moderate"].includes(action)) {
+		const current = { ...route },
+			path = location.pathname;
+		busy = true;
+		control.disabled = true;
+		try {
+			const updated =
+				action === "feed-react"
+					? await api.react(current.course, current.number, control.dataset.id, control.dataset.kind)
+					: await api.moderate(current.course, current.number, control.dataset.id, control.dataset.mod);
+			if (path === location.pathname) {
+				feed = updated;
+				showData();
+			}
+		} catch (error) {
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (control.isConnected) control.disabled = false;
+		}
+		return;
+	}
 	if (action === "welcome-dismiss") {
 		dismissWelcome();
 		control.closest(".ou-welcome")?.remove();
@@ -216,6 +257,8 @@ root.addEventListener("click", async (event) => {
 	}
 });
 root.addEventListener("input", (event) => {
+	const draft = event.target.dataset?.draft;
+	if (draft) drafts.feedText.set(draft, event.target.value);
 	if (route?.view !== "lesson") return;
 	const key = `${route.course}/${route.number}`;
 	if (event.target.id === "homework-answer")
@@ -274,6 +317,8 @@ root.addEventListener("submit", async (event) => {
 		}
 		if (path === location.pathname) {
 			data = updated;
+			if (form.id === "homework-form" && updated.assignment)
+				feed = await api.feed(current.course, current.number).catch(() => feed);
 			showData();
 			const target = document.querySelector(
 				".quiz-result h2, .homework-status strong"
@@ -298,6 +343,50 @@ root.addEventListener("submit", async (event) => {
 		}
 	}
 });
+root.addEventListener("submit", async (event) => {
+	const form = event.target;
+	if (!form.matches("[data-feed-form]")) return;
+	event.preventDefault();
+	if (busy || !form.reportValidity()) return;
+	const current = { ...route },
+		path = location.pathname;
+	const field = form.elements.text,
+		submit = form.querySelector("button[type=submit]");
+	const slot = form.dataset.reply ? `reply:${form.dataset.reply}` : "main";
+	busy = true;
+	submit.disabled = true;
+	try {
+		const updated = await api.post(current.course, current.number, field.value, form.dataset.reply || "");
+		drafts.feedText.delete(slot);
+		if (path === location.pathname) {
+			feed = updated;
+			showData();
+		}
+	} catch (error) {
+		const box = form.querySelector(".feed-error") || document.getElementById("announcements");
+		box.textContent = error.message;
+		announce(error.message);
+	} finally {
+		busy = false;
+		if (submit.isConnected) submit.disabled = false;
+	}
+});
+// Pull in new messages while the learner is reading, but never while they are typing.
+async function refreshFeed() {
+	if (document.hidden || busy || route?.view !== "lesson" || !feed?.unlocked) return;
+	if (document.activeElement?.closest?.(".feed")) return;
+	const path = location.pathname;
+	try {
+		const updated = await api.feed(route.course, route.number);
+		if (path === location.pathname && JSON.stringify(updated) !== JSON.stringify(feed)) {
+			feed = updated;
+			showData();
+		}
+	} catch {
+		/* Keep the last loaded messages. */
+	}
+}
+setInterval(refreshFeed, 20000);
 // Refresh only a read-only, waiting assignment. Never replace a draft or quiz in progress.
 async function checkGrade() {
 	if (

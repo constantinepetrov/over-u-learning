@@ -135,8 +135,10 @@ def home():
         if frappe.db.exists("LMS Course", name):
             courses.append(_snapshot(name))
     user = frappe.get_cached_doc("User", member)
+    from over_u import points
     return {"api_version": API_VERSION, "user": {"first_name": user.first_name, "name": user.full_name,
-                                                "email": member}, "courses": courses}
+                                                "email": member}, "courses": courses,
+            "points": points.total_for(member) if points.setting("leaderboard_enabled", 1) else None}
 
 
 def _review_submission(name):

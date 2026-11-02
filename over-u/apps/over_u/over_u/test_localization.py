@@ -84,8 +84,8 @@ class TestLocalization(BaseTestUtils):
         for key in ru:
             self.assertTrue(ru[key]); self.assertTrue(en[key])
             self.assertEqual(re.findall(r"\{\d+\}", ru[key]), re.findall(r"\{\d+\}", en[key]))
-        source = "\n".join((folder.parent / name).read_text() for name in ["views.js", "components.js", "app.js", "api.js"])
-        self.assertEqual(set(re.findall(r"t\('(ui_\d+)'", source)), set(ru))
+        source = "\n".join((folder.parent / name).read_text() for name in ["views.js", "components.js", "app.js", "api.js", "community.js", "guide.js"])
+        self.assertEqual(set(re.findall(r"t\(\s*['\"](ui_\d+)['\"]", source)), set(ru))
 
     def test_native_catalog_preserves_interpolation_and_technical_values(self):
         import csv

@@ -3,6 +3,9 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
 def configure():
+	from over_u.points import seed_rules
+
+	seed_rules()
 	create_custom_fields(
 		{
 			"LMS Course": [
