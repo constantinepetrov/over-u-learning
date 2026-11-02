@@ -22,7 +22,8 @@ STAFF_ROLES = {"Course Creator", "Moderator", "Batch Evaluator", "System Manager
 
 def seed_rules():
 	for event, label, points, daily_limit in DEFAULT_RULES:
-		if not frappe.db.exists("OU Points Rule", event):
+		try:
+			# nosemgrep: lms-unjustified-ignore-permissions - one-time system seed of default rules
 			frappe.get_doc(
 				{
 					"doctype": "OU Points Rule",
@@ -33,6 +34,8 @@ def seed_rules():
 					"daily_limit": daily_limit,
 				}
 			).insert(ignore_permissions=True)
+		except frappe.DuplicateEntryError:
+			pass  # already seeded; the author's edits are never overwritten
 
 
 def setting(field, default=None):
@@ -58,6 +61,7 @@ def award(member, event, key, course=None, reason=None):
 			)
 			if spent >= rule.daily_limit:
 				return
+		# nosemgrep: lms-unjustified-ignore-permissions - points are system-awarded after server-side rules; learners have no DocPerm on OU Points Entry
 		frappe.get_doc(
 			{
 				"doctype": "OU Points Entry",
@@ -238,7 +242,7 @@ def leaderboard(course, member, period="all"):
 	}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def award_bonus(member: str, points: int, reason: str, course: str = ""):
 	"""Instructor bonus from a custom button or script; Desk can also create entries by hand."""
 	if not is_staff(frappe.session.user):
@@ -246,6 +250,7 @@ def award_bonus(member: str, points: int, reason: str, course: str = ""):
 	points = int(points)
 	if not points or not isinstance(reason, str) or not reason.strip():
 		frappe.throw(_("Enter the points and the reason."))
+	# nosemgrep: lms-unjustified-ignore-permissions - points are system-awarded after server-side rules; learners have no DocPerm on OU Points Entry
 	doc = frappe.get_doc(
 		{
 			"doctype": "OU Points Entry",
