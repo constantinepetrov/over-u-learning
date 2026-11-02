@@ -22,6 +22,7 @@ def browser_fixture():
 
 	if not frappe.conf.allow_tests or frappe.session.user != "Administrator":
 		frappe.throw("Development test fixture only", frappe.PermissionError)
+	# nosemgrep: lms-exists-then-insert - idempotent test fixture, run once as Administrator
 	if not frappe.db.exists("User", BROWSER_USER):
 		frappe.get_doc(
 			{
@@ -35,6 +36,7 @@ def browser_fixture():
 		).insert()
 		update_password(BROWSER_USER, os.environ["OVER_U_DEMO_PASSWORD"])
 	course = manifest()["course"]
+	# nosemgrep: lms-exists-then-insert - idempotent test fixture, run once as Administrator
 	if not frappe.db.exists("LMS Enrollment", {"course": course, "member": BROWSER_USER}):
 		frappe.get_doc({"doctype": "LMS Enrollment", "course": course, "member": BROWSER_USER}).insert()
 	return {"user": BROWSER_USER, "course": course}

@@ -109,13 +109,17 @@ class TestCommunity(BaseTestUtils):
 		doc = frappe.get_doc("LMS Assignment Submission", name)
 		doc.status = "Pass"
 		doc.save()
-		self.assertEqual(points.total_for(self.alice), start + 13)
+		self.assertEqual(
+			points.total_for(self.alice), start + 14
+		)  # 3 submitted + 10 passed + 1 lesson completed by the pass
 		doc.status = "Fail"
 		doc.save()
-		self.assertEqual(points.total_for(self.alice), start + 3)
+		# The pass is taken back; the lesson point stays and is never paid twice.
+		self.assertEqual(points.total_for(self.alice), start + 4)
 
 	def test_leaderboard_groups_and_privacy(self):
 		points.award(self.bob, "assignment_pass", "test:bob:1", self.course)
+		frappe.set_user("Administrator")
 		group = frappe.get_doc(
 			{
 				"doctype": "OU Group",
@@ -123,11 +127,13 @@ class TestCommunity(BaseTestUtils):
 				"kind": "Бадди",
 				"members": [{"member": self.alice}, {"member": self.bob}],
 			}
-		).insert(ignore_permissions=True)
+		).insert()
+		frappe.set_user(self.alice)
 		board = community.leaderboard(self.course, "all")
 		self.assertTrue(board["enabled"])
 		self.assertNotIn("@", json.dumps(board, ensure_ascii=False))
 		self.assertTrue(any(g["title"] == "Пара тест" and g["mine"] for g in board["groups"]))
+		frappe.set_user("Administrator")
 		with self.assertRaises(frappe.ValidationError):
 			frappe.get_doc(
 				{
@@ -136,16 +142,19 @@ class TestCommunity(BaseTestUtils):
 					"kind": "Бадди",
 					"members": [{"member": self.alice}],
 				}
-			).insert(ignore_permissions=True)
+			).insert()
+		frappe.set_user(self.alice)
 		frappe.db.set_single_value(
 			"OU Settings", "leaderboard_visibility", "Ученик видит только свой результат"
 		)
 		own = community.leaderboard(self.course, "all")
 		self.assertTrue(all(row["me"] for row in own["top"]))
 		frappe.db.set_single_value("OU Settings", "leaderboard_visibility", "Все ученики видят табло")
-		group.delete(ignore_permissions=True)
+		frappe.set_user("Administrator")
+		group.delete()
 
 	def test_outsider_cannot_read_feed_or_rating(self):
+		frappe.set_user("Administrator")
 		stranger = self._create_user(
 			"over-u-feed-stranger@example.com", "Чужой", "Тест", ["LMS Student"]
 		).name
