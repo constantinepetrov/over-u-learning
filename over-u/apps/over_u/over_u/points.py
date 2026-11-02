@@ -134,7 +134,9 @@ def _sums(members, since=None):
 		conditions.append("creation >= %(since)s")
 		values["since"] = since
 	rows = frappe.db.sql(
-		"select member, sum(points) from `tabOU Points Entry` where " + " and ".join(conditions) + " group by member",
+		"select member, sum(points) from `tabOU Points Entry` where "
+		+ " and ".join(conditions)
+		+ " group by member",
 		values,
 	)
 	return {member: int(total or 0) for member, total in rows}
@@ -152,7 +154,9 @@ def _rank(sorted_rows, key):
 
 def total_for(member):
 	return int(
-		frappe.db.sql("select coalesce(sum(points), 0) from `tabOU Points Entry` where member = %s", member)[0][0]
+		frappe.db.sql("select coalesce(sum(points), 0) from `tabOU Points Entry` where member = %s", member)[
+			0
+		][0]
 	)
 
 
@@ -172,7 +176,9 @@ def leaderboard(course, member, period="all"):
 	for row in rows:
 		row["rank"] = places[id(row)]
 	mine = next(r for r in rows if r["user"] == member)
-	everyone = setting("leaderboard_visibility", "Все ученики видят табло") != "Ученик видит только свой результат"
+	everyone = (
+		setting("leaderboard_visibility", "Все ученики видят табло") != "Ученик видит только свой результат"
+	)
 	limit = max(3, int(setting("leaderboard_limit", 10) or 10))
 	top = [
 		{"name": short_name(r["user"]), "points": r["points"], "rank": r["rank"], "me": r["user"] == member}

@@ -29,7 +29,9 @@ def _can_moderate(course, user=None):
 
 
 def _own_answer(assignment, member):
-	answer = frappe.db.get_value("LMS Assignment Submission", {"assignment": assignment, "member": member}, "answer")
+	answer = frappe.db.get_value(
+		"LMS Assignment Submission", {"assignment": assignment, "member": member}, "answer"
+	)
 	return bool(_rich(answer).strip()) if answer else False
 
 
@@ -44,7 +46,10 @@ def _sync_answers(assignment, course):
 	known = {
 		row.key: row
 		for row in frappe.get_all(
-			"OU Feed Message", {"assignment": assignment, "kind": "Answer"}, ["name", "key", "text"], limit_page_length=0
+			"OU Feed Message",
+			{"assignment": assignment, "kind": "Answer"},
+			["name", "key", "text"],
+			limit_page_length=0,
 		)
 	}
 	for row in submissions:
@@ -68,14 +73,19 @@ def _sync_answers(assignment, course):
 						"key": key,
 					}
 				).insert(ignore_permissions=True)
-				frappe.db.set_value("OU Feed Message", doc.name, "creation", row.creation, update_modified=False)
+				frappe.db.set_value(
+					"OU Feed Message", doc.name, "creation", row.creation, update_modified=False
+				)
 			except frappe.DuplicateEntryError:
 				pass  # another request created it a moment earlier
 
 
 def _render(row, names, reactions, me, moderator, replies=()):
 	mine = {kind for (message, who, kind) in reactions if message == row.name and who == me}
-	counts = {kind: sum(1 for (message, _w, k) in reactions if message == row.name and k == kind) for kind in REACTIONS}
+	counts = {
+		kind: sum(1 for (message, _w, k) in reactions if message == row.name and k == kind)
+		for kind in REACTIONS
+	}
 	author = names.get(row.member) or ""
 	item = {
 		"id": row.name,
@@ -117,15 +127,16 @@ def _feed(course, assignment):
 		order_by="creation asc",
 		limit_page_length=0,
 	)
-	names = {
-		user: points.short_name(user) for user in {row.member for row in rows}
-	}
+	names = {user: points.short_name(user) for user in {row.member for row in rows}}
 	ids = [row.name for row in rows]
 	reactions = (
 		[
 			(r.message, r.member, r.kind)
 			for r in frappe.get_all(
-				"OU Feed Reaction", {"message": ["in", ids]}, ["message", "member", "kind"], limit_page_length=0
+				"OU Feed Reaction",
+				{"message": ["in", ids]},
+				["message", "member", "kind"],
+				limit_page_length=0,
 			)
 		]
 		if ids
@@ -153,7 +164,10 @@ def _feed(course, assignment):
 
 def _message(name, assignment):
 	row = frappe.db.get_value(
-		"OU Feed Message", name, ["name", "assignment", "member", "kind", "reply_to", "hidden", "course"], as_dict=True
+		"OU Feed Message",
+		name,
+		["name", "assignment", "member", "kind", "reply_to", "hidden", "course"],
+		as_dict=True,
 	)
 	if not row or row.assignment != assignment:
 		frappe.throw(_("Message not found."), frappe.DoesNotExistError)
@@ -173,7 +187,9 @@ def post_message(course: str, number: str, text: str, reply_to: str = ""):
 	if not points.setting("feed_enabled", 1):
 		frappe.throw(_("The answer feed is switched off."))
 	if not (_own_answer(assignment, me) or _can_moderate(course)):
-		frappe.throw(_("Submit your own answer to see and discuss the answers of others."), frappe.PermissionError)
+		frappe.throw(
+			_("Submit your own answer to see and discuss the answers of others."), frappe.PermissionError
+		)
 	if not isinstance(text, str) or not text.strip() or len(text.strip()) > MAX_TEXT:
 		frappe.throw(_("Write a message between 1 and 2,000 characters."))
 	recent = frappe.db.count(
@@ -212,7 +228,9 @@ def react(course: str, number: str, message: str, kind: str):
 	if kind not in REACTIONS:
 		frappe.throw(_("Choose one of the available reactions."))
 	if not (_own_answer(assignment, me) or _can_moderate(course)):
-		frappe.throw(_("Submit your own answer to see and discuss the answers of others."), frappe.PermissionError)
+		frappe.throw(
+			_("Submit your own answer to see and discuss the answers of others."), frappe.PermissionError
+		)
 	target = _message(message, assignment)
 	if target.hidden and not _can_moderate(course):
 		frappe.throw(_("Message not found."), frappe.DoesNotExistError)
@@ -226,7 +244,13 @@ def react(course: str, number: str, message: str, kind: str):
 	else:
 		try:
 			reaction = frappe.get_doc(
-				{"doctype": "OU Feed Reaction", "message": target.name, "member": me, "kind": kind, "key": key}
+				{
+					"doctype": "OU Feed Reaction",
+					"message": target.name,
+					"member": me,
+					"kind": kind,
+					"key": key,
+				}
 			).insert(ignore_permissions=True)
 			points.award(target.member, "reaction_received", f"fr:{reaction.name}", course)
 		except frappe.DuplicateEntryError:
@@ -253,7 +277,12 @@ def moderate(course: str, number: str, message: str, action: str):
 	else:
 		if not moderator:
 			frappe.throw(_("Only instructors can moderate the feed."), frappe.PermissionError)
-		field, value = {"pin": ("pinned", 1), "unpin": ("pinned", 0), "hide": ("hidden", 1), "unhide": ("hidden", 0)}[action]
+		field, value = {
+			"pin": ("pinned", 1),
+			"unpin": ("pinned", 0),
+			"hide": ("hidden", 1),
+			"unhide": ("hidden", 0),
+		}[action]
 		frappe.db.set_value("OU Feed Message", target.name, field, value)
 	return _feed(course, assignment)
 

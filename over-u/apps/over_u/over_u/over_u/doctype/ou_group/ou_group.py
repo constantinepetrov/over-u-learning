@@ -17,6 +17,4 @@ class OUGroup(Document):
 				(self.kind, row.member, self.name or ""),
 			)
 			if clash:
-				frappe.throw(
-					_("{0} is already in the group {1}.").format(row.member, clash[0][0])
-				)
+				frappe.throw(_("{0} is already in the group {1}.").format(row.member, clash[0][0]))

@@ -54,7 +54,9 @@ function parseRoute() {
 		return { view: "lesson", course: parts[1], number: parts[3] };
 	if (
 		parts.length === 1 &&
-		["learning", "assignments", "results", "profile", "rating"].includes(parts[0])
+		["learning", "assignments", "results", "profile", "rating"].includes(
+			parts[0]
+		)
 	)
 		return { view: parts[0] };
 	if (parts.length === 1 && parts[0] === "teacher")
@@ -186,8 +188,18 @@ root.addEventListener("click", async (event) => {
 		try {
 			const updated =
 				action === "feed-react"
-					? await api.react(current.course, current.number, control.dataset.id, control.dataset.kind)
-					: await api.moderate(current.course, current.number, control.dataset.id, control.dataset.mod);
+					? await api.react(
+							current.course,
+							current.number,
+							control.dataset.id,
+							control.dataset.kind
+					  )
+					: await api.moderate(
+							current.course,
+							current.number,
+							control.dataset.id,
+							control.dataset.mod
+					  );
 			if (path === location.pathname) {
 				feed = updated;
 				showData();
@@ -318,7 +330,9 @@ root.addEventListener("submit", async (event) => {
 		if (path === location.pathname) {
 			data = updated;
 			if (form.id === "homework-form" && updated.assignment)
-				feed = await api.feed(current.course, current.number).catch(() => feed);
+				feed = await api
+					.feed(current.course, current.number)
+					.catch(() => feed);
 			showData();
 			const target = document.querySelector(
 				".quiz-result h2, .homework-status strong"
@@ -356,14 +370,21 @@ root.addEventListener("submit", async (event) => {
 	busy = true;
 	submit.disabled = true;
 	try {
-		const updated = await api.post(current.course, current.number, field.value, form.dataset.reply || "");
+		const updated = await api.post(
+			current.course,
+			current.number,
+			field.value,
+			form.dataset.reply || ""
+		);
 		drafts.feedText.delete(slot);
 		if (path === location.pathname) {
 			feed = updated;
 			showData();
 		}
 	} catch (error) {
-		const box = form.querySelector(".feed-error") || document.getElementById("announcements");
+		const box =
+			form.querySelector(".feed-error") ||
+			document.getElementById("announcements");
 		box.textContent = error.message;
 		announce(error.message);
 	} finally {
@@ -373,12 +394,16 @@ root.addEventListener("submit", async (event) => {
 });
 // Pull in new messages while the learner is reading, but never while they are typing.
 async function refreshFeed() {
-	if (document.hidden || busy || route?.view !== "lesson" || !feed?.unlocked) return;
+	if (document.hidden || busy || route?.view !== "lesson" || !feed?.unlocked)
+		return;
 	if (document.activeElement?.closest?.(".feed")) return;
 	const path = location.pathname;
 	try {
 		const updated = await api.feed(route.course, route.number);
-		if (path === location.pathname && JSON.stringify(updated) !== JSON.stringify(feed)) {
+		if (
+			path === location.pathname &&
+			JSON.stringify(updated) !== JSON.stringify(feed)
+		) {
 			feed = updated;
 			showData();
 		}

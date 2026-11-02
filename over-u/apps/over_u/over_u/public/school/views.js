@@ -68,12 +68,14 @@ export function shell(content, home, section = "home") {
 			"ui_009"
 		)}">${navLinks}${authorLink}</nav>
       <div class="ou-header-account">${
-		home?.points != null
-			? `<a class="ou-points" href="/school/rating" data-nav title="${t("ui_205")}">${t("ui_204", home.points)}</a>`
-			: ""
-	}<button type="button" class="ou-help" data-action="guide" aria-label="Как это работает" title="Как это работает">?</button><span class="ou-profile-name">${e(
-			name
-		)}<small>${
+			home?.points != null
+				? `<a class="ou-points" href="/school/rating" data-nav title="${t(
+						"ui_205"
+				  )}">${t("ui_204", home.points)}</a>`
+				: ""
+		}<button type="button" class="ou-help" data-action="guide" aria-label="Как это работает" title="Как это работает">?</button><span class="ou-profile-name">${e(
+		name
+	)}<small>${
 		boot.author_tools ? "Автор / преподаватель" : t("ui_011")
 	}</small></span>
         ${link(
@@ -527,9 +529,9 @@ export function lessonView(data, drafts, feed) {
 			data.blocks
 		)}${data.unsupported_content ? fallback(data) : ""}${
 			data.quiz ? quizView(data, drafts) : ""
-		}${
-			data.assignment ? homeworkView(data, drafts) : ""
-		}${data.assignment ? feedView(feed, drafts) : ""}</div><div class="lesson-footer">${
+		}${data.assignment ? homeworkView(data, drafts) : ""}${
+			data.assignment ? feedView(feed, drafts) : ""
+		}</div><div class="lesson-footer">${
 			l.complete
 				? `<span class="completed-mark">${icon("check")}${t(
 						"ui_091"

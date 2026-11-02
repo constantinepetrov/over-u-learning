@@ -16,7 +16,9 @@ class TestCommunity(BaseTestUtils):
 		points.seed_rules()
 		self.school = manifest()
 		self.course = self.school["course"]
-		self.alice = self._create_user("over-u-feed-alice@example.com", "Алиса", "Иванова", ["LMS Student"]).name
+		self.alice = self._create_user(
+			"over-u-feed-alice@example.com", "Алиса", "Иванова", ["LMS Student"]
+		).name
 		self.bob = self._create_user("over-u-feed-bob@example.com", "Борис", "Петров", ["LMS Student"]).name
 		for user in (self.alice, self.bob):
 			frappe.get_doc({"doctype": "LMS Enrollment", "course": self.course, "member": user}).insert()
@@ -24,7 +26,9 @@ class TestCommunity(BaseTestUtils):
 			for number in ("1-1", "1-2", "2-1"):
 				api.complete_lesson(self.course, number)
 			quiz = frappe.get_doc("LMS Quiz", self.school["quiz"])
-			answers = [frappe.db.get_value("LMS Question", row.question, "option_1") for row in quiz.questions]
+			answers = [
+				frappe.db.get_value("LMS Question", row.question, "option_1") for row in quiz.questions
+			]
 			api.submit_quiz(self.course, "2-2", answers)
 			frappe.set_user("Administrator")
 		frappe.set_user(self.alice)
@@ -55,11 +59,17 @@ class TestCommunity(BaseTestUtils):
 		api.submit_assignment(self.course, "3-1", "Ответ Бориса")
 		frappe.set_user(self.alice)
 		api.submit_assignment(self.course, "3-1", "Ответ Алисы")
-		bob_answer = next(m for m in community.feed(self.course, "3-1")["messages"] if m["author"] == "Борис П.")
+		bob_answer = next(
+			m for m in community.feed(self.course, "3-1")["messages"] if m["author"] == "Борис П."
+		)
 		before = points.total_for(self.bob)
 		with self.assertRaises(frappe.ValidationError):
-			community.react(self.course, "3-1", next(
-				m["id"] for m in community.feed(self.course, "3-1")["messages"] if m["mine"]), "like")
+			community.react(
+				self.course,
+				"3-1",
+				next(m["id"] for m in community.feed(self.course, "3-1")["messages"] if m["mine"]),
+				"like",
+			)
 		feed = community.react(self.course, "3-1", bob_answer["id"], "useful")
 		self.assertEqual(points.total_for(self.bob), before + 1)
 		reacted = next(m for m in feed["messages"] if m["id"] == bob_answer["id"])
@@ -76,7 +86,9 @@ class TestCommunity(BaseTestUtils):
 		api.submit_assignment(self.course, "3-1", "Ответ Бориса")
 		frappe.set_user(self.alice)
 		api.submit_assignment(self.course, "3-1", "Ответ Алисы")
-		bob_answer = next(m for m in community.feed(self.course, "3-1")["messages"] if m["author"] == "Борис П.")
+		bob_answer = next(
+			m for m in community.feed(self.course, "3-1")["messages"] if m["author"] == "Борис П."
+		)
 		with self.assertRaises(frappe.PermissionError):
 			community.moderate(self.course, "3-1", bob_answer["id"], "hide")
 		frappe.db.set_value("OU Feed Message", bob_answer["id"], "hidden", 1)
@@ -90,7 +102,9 @@ class TestCommunity(BaseTestUtils):
 		self.assertEqual(points.total_for(self.alice), start + 3)
 		frappe.set_user(TEACHER)
 		name = frappe.db.get_value(
-			"LMS Assignment Submission", {"assignment": self.school["assignment"], "member": self.alice}, "name"
+			"LMS Assignment Submission",
+			{"assignment": self.school["assignment"], "member": self.alice},
+			"name",
 		)
 		doc = frappe.get_doc("LMS Assignment Submission", name)
 		doc.status = "Pass"
@@ -116,16 +130,25 @@ class TestCommunity(BaseTestUtils):
 		self.assertTrue(any(g["title"] == "Пара тест" and g["mine"] for g in board["groups"]))
 		with self.assertRaises(frappe.ValidationError):
 			frappe.get_doc(
-				{"doctype": "OU Group", "title": "Дубль", "kind": "Бадди", "members": [{"member": self.alice}]}
+				{
+					"doctype": "OU Group",
+					"title": "Дубль",
+					"kind": "Бадди",
+					"members": [{"member": self.alice}],
+				}
 			).insert(ignore_permissions=True)
-		frappe.db.set_single_value("OU Settings", "leaderboard_visibility", "Ученик видит только свой результат")
+		frappe.db.set_single_value(
+			"OU Settings", "leaderboard_visibility", "Ученик видит только свой результат"
+		)
 		own = community.leaderboard(self.course, "all")
 		self.assertTrue(all(row["me"] for row in own["top"]))
 		frappe.db.set_single_value("OU Settings", "leaderboard_visibility", "Все ученики видят табло")
 		group.delete(ignore_permissions=True)
 
 	def test_outsider_cannot_read_feed_or_rating(self):
-		stranger = self._create_user("over-u-feed-stranger@example.com", "Чужой", "Тест", ["LMS Student"]).name
+		stranger = self._create_user(
+			"over-u-feed-stranger@example.com", "Чужой", "Тест", ["LMS Student"]
+		).name
 		frappe.set_user(stranger)
 		with self.assertRaises(frappe.PermissionError):
 			community.feed(self.course, "3-1")
