@@ -1,0 +1,24 @@
+{
+  "frappe": {
+    "repository": "https://github.com/frappe/frappe",
+    "commit": "2871914b69b6e14a4b023d9b7cc52dc3e269cc1b",
+    "build_image": "frappe/build@sha256:e9139c9e399bc5d58b3f6e1988272f435eeb909163140eb735e4cc52697baa76",
+    "runtime_image": "frappe/base@sha256:1a70d58dcd0d4b919b00626a458b07114efe005e077761daa516bd929fd5568d"
+  },
+  "payments": {
+    "repository": "https://github.com/frappe/payments",
+    "commit": "cca07d9f9392e2ea0e521c5975151db9e4b6c321"
+  },
+  "lms": {
+    "repository": "https://github.com/constantinepetrov/over-u-learning",
+    "commit": "3b91e1c0f840f7c5d270c235a2df6396e58e5e37"
+  },
+  "frappe_docker": {
+    "repository": "https://github.com/frappe/frappe_docker",
+    "commit": "2b26e9ab8d751e5ea33bb7b930aea3550bb81ded",
+    "vendored_files": {
+      "resources/core/main-entrypoint.sh": "d2ac6f979838d9ae14559311933d109fc81c28ba",
+      "resources/core/start.sh": "2ac1a388f47a05cacfd77365130841e801e18040"
+    }
+  }
+}

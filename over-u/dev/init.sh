@@ -5,10 +5,14 @@ if [ "$(id -u)" -eq 0 ]; then
   ln -sfn /home/frappe/frappe-bench/sites /sites
   exec /usr/sbin/runuser -u frappe -- /bin/bash /workspace/over-u/dev/init.sh
 fi
+FRAPPE_COMMIT=$(python3 -c 'import json; print(json.load(open("/workspace/over-u/deploy/versions.lock.json"))["frappe"]["commit"])')
 if [ ! -f frappe-bench/sites/apps.txt ]; then
-  bench --verbose init --ignore-exist --frappe-branch v16.36.1 --skip-redis-config-generation --skip-assets frappe-bench
+  bench --verbose init --ignore-exist --frappe-branch version-16 --skip-redis-config-generation --skip-assets frappe-bench
 fi
 cd frappe-bench
+git -C apps/frappe fetch --depth=1 https://github.com/frappe/frappe.git "$FRAPPE_COMMIT"
+git -C apps/frappe checkout --detach FETCH_HEAD
+uv pip install -e apps/frappe --python env/bin/python
 # Serve the original POC and isolated Desk clone by their own hostnames.
 bench config dns_multitenant on
 # A default_site forces bench serve to one site even in DNS mode.

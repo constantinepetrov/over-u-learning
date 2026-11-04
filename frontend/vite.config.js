@@ -149,7 +149,9 @@ export default defineConfig(async ({ mode }) => {
 				'prosemirror-view',
 				'prosemirror-transform',
 				'vue',
+				'vue-router',
 				'frappe-ui',
+				'pinia',
 			],
 		},
 		optimizeDeps: {

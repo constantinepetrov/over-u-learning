@@ -39,6 +39,9 @@ from ...md import find_macros
 class CourseLesson(Document):
 	def after_insert(self):
 		self.validate_progress_recalculation()
+		# A lesson can be inserted with assessment blocks already present. Keep
+		# the assessment's owning course and lesson links in sync on first save.
+		self.validate_quiz_id()
 
 	def on_trash(self):
 		cleanup_lesson_backreferences(self.name)

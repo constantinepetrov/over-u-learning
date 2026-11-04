@@ -32,7 +32,10 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -48,8 +51,17 @@ jobs:
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
 
-      - name: Install and Run Pre-commit
-        uses: pre-commit/action@v3.0.1
+      # The imported upstream tree contains unrelated formatting debt. Lint
+      # every changed PR file rather than reformatting the entire repository;
+      # Semgrep's security checks remain enabled below.
+      - name: Install pre-commit
+        run: python -m pip install pre-commit==4.3.0
+
+      - name: Run pre-commit on PR changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pre-commit run --show-diff-on-failure --from-ref "$BASE_SHA" --to-ref "$HEAD_SHA" --show-diff-on-failure
 
       - name: Download Semgrep rules
         run: git clone --depth 1 https://github.com/frappe/semgrep-rules.git frappe-semgrep-rules

@@ -1,0 +1,92 @@
+/* OVER U approved visual language for the whole LMS SPA (teacher cabinet and
+   everything else under /lms). Retheme through frappe-ui's own tokens so no
+   component logic or markup changes. Light theme only. */
+:root:root:not([data-theme='dark']) {
+	--surface-base: #f6f4ee;
+	--surface-white: #fffefa;
+	--surface-cards: #fffefa;
+	--surface-modal: #fffefa;
+	--surface-menu-bar: #fffefa;
+	--surface-sidebar: #fffefa;
+	--surface-selected: #e8eee7;
+	--surface-gray-1: #f1efe7;
+	--surface-gray-2: #ebeee6;
+	--surface-gray-3: #e8eee7;
+	--surface-gray-4: #deded4;
+	--surface-gray-5: #cfd2c6;
+	--ink-gray-1: #f6f4ee;
+	--ink-gray-2: #eef0ea;
+	--ink-gray-3: #a9b1aa;
+	--ink-gray-4: #8a948c;
+	--ink-gray-5: #68736b;
+	--ink-gray-6: #55605a;
+	--ink-gray-7: #3d4640;
+	--ink-gray-8: #2b332e;
+	--ink-gray-9: #202722;
+	--outline-gray-1: #e7e6dc;
+	--outline-gray-2: #deded4;
+	--outline-gray-3: #d2d3c8;
+	--outline-gray-4: #bcc0b4;
+	--ou-forest: #214d3c;
+	--ou-orange: #e94e15;
+	--ou-serif: 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+}
+
+html {
+	background-color: #f6f4ee;
+}
+
+/* Solid primary buttons are orange pills, as in the approved preview. */
+button[class*='bg-surface-gray-10'] {
+	background-color: #e94e15;
+	border-radius: 999px;
+	color: #fff;
+	box-shadow: 0 8px 18px rgba(233, 78, 21, 0.18);
+}
+button[class*='bg-surface-gray-10']:hover:not(:disabled) {
+	background-color: #ce4310;
+}
+/* Outline / subtle buttons are quiet pills. */
+button[class*='border-outline'],
+button[class*='bg-surface-white'][class*='border'] {
+	border-radius: 999px;
+}
+
+/* Cards, inputs, dialogs: the larger radius of the approved language. */
+[class*='rounded-lg'],
+[class*='rounded-xl'] {
+	border-radius: 18px;
+}
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+textarea,
+select {
+	border-radius: 12px;
+}
+[role='dialog'] {
+	border-radius: 22px;
+}
+
+/* Page titles read in the brand serif. */
+h1,
+[class*='text-2xl'][class*='font-semibold'] {
+	font-family: var(--ou-serif);
+	font-weight: 400;
+	letter-spacing: -0.02em;
+}
+
+/* Sidebar active item: pale green with forest text. */
+nav [class*='bg-surface-selected'],
+nav [class*='bg-surface-gray-3'] {
+	background-color: #e8eee7;
+	color: #214d3c;
+}
+
+/* Links and focus follow the brand. */
+a:focus-visible,
+button:focus-visible {
+	outline: 2px solid #e94e15;
+	outline-offset: 2px;
+}
