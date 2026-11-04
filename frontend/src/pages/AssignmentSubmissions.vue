@@ -1,4 +1,15 @@
 <template>
+	<div class="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-6">
+		<div>
+			<h1 class="text-xl font-semibold text-ink-gray-9">{{ __('Student answers') }}</h1>
+			<p class="mt-1 text-sm text-ink-gray-6">{{ __('Review assignments from all courses in one place.') }}</p>
+		</div>
+		<Button
+			:variant="pendingOnly ? 'solid' : 'outline'"
+			:label="pendingOnly ? __('Show all answers') : __('Needs review')"
+			@click="togglePending"
+		/>
+	</div>
 	<SubmissionsPage :config="config" :can-delete="canDelete">
 		<template #cell="{ column, value }">
 			<Badge
@@ -13,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { Badge } from 'frappe-ui'
+import { Badge, Button } from 'frappe-ui'
 import type { BadgeProps } from 'frappe-ui'
 import type dayjsType from 'dayjs'
 import type {} from 'dayjs/plugin/relativeTime'
@@ -25,6 +36,14 @@ import type { ListRow, SessionUser, SubmissionsConfig } from '@/types'
 const user = inject<SessionUser>('$user')!
 const dayjs = inject<typeof dayjsType>('$dayjs')!
 const router = useRouter()
+
+const pendingOnly = computed(() => router.currentRoute.value.query.status === 'Not Graded')
+const togglePending = () => {
+	const query = { ...router.currentRoute.value.query }
+	if (pendingOnly.value) delete query.status
+	else query.status = 'Not Graded'
+	router.push({ query })
+}
 
 onMounted(() => {
 	if (!user.data?.is_instructor && !user.data?.is_moderator) {
