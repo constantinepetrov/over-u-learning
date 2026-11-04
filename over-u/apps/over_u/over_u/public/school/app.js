@@ -11,11 +11,16 @@ import {
 	resultsView,
 	profileView,
 	ratingPage,
-	teacherAssignmentsView,
-	teacherAssignmentView,
 	loadingView,
 	errorView,
 } from "./views.js";
+import {
+	teacherDeskView,
+	teacherAssignmentView,
+	teacherCourseView,
+	teacherLessonView,
+	teacherStudentView,
+} from "./teacher.js";
 const root = document.getElementById("school");
 const announce = (message) => {
 	document.getElementById("announcements").textContent = message;
@@ -30,6 +35,8 @@ const drafts = {
 let home,
 	data,
 	feed = null,
+	disc = null,
+	desk = { status: "Not Graded", course: "" },
 	period = "all",
 	route,
 	sequence = 0,
@@ -61,6 +68,28 @@ function parseRoute() {
 		return { view: parts[0] };
 	if (parts.length === 1 && parts[0] === "teacher")
 		return { view: "teacher" };
+	if (parts[0] === "teacher" && parts[1] === "courses" && parts[2]) {
+		if (parts[3] === "lessons" && parts[4] && parts.length === 5)
+			return {
+				view: "teacher-lesson",
+				course: parts[2],
+				number: parts[4],
+			};
+		if (parts.length === 3)
+			return { view: "teacher-course", course: parts[2], tab: "content" };
+		if (
+			parts.length === 4 &&
+			["students", "discussions"].includes(parts[3])
+		)
+			return { view: "teacher-course", course: parts[2], tab: parts[3] };
+	}
+	if (
+		parts.length === 3 &&
+		parts[0] === "teacher" &&
+		parts[1] === "students" &&
+		parts[2]
+	)
+		return { view: "teacher-student", student: parts[2] };
 	if (parts.length === 2 && parts[0] === "teacher" && parts[1])
 		return { view: "teacher-detail", submission: parts[1] };
 	throw new Error(t("ui_127"));
@@ -68,7 +97,7 @@ function parseRoute() {
 function section() {
 	return ["course", "lesson"].includes(route?.view)
 		? "learning"
-		: route?.view === "teacher-detail"
+		: String(route?.view || "").startsWith("teacher-")
 		? "teacher"
 		: route?.view || "home";
 }
@@ -87,16 +116,22 @@ function showData(focus = false) {
 		results: resultsView,
 		profile: profileView,
 		rating: () => ratingPage(data, period),
-		teacher: teacherAssignmentsView,
+		teacher: () => teacherDeskView(data),
 	};
 	const content =
 		route.view === "lesson"
-			? lessonView(data, drafts, feed)
+			? lessonView(data, drafts, feed, disc)
 			: route.view === "course"
 			? courseView(data)
 			: route.view === "teacher-detail"
 			? teacherAssignmentView(data)
-			: views[route.view](route.view === "teacher" ? data : home);
+			: route.view === "teacher-course"
+			? teacherCourseView(data, route.tab)
+			: route.view === "teacher-lesson"
+			? teacherLessonView(data, drafts)
+			: route.view === "teacher-student"
+			? teacherStudentView(data)
+			: views[route.view](home);
 	paint(content, focus);
 	const title =
 		route.view === "lesson"
@@ -105,6 +140,10 @@ function showData(focus = false) {
 			? data.title
 			: route.view === "teacher-detail"
 			? data.assignment
+			: ["teacher-course", "teacher-lesson", "teacher-student"].includes(
+					route.view
+			  )
+			? data.title || data.name
 			: {
 					home: t("ui_001"),
 					learning: t("ui_002"),
@@ -128,9 +167,15 @@ async function loadRoute({ refresh = false } = {}) {
 				: route.view === "course"
 				? await api.course(route.course)
 				: route.view === "teacher"
-				? await api.teacherAssignments()
+				? await api.teacherDesk(desk.status, desk.course)
 				: route.view === "teacher-detail"
 				? await api.teacherAssignment(route.submission)
+				: route.view === "teacher-course"
+				? await api.teacherCourse(route.course)
+				: route.view === "teacher-lesson"
+				? await api.teacherLesson(route.course, route.number)
+				: route.view === "teacher-student"
+				? await api.teacherStudent(route.student)
 				: route.view === "rating"
 				? nextHome.courses[0]
 					? await api.leaderboard(nextHome.courses[0].id, period)
@@ -140,10 +185,17 @@ async function loadRoute({ refresh = false } = {}) {
 			route.view === "lesson" && next.assignment && !next.locked
 				? await api.feed(route.course, route.number).catch(() => null)
 				: null;
+		const nextDisc =
+			route.view === "lesson" && !next.locked
+				? await api
+						.comments(route.course, route.number)
+						.catch(() => null)
+				: null;
 		if (ticket !== sequence) return;
 		home = nextHome;
 		data = next;
 		feed = nextFeed;
+		disc = route.view === "teacher-lesson" ? next.discussion : nextDisc;
 		showData(!refresh);
 		lastPath = location.pathname;
 	} catch (error) {
@@ -179,6 +231,33 @@ root.addEventListener("click", async (event) => {
 	if (action === "rating-period") {
 		period = control.dataset.period === "week" ? "week" : "all";
 		return loadRoute({ refresh: true });
+	}
+	if (action === "desk-filter") {
+		desk = { ...desk, status: control.dataset.status };
+		return loadRoute({ refresh: true });
+	}
+	if (action === "disc-moderate") {
+		const current = { ...route },
+			path = location.pathname;
+		busy = true;
+		control.disabled = true;
+		try {
+			setDisc(
+				await api.moderateComment(
+					current.course,
+					current.number,
+					control.dataset.id,
+					control.dataset.mod
+				),
+				path
+			);
+		} catch (error) {
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (control.isConnected) control.disabled = false;
+		}
+		return;
 	}
 	if (["feed-react", "feed-moderate"].includes(action)) {
 		const current = { ...route },
@@ -268,6 +347,19 @@ root.addEventListener("click", async (event) => {
 		}
 	}
 });
+function setDisc(updated, path) {
+	if (path !== location.pathname) return;
+	disc = updated;
+	if (route.view === "teacher-lesson")
+		data = { ...data, discussion: updated };
+	showData();
+}
+root.addEventListener("change", (event) => {
+	if (event.target.matches("[data-desk-course]")) {
+		desk = { ...desk, course: event.target.value };
+		loadRoute({ refresh: true });
+	}
+});
 root.addEventListener("input", (event) => {
 	const draft = event.target.dataset?.draft;
 	if (draft) drafts.feedText.set(draft, event.target.value);
@@ -294,7 +386,7 @@ root.addEventListener("submit", async (event) => {
 	const current = { ...route },
 		path = location.pathname,
 		key = `${current.course}/${current.number}`;
-	const submit = form.querySelector("button[type=submit]"),
+	const submit = event.submitter || form.querySelector("button[type=submit]"),
 		original = submit.innerHTML;
 	const feedback = form.querySelector("#form-feedback");
 	feedback.textContent = "";
@@ -306,7 +398,7 @@ root.addEventListener("submit", async (event) => {
 		if (form.id === "teacher-review-form") {
 			updated = await api.reviewAssignment(
 				new FormData(form).get("submission"),
-				new FormData(form).get("status"),
+				submit.value,
 				new FormData(form).get("comments")
 			);
 			navigate("/school/teacher");
@@ -359,6 +451,39 @@ root.addEventListener("submit", async (event) => {
 });
 root.addEventListener("submit", async (event) => {
 	const form = event.target;
+	if (form.matches("[data-disc-form]")) {
+		event.preventDefault();
+		if (busy || !form.reportValidity()) return;
+		const current = { ...route },
+			path = location.pathname;
+		const submit = form.querySelector("button[type=submit]");
+		const slot = form.dataset.reply
+			? `d:reply:${form.dataset.reply}`
+			: "d:main";
+		busy = true;
+		submit.disabled = true;
+		try {
+			const updated = await api.comment(
+				current.course,
+				current.number,
+				form.elements.text.value,
+				form.dataset.reply || "",
+				form.elements.private?.checked ? 1 : 0
+			);
+			drafts.feedText.delete(slot);
+			setDisc(updated, path);
+		} catch (error) {
+			const box =
+				form.querySelector(".feed-error") ||
+				document.getElementById("announcements");
+			box.textContent = error.message;
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (submit.isConnected) submit.disabled = false;
+		}
+		return;
+	}
 	if (!form.matches("[data-feed-form]")) return;
 	event.preventDefault();
 	if (busy || !form.reportValidity()) return;
@@ -393,6 +518,25 @@ root.addEventListener("submit", async (event) => {
 	}
 });
 // Pull in new messages while the learner is reading, but never while they are typing.
+async function refreshDisc() {
+	if (
+		document.hidden ||
+		busy ||
+		!["lesson", "teacher-lesson"].includes(route?.view) ||
+		!disc
+	)
+		return;
+	if (document.activeElement?.closest?.(".discussion")) return;
+	const path = location.pathname;
+	try {
+		const updated = await api.comments(route.course, route.number);
+		if (JSON.stringify(updated) !== JSON.stringify(disc))
+			setDisc(updated, path);
+	} catch {
+		/* Keep the last loaded discussion. */
+	}
+}
+setInterval(refreshDisc, 20000);
 async function refreshFeed() {
 	if (document.hidden || busy || route?.view !== "lesson" || !feed?.unlocked)
 		return;

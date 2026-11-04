@@ -1,6 +1,7 @@
 import { boot, t } from "./i18n.js";
 import { welcomeCard, chatBanner } from "./guide.js";
 import { feedView, ratingView } from "./community.js";
+import { discussionView } from "./discussion.js";
 import {
 	escape as e,
 	icon,
@@ -42,7 +43,11 @@ export function shell(content, home, section = "home") {
 		? '<a class="ou-nav-item" href="/lms" title="Открыть редактор Frappe Learning">Студия курсов</a>'
 		: "";
 	const mobileNav = tabs
-		.filter(([, , , key]) => key !== "teacher")
+		// Instructors get their desk in the bottom bar instead of the learner results page.
+		.filter(
+			([, , , key]) =>
+				key !== (boot.teacher_tools ? "results" : "teacher")
+		)
 		.map(([iconName, href, label, key]) => {
 			const active = section === key;
 			return link(
@@ -498,17 +503,7 @@ function homeworkView(data, drafts) {
 			: ""
 	}</section>`;
 }
-function discussionLink(data) {
-	if (data.locked) return "";
-	// The stock lesson page carries the course discussion (questions and answers).
-	const stock = location.pathname
-		.replace("/school/courses/", "/lms/courses/")
-		.replace("/lessons/", "/learn/");
-	return `<section class="lesson-help" aria-label="Вопросы к уроку"><div><h2>Есть вопрос по уроку?</h2><p>Задайте его в обсуждении: преподаватель и другие ученики смогут ответить.</p></div><a class="button secondary" href="${e(
-		stock
-	)}">Вопросы и обсуждение</a></section>`;
-}
-export function lessonView(data, drafts, feed) {
+export function lessonView(data, drafts, feed, disc) {
 	const c = data.course,
 		l = data.lesson;
 	let article;
@@ -564,9 +559,9 @@ export function lessonView(data, drafts, feed) {
 		l.chapter_title
 	)} · ${kinds[l.kind]}</span><h1>${e(
 		l.title.replace(/^\d+\.\d+\s*/, "")
-	)}</h1></div>${article}${discussionLink(
-		data
-	)}</div><aside class="learn-outline"><div class="outline-heading"><h2>${e(
+	)}</h1></div>${article}${
+		data.locked ? "" : discussionView(disc, drafts)
+	}</div><aside class="learn-outline"><div class="outline-heading"><h2>${e(
 		c.title.replace(/^OVER U\s*[—–-]\s*/, "")
 	)}</h2>${progress(c)}</div>${outline(c, true, l.number)}</aside></div>`;
 }
@@ -643,74 +638,6 @@ export function profileView(home) {
 	)}</p><button class="button secondary" data-action="logout">${t(
 		"ui_149"
 	)}</button><div id="logout-feedback" role="alert"></div></div></section><section class="profile-panel"><div><h2>Пароль и подсказки</h2><p class="help">Забыли пароль или хотите его сменить? Это можно сделать самостоятельно.</p><div class="profile-actions"><a class="button secondary" href="/update-password">Сменить пароль</a><button class="button secondary" type="button" data-action="guide">Как это работает</button></div></div></section>`;
-}
-export function teacherAssignmentsView(rows) {
-	return `<div class="page-heading"><span class="eyebrow">${t(
-		"ui_151"
-	)}</span><h1>${t("ui_152")}</h1><p>${t("ui_153")}</p></div>${
-		rows.length
-			? `<div class="teacher-queue">${rows
-					.map(
-						(row) =>
-							`<article class="assignment-row teacher-queue-row"><div><span class="eyebrow">${
-								row.status === "Not Graded"
-									? t("ui_032")
-									: e(row.status)
-							}</span><h2>${e(row.assignment)}</h2><p>${e(
-								row.member
-							)} · ${e(row.course)}</p><span class="help">${e(
-								row.lesson
-							)}</span></div>${link(
-								row.href,
-								`${t("ui_154")}${icon("arrow")}`,
-								"button secondary"
-							)}</article>`
-					)
-					.join("")}</div>`
-			: `<section class="empty"><h2>${t("ui_155")}</h2><p>${t(
-					"ui_156"
-			  )}</p></section>`
-	}`;
-}
-export function teacherAssignmentView(item) {
-	return `<div class="breadcrumbs">${link(
-		"/school/teacher",
-		t("ui_151")
-	)} ${icon("chevron")} <span>${t(
-		"ui_157"
-	)}</span></div><div class="page-heading"><span class="eyebrow">${e(
-		item.course
-	)}</span><h1>${e(item.assignment)}</h1><p>${e(item.lesson)} · ${e(
-		item.member
-	)}</p></div><section class="teacher-review"><div class="review-content"><span class="eyebrow">${t(
-		"ui_158"
-	)}</span><div class="review-answer">${
-		item.answer || `<p>${t("ui_159")}</p>`
-	}</div></div><details class="review-prompt"><summary>${t(
-		"ui_160"
-	)}</summary><div>${
-		item.question || ""
-	}</div></details><form id="teacher-review-form"><input type="hidden" name="submission" value="${e(
-		item.name
-	)}"><label for="review-status">${t(
-		"ui_161"
-	)}</label><select id="review-status" name="status" required><option value="">${t(
-		"ui_162"
-	)}</option><option value="Pass">${t(
-		"ui_163"
-	)}</option><option value="Fail">${t(
-		"ui_164"
-	)}</option></select><label for="review-comment">${t(
-		"ui_165"
-	)}</label><textarea id="review-comment" name="comments" maxlength="10000">${richText(
-		item.comments
-	)}</textarea><div id="form-feedback" role="alert"></div><div class="review-actions"><button type="submit" class="button primary">${t(
-		"ui_166"
-	)}</button>${link(
-		"/school/teacher",
-		t("ui_167"),
-		"button secondary"
-	)}</div></form></section>`;
 }
 export const loadingView = () => t("ui_112");
 export function errorView(error) {

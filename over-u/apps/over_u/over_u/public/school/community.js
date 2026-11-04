@@ -1,7 +1,7 @@
 import { t, language } from "./i18n.js";
 import { escape as e, icon } from "./components.js";
 const locale = language === "ru" ? "ru-RU" : "en-GB";
-const when = (value) => {
+export const when = (value) => {
 	const date = new Date(String(value).replace(" ", "T"));
 	return Number.isNaN(date.getTime())
 		? ""
@@ -12,7 +12,7 @@ const when = (value) => {
 				minute: "2-digit",
 		  });
 };
-const plain = (text) => e(text).replace(/\n/g, "<br>");
+export const plain = (text) => e(text).replace(/\n/g, "<br>");
 const pts = (value) => t("ui_201", value);
 
 function reactions(message, labels) {

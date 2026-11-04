@@ -203,28 +203,39 @@ def _review_submission(name):
 	return submission, lessons[0]
 
 
-@frappe.whitelist()
-def teacher_assignments():
-	member = _member()
-	if not set(frappe.get_roles(member)) & {
-		"Course Creator",
-		"Moderator",
-		"Batch Evaluator",
-		"System Manager",
-	}:
+REVIEW_ROLES = {"Course Creator", "Moderator", "Batch Evaluator", "System Manager"}
+REVIEW_STATUSES = ("Not Graded", "Pass", "Fail")
+
+
+def review_courses(member):
+	"""Courses whose homework this signed-in instructor may review."""
+	if not set(frappe.get_roles(member)) & REVIEW_ROLES:
 		frappe.throw(_("You cannot review assignments."), frappe.PermissionError)
 	from lms.lms.permissions import can_author_course
 
-	courses = [
+	return [
 		name
 		for name in frappe.get_all("LMS Course", pluck="name", limit_page_length=0)
 		if can_author_course(name, user=member)
 	]
+
+
+@frappe.whitelist()
+def teacher_assignments(status: str = "Not Graded", course: str = ""):
+	member = _member()
+	courses = review_courses(member)
+	if status not in REVIEW_STATUSES + ("",):
+		frappe.throw(_("Unknown filter."))
+	if course:
+		courses = [name for name in courses if name == course]
 	if not courses:
 		return []
+	filters = {"course": ["in", courses]}
+	if status:
+		filters["status"] = status
 	rows = frappe.get_all(
 		"LMS Assignment Submission",
-		filters={"status": "Not Graded", "course": ["in", courses]},
+		filters=filters,
 		fields=[
 			"name",
 			"assignment",
@@ -235,7 +246,7 @@ def teacher_assignments():
 			"lesson",
 			"creation",
 		],
-		order_by="creation asc",
+		order_by="creation asc" if status == "Not Graded" else "creation desc",
 		limit_page_length=200,
 	)
 	result = []
@@ -249,6 +260,8 @@ def teacher_assignments():
 				"name": submission.name,
 				"member": submission.member_name or submission.member,
 				"course": frappe.db.get_value("LMS Course", lesson.course, "title"),
+				"course_id": lesson.course,
+				"student": submission.member,
 				"lesson": lesson.title,
 				"assignment": submission.assignment_title
 				or frappe.db.get_value("LMS Assignment", submission.assignment, "title"),

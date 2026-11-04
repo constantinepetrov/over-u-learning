@@ -118,7 +118,16 @@ class TestLocalization(BaseTestUtils):
 			self.assertEqual(re.findall(r"\{\d+\}", ru[key]), re.findall(r"\{\d+\}", en[key]))
 		source = "\n".join(
 			(folder.parent / name).read_text()
-			for name in ["views.js", "components.js", "app.js", "api.js", "community.js", "guide.js"]
+			for name in [
+				"views.js",
+				"components.js",
+				"app.js",
+				"api.js",
+				"community.js",
+				"guide.js",
+				"teacher.js",
+				"discussion.js",
+			]
 		)
 		self.assertEqual(set(re.findall(r"t\(\s*['\"](ui_\d+)['\"]", source)), set(ru))
 

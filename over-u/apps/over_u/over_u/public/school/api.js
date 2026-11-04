@@ -12,6 +12,15 @@ const methods = new Set([
 	"teacher_assignment",
 	"review_assignment",
 ]);
+const discussion = new Set([
+	"lesson_comments",
+	"post_lesson_comment",
+	"moderate_lesson_comment",
+	"teacher_desk",
+	"teacher_course",
+	"teacher_lesson",
+	"teacher_student",
+]);
 const community = new Set([
 	"feed",
 	"post_message",
@@ -26,13 +35,21 @@ export class SchoolError extends Error {
 	}
 }
 async function request(method, args = {}) {
-	if (!methods.has(method) && !community.has(method))
+	if (
+		!methods.has(method) &&
+		!community.has(method) &&
+		!discussion.has(method)
+	)
 		throw new SchoolError(t("ui_136"), 400);
 	let response;
 	try {
 		response = await fetch(
 			`/api/method/over_u.${
-				community.has(method) ? "community_api" : "student_api"
+				discussion.has(method)
+					? "discussion_api"
+					: community.has(method)
+					? "community_api"
+					: "student_api"
 			}.${method}`,
 			{
 				method: "POST",
@@ -82,7 +99,26 @@ export const api = {
 		request("submit_quiz", { course, number, answers }),
 	homework: (course, number, answer) =>
 		request("submit_assignment", { course, number, answer }),
-	teacherAssignments: () => request("teacher_assignments"),
+	teacherAssignments: (status = "Not Graded", course = "") =>
+		request("teacher_assignments", { status, course }),
+	teacherDesk: (status = "Not Graded", course = "") =>
+		request("teacher_desk", { status, course }),
+	teacherCourse: (course) => request("teacher_course", { course }),
+	teacherLesson: (course, number) =>
+		request("teacher_lesson", { course, number }),
+	teacherStudent: (student) => request("teacher_student", { student }),
+	comments: (course, number) =>
+		request("lesson_comments", { course, number }),
+	comment: (course, number, text, reply_to = "", priv = 0) =>
+		request("post_lesson_comment", {
+			course,
+			number,
+			text,
+			reply_to,
+			private: priv,
+		}),
+	moderateComment: (course, number, comment, action) =>
+		request("moderate_lesson_comment", { course, number, comment, action }),
 	teacherAssignment: (submission) =>
 		request("teacher_assignment", { submission }),
 	reviewAssignment: (submission, status, comments) =>
