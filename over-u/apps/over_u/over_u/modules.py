@@ -7,28 +7,39 @@ without lessons is never shown to learners (see student_api._snapshot).
 Run once, safe to repeat:  bench --site <site> execute over_u.modules.ensure_skeleton
 """
 
+import re
+
 import frappe
 from frappe import _
 
 COURSE_TITLE = "LIFELONG ENERGY (Энерголетие)"
+# The production course was created earlier under the name "Энерголетие"; never create a second one.
+COURSE_TITLES = ("Энерголетие", "LIFELONG ENERGY", COURSE_TITLE)
 MODULES = 12
 
 
-def _course(title):
-	name = frappe.db.exists("LMS Course", {"title": title})
-	if name:
-		return frappe.get_doc("LMS Course", name)
+def find_course(title=None):
+	for candidate in (title,) if title else COURSE_TITLES:
+		name = frappe.db.exists("LMS Course", {"title": candidate})
+		if name:
+			return frappe.get_doc("LMS Course", name)
 	return None
 
 
-def ensure_skeleton(title=COURSE_TITLE, instructor=None):
+def module_number(title):
+	"""«Модуль 3», «Модуль 1. Квантовый код» and «3. Название» all mean module 3."""
+	match = re.match(r"^\s*(?:Модуль\s*)?(\d{1,2})(?:\D|$)", title or "")
+	return int(match.group(1)) if match and "Модуль" in (title or "") else None
+
+
+def ensure_skeleton(title=None, instructor=None):
 	if frappe.session.user != "Administrator":
 		frappe.throw(_("Run as Administrator."), frappe.PermissionError)
-	course = _course(title)
+	course = find_course(title)
 	if not course:
 		values = {
 			"doctype": "LMS Course",
-			"title": title,
+			"title": title or COURSE_TITLE,
 			"short_introduction": "Материал ожидается от автора курса.",
 			"description": "<p>Материал ожидается от автора курса.</p>",
 			"published": 0,
@@ -39,13 +50,14 @@ def ensure_skeleton(title=COURSE_TITLE, instructor=None):
 			values["instructors"] = [{"instructor": instructor}]
 		course = frappe.get_doc(values).insert()
 	have = {
-		frappe.db.get_value("Course Chapter", row.chapter, "title") for row in course.get("chapters") or []
+		module_number(frappe.db.get_value("Course Chapter", row.chapter, "title"))
+		for row in course.get("chapters") or []
 	}
 	created = []
 	for number in range(1, MODULES + 1):
-		module = f"Модуль {number}"
-		if module in have:
+		if number in have:
 			continue
+		module = f"Модуль {number}"
 		chapter = frappe.get_doc(
 			{"doctype": "Course Chapter", "title": module, "course": course.name}
 		).insert()
