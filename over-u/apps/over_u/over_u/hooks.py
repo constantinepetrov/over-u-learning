@@ -30,9 +30,14 @@ doc_events = {
 	"User": {"before_insert": "over_u.localization.set_new_user_language"},
 	"LMS Assignment Submission": {
 		"validate": "over_u.policy.validate_submission",
-		"on_update": "over_u.policy.update_assignment_progress",
+		"after_insert": "over_u.points.on_submission_insert",
+		"on_update": ["over_u.policy.update_assignment_progress", "over_u.points.on_submission_update"],
 	},
-	"LMS Course Progress": {"validate": "over_u.policy.validate_progress"},
+	"LMS Course Progress": {
+		"validate": "over_u.policy.validate_progress",
+		"on_update": "over_u.points.on_progress",
+	},
+	"LMS Quiz Submission": {"after_insert": "over_u.points.on_quiz_submission"},
 }
 has_permission = {
 	"LMS Assignment Submission": "over_u.policy.assignment_submission_has_permission",

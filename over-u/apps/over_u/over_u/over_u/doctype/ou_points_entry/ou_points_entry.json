@@ -1,0 +1,117 @@
+{
+ "actions": [],
+ "creation": "2026-11-02 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "member",
+  "member_name",
+  "points",
+  "reason",
+  "event",
+  "course",
+  "key",
+  "awarded_by"
+ ],
+ "fields": [
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "label": "Ученик",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "label": "Имя",
+   "fetch_from": "member.full_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "points",
+   "fieldtype": "Int",
+   "label": "Баллы",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Можно вводить отрицательное число, чтобы снять баллы"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Data",
+   "label": "За что",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "event",
+   "fieldtype": "Data",
+   "label": "Событие",
+   "read_only": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Курс",
+   "options": "LMS Course"
+  },
+  {
+   "fieldname": "key",
+   "fieldtype": "Data",
+   "label": "Ключ защиты от повтора",
+   "unique": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "awarded_by",
+   "fieldtype": "Link",
+   "label": "Кто начислил",
+   "options": "User",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OVER U",
+ "name": "OU Points Entry",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Course Creator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Moderator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "hash",
+ "naming_rule": "Random"
+}
