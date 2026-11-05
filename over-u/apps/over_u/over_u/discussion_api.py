@@ -13,7 +13,7 @@ import frappe
 from frappe import _
 
 from lms.lms import utils as lms
-from over_u import points
+from over_u import goals_api, points
 from over_u.student_api import (
 	KINDS,
 	REVIEW_STATUSES,
@@ -319,6 +319,10 @@ def teacher_desk(status: str = "Not Graded", course: str = ""):
 			"questions": len(questions),
 			"students": len(students),
 			"courses": len(courses),
+			"reports_today": frappe.db.count(
+				"OU Daily Report",
+				{"report_date": frappe.utils.today(), "member": ["in", list(students) or [""]]},
+			),
 		},
 		"filter": {"status": status, "course": course},
 		"courses": [{"id": name, "title": titles.get(name, name)} for name in courses],
@@ -491,9 +495,13 @@ def teacher_student(student: str):
 			["title", "kind"],
 		)
 	]
+	goals = goals_api.goals_of(student)
 	return {
 		"student": student,
 		"name": frappe.db.get_value("User", student, "full_name") or student,
+		"goals": goals,
+		"goals_percent": goals_api.overall(goals),
+		"reports": goals_api.reports_of(student, limit=14),
 		"points": points.total_for(student),
 		"courses": cards,
 		"submissions": submissions,

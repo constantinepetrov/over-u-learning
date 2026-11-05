@@ -12,6 +12,14 @@ const methods = new Set([
 	"teacher_assignment",
 	"review_assignment",
 ]);
+const goals = new Set([
+	"my_goals",
+	"save_goal",
+	"set_step",
+	"delete_goal",
+	"my_report",
+	"save_report",
+]);
 const discussion = new Set([
 	"lesson_comments",
 	"post_lesson_comment",
@@ -38,14 +46,17 @@ async function request(method, args = {}) {
 	if (
 		!methods.has(method) &&
 		!community.has(method) &&
-		!discussion.has(method)
+		!discussion.has(method) &&
+		!goals.has(method)
 	)
 		throw new SchoolError(t("ui_136"), 400);
 	let response;
 	try {
 		response = await fetch(
 			`/api/method/over_u.${
-				discussion.has(method)
+				goals.has(method)
+					? "goals_api"
+					: discussion.has(method)
 					? "discussion_api"
 					: community.has(method)
 					? "community_api"
@@ -107,6 +118,12 @@ export const api = {
 	teacherLesson: (course, number) =>
 		request("teacher_lesson", { course, number }),
 	teacherStudent: (student) => request("teacher_student", { student }),
+	myGoals: () => request("my_goals"),
+	saveGoal: (goal) => request("save_goal", goal),
+	setStep: (goal, index, done) => request("set_step", { goal, index, done }),
+	deleteGoal: (goal) => request("delete_goal", { goal }),
+	myReport: () => request("my_report"),
+	saveReport: (report) => request("save_report", report),
 	comments: (course, number) =>
 		request("lesson_comments", { course, number }),
 	comment: (course, number, text, reply_to = "", priv = 0) =>

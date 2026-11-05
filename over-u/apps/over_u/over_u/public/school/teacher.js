@@ -1,6 +1,6 @@
 import { t } from "./i18n.js";
 import { escape as e, icon, link, richText } from "./components.js";
-import { when, plain } from "./community.js";
+import { when, plain, day } from "./community.js";
 import { discussionView } from "./discussion.js";
 
 const studentHref = (email) =>
@@ -111,7 +111,7 @@ export function teacherDeskView(desk) {
 	)}${counter(c.questions, t("ui_221"), true)}${counter(
 		c.students,
 		t("ui_222")
-	)}${counter(
+	)}${counter(c.reports_today, t("ui_315"))}${counter(
 		c.courses,
 		t("ui_223")
 	)}</div><section class="desk-block"><div class="desk-head"><h2>${t(
@@ -307,6 +307,32 @@ export function teacherStudentView(card) {
 	)}</h2></div>${rows(
 		card.courses,
 		(c) => `<li><strong>${e(c.title)}</strong>${bar(c.progress)}</li>`
+	)}</section><section class="desk-block"><div class="desk-head"><h2>${t(
+		"ui_313"
+	)}</h2></div>${rows(
+		card.goals,
+		(g) =>
+			`<li><strong>${e(g.title)}</strong> <span class="help">${e(
+				g.kind
+			)}</span><div class="goal-bar"><progress max="100" value="${
+				g.percent
+			}">${g.percent}%</progress><strong>${
+				g.percent
+			}%</strong></div></li>`
+	)}</section><section class="desk-block"><div class="desk-head"><h2>${t(
+		"ui_314"
+	)}</h2></div>${rows(
+		card.reports,
+		(r) =>
+			`<li><span class="help">${day(r.date)}</span>${[
+				r.goals_done,
+				r.insights,
+				r.tasks_done,
+				r.suggestions,
+			]
+				.filter(Boolean)
+				.map((x) => `<p class="desk-quote">${plain(x)}</p>`)
+				.join("")}</li>`
 	)}</section>${
 		card.groups.length
 			? `<section class="desk-block"><div class="desk-head"><h2>${t(

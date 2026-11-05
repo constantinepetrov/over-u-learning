@@ -17,6 +17,9 @@ DEFAULT_RULES = (
 	("comment_posted", "Сообщение в ленте ответов", 1, 5),
 	("reaction_received", "Ваш ответ или сообщение оценили", 1, 10),
 )
+# Rules the author has not priced yet: seeded switched off with zero points, so nothing is
+# paid until the author sets the scale in Desk.
+PENDING_RULES = (("daily_report", "Ежедневный отчёт", 1),)
 STAFF_ROLES = {"Course Creator", "Moderator", "Batch Evaluator", "System Manager"}
 
 
@@ -36,6 +39,23 @@ def seed_rules():
 			).insert(ignore_permissions=True)
 		except frappe.DuplicateEntryError:
 			pass  # already seeded; the author's edits are never overwritten
+	for event, label, daily_limit in PENDING_RULES:
+		if frappe.db.exists("OU Points Rule", event):
+			continue
+		try:
+			# nosemgrep: lms-unjustified-ignore-permissions - one-time system seed of default rules
+			frappe.get_doc(
+				{
+					"doctype": "OU Points Rule",
+					"event": event,
+					"label": label,
+					"points": 0,
+					"enabled": 0,
+					"daily_limit": daily_limit,
+				}
+			).insert(ignore_permissions=True)
+		except frappe.DuplicateEntryError:
+			pass
 
 
 def setting(field, default=None):

@@ -127,6 +127,7 @@ class TestLocalization(BaseTestUtils):
 				"guide.js",
 				"teacher.js",
 				"discussion.js",
+				"goals.js",
 			]
 		)
 		self.assertEqual(set(re.findall(r"t\(\s*['\"](ui_\d+)['\"]", source)), set(ru))

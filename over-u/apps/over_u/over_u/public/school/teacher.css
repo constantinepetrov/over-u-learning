@@ -52,3 +52,4 @@
 @media(max-width:650px){.desk-counters{grid-template-columns:repeat(2,minmax(0,1fr))}.desk-counter strong{font-size:28px}}
 @media(min-width:1001px) and (max-width:1560px){.ou-nav-item .icon{display:none}.ou-nav-item{padding:8px 10px}}
 .feed-form.main label.feed-private{display:flex;flex-direction:row;align-items:center;gap:10px;margin:10px 0;font-weight:500}.feed-form.main label.feed-private input{width:auto;min-height:0;flex:none}
+.desk-counters{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}

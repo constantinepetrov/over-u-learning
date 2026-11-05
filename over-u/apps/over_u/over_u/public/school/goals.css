@@ -1,0 +1,37 @@
+/* Personal goals, daily report and buddy widget. */
+.goal-summary{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 24px;margin:0 0 24px}
+.goal-bar{display:flex;align-items:center;gap:12px;margin:8px 0}
+.goal-bar progress{flex:1;height:10px;max-width:480px}
+.goal-bar strong{min-width:46px;color:var(--green)}
+.goal-list{display:grid;gap:16px;margin-bottom:28px}
+.goal-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+.goal-card header{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.goal-card h3{margin:4px 0 6px;overflow-wrap:anywhere}
+.goal-card p{overflow-wrap:anywhere}
+.step-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:8px}
+.step-list li{display:flex;align-items:center;gap:12px}
+.step-list li.done span:last-child{color:var(--muted);text-decoration:line-through}
+.step-list small{color:var(--muted);margin-left:6px}
+.step-check{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:#fff;display:grid;place-items:center;padding:0;cursor:pointer}
+.step-check .icon{width:16px;height:16px}
+.step-list li.done .step-check{background:var(--green);border-color:var(--green)}
+.step-check:hover{border-color:var(--green)}
+.step-check.static{cursor:default}
+.goal-edit{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.goal-edit summary{cursor:pointer;color:var(--green);font-weight:600}
+.goal-form{display:grid;gap:12px;margin-top:12px;max-width:720px}
+.goal-form label{display:grid;gap:6px;font-weight:600}
+.goal-form input[type=text],.goal-form input[type=date],.goal-form textarea,.goal-form select{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);color:var(--ink);font:inherit;font-weight:400}
+.goal-steps{border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.goal-steps legend{font-weight:600;padding:0 6px}
+.step-rows{display:grid;gap:8px;margin-bottom:8px}
+.step-row{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:8px;align-items:center}
+.step-done{display:flex!important;align-items:center}
+.goal-form label.feed-private{display:flex;flex-direction:row;align-items:center;gap:10px;font-weight:500}
+.goal-form label.feed-private input{width:auto}
+.goal-new{margin:28px 0}
+.link-button.danger{color:var(--error);margin-top:10px}
+.help.ok{color:var(--green);font-weight:600}
+.report-form{margin-bottom:28px}
+.report-history{display:grid;gap:12px}
+@media(max-width:650px){.step-row{grid-template-columns:minmax(0,1fr) auto}.step-row input[type=date]{grid-column:1/2}.goal-card{padding:16px}}

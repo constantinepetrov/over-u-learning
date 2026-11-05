@@ -21,6 +21,7 @@ import {
 	teacherLessonView,
 	teacherStudentView,
 } from "./teacher.js";
+import { goalsView, reportView, buddyView, newStepRow } from "./goals.js";
 const root = document.getElementById("school");
 const announce = (message) => {
 	document.getElementById("announcements").textContent = message;
@@ -66,6 +67,13 @@ function parseRoute() {
 		)
 	)
 		return { view: parts[0] };
+	if (parts[0] === "goals" && parts.length === 1) return { view: "goals" };
+	if (
+		parts[0] === "goals" &&
+		parts.length === 2 &&
+		["report", "buddy"].includes(parts[1])
+	)
+		return { view: "goals-" + parts[1] };
 	if (parts.length === 1 && parts[0] === "teacher")
 		return { view: "teacher" };
 	if (parts[0] === "teacher" && parts[1] === "courses" && parts[2]) {
@@ -99,6 +107,8 @@ function section() {
 		? "learning"
 		: String(route?.view || "").startsWith("teacher-")
 		? "teacher"
+		: String(route?.view || "").startsWith("goals")
+		? "goals"
 		: route?.view || "home";
 }
 function paint(content, focus = false) {
@@ -131,6 +141,12 @@ function showData(focus = false) {
 			? teacherLessonView(data, drafts)
 			: route.view === "teacher-student"
 			? teacherStudentView(data)
+			: route.view === "goals"
+			? goalsView(data)
+			: route.view === "goals-report"
+			? reportView(data)
+			: route.view === "goals-buddy"
+			? buddyView(data)
 			: views[route.view](home);
 	paint(content, focus);
 	const title =
@@ -140,6 +156,8 @@ function showData(focus = false) {
 			? data.title
 			: route.view === "teacher-detail"
 			? data.assignment
+			: route.view.startsWith("goals")
+			? t("ui_262")
 			: ["teacher-course", "teacher-lesson", "teacher-student"].includes(
 					route.view
 			  )
@@ -176,6 +194,10 @@ async function loadRoute({ refresh = false } = {}) {
 				? await api.teacherLesson(route.course, route.number)
 				: route.view === "teacher-student"
 				? await api.teacherStudent(route.student)
+				: ["goals", "goals-buddy"].includes(route.view)
+				? await api.myGoals()
+				: route.view === "goals-report"
+				? await api.myReport()
 				: route.view === "rating"
 				? nextHome.courses[0]
 					? await api.leaderboard(nextHome.courses[0].id, period)
@@ -231,6 +253,39 @@ root.addEventListener("click", async (event) => {
 	if (action === "rating-period") {
 		period = control.dataset.period === "week" ? "week" : "all";
 		return loadRoute({ refresh: true });
+	}
+	if (action === "goal-add-step") {
+		control
+			.closest("fieldset")
+			.querySelector(".step-rows")
+			.insertAdjacentHTML("beforeend", newStepRow());
+		return;
+	}
+	if (["step-toggle", "goal-delete"].includes(action)) {
+		if (action === "goal-delete" && !window.confirm(t("ui_278"))) return;
+		const path = location.pathname;
+		busy = true;
+		control.disabled = true;
+		try {
+			const updated =
+				action === "step-toggle"
+					? await api.setStep(
+							control.dataset.goal,
+							Number(control.dataset.idx),
+							Number(control.dataset.done)
+					  )
+					: await api.deleteGoal(control.dataset.goal);
+			if (path === location.pathname) {
+				data = updated;
+				showData();
+			}
+		} catch (error) {
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (control.isConnected) control.disabled = false;
+		}
+		return;
 	}
 	if (action === "desk-filter") {
 		desk = { ...desk, status: control.dataset.status };
@@ -451,6 +506,57 @@ root.addEventListener("submit", async (event) => {
 });
 root.addEventListener("submit", async (event) => {
 	const form = event.target;
+	if (form.matches("[data-goal-form], [data-report-form]")) {
+		event.preventDefault();
+		if (busy || !form.reportValidity()) return;
+		const path = location.pathname;
+		const submit = form.querySelector("button[type=submit]");
+		const box = form.querySelector(".feed-error");
+		const values = new FormData(form);
+		busy = true;
+		submit.disabled = true;
+		try {
+			let updated;
+			if (form.matches("[data-goal-form]")) {
+				const steps = [...form.querySelectorAll(".step-row")].map(
+					(row) => ({
+						title: row.querySelector("[name=step_title]").value,
+						due: row.querySelector("[name=step_due]").value,
+						done: row.querySelector("[name=step_done]").checked
+							? 1
+							: 0,
+					})
+				);
+				updated = await api.saveGoal({
+					goal: form.dataset.goal || "",
+					kind: values.get("kind") || undefined,
+					title: values.get("title"),
+					details: values.get("details") || "",
+					target_date: values.get("target_date") || "",
+					shared: form.elements.shared.checked ? 1 : 0,
+					steps,
+				});
+			} else {
+				updated = await api.saveReport({
+					goals_done: values.get("goals_done") || "",
+					insights: values.get("insights") || "",
+					tasks_done: values.get("tasks_done") || "",
+					suggestions: values.get("suggestions") || "",
+				});
+			}
+			if (path === location.pathname) {
+				data = updated;
+				showData();
+			}
+		} catch (error) {
+			if (box) box.textContent = error.message;
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (submit.isConnected) submit.disabled = false;
+		}
+		return;
+	}
 	if (form.matches("[data-disc-form]")) {
 		event.preventDefault();
 		if (busy || !form.reportValidity()) return;

@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "creation": "2026-11-05 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "member",
+  "course",
+  "report_date",
+  "goals_done",
+  "insights",
+  "tasks_done",
+  "suggestions",
+  "key"
+ ],
+ "fields": [
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "label": "Участник",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Курс",
+   "options": "LMS Course"
+  },
+  {
+   "fieldname": "report_date",
+   "fieldtype": "Date",
+   "label": "День",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "goals_done",
+   "fieldtype": "Text",
+   "label": "Что сделано по целям"
+  },
+  {
+   "fieldname": "insights",
+   "fieldtype": "Text",
+   "label": "Инсайты дня"
+  },
+  {
+   "fieldname": "tasks_done",
+   "fieldtype": "Text",
+   "label": "Задания и чек-листы"
+  },
+  {
+   "fieldname": "suggestions",
+   "fieldtype": "Text",
+   "label": "Предложения по освоению материала"
+  },
+  {
+   "fieldname": "key",
+   "fieldtype": "Data",
+   "label": "Ключ защиты от повтора",
+   "unique": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-05 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OVER U",
+ "name": "OU Daily Report",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Course Creator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Moderator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "hash",
+ "naming_rule": "Random",
+ "track_changes": 1
+}

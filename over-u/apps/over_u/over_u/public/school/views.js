@@ -22,6 +22,9 @@ export function shell(content, home, section = "home") {
 		...(boot.teacher_tools
 			? [["task", "/school/teacher", t("ui_151"), "teacher"]]
 			: []),
+		...(boot.teacher_tools
+			? []
+			: [["check", "/school/goals", t("ui_261"), "goals"]]),
 		["results", "/school/results", t("ui_004"), "results"],
 		["trophy", "/school/rating", t("ui_186"), "rating"],
 		["user", "/school/profile", t("ui_005"), "profile"],
@@ -43,10 +46,11 @@ export function shell(content, home, section = "home") {
 		? '<a class="ou-nav-item" href="/lms" title="Открыть редактор Frappe Learning">Студия курсов</a>'
 		: "";
 	const mobileNav = tabs
-		// Instructors get their desk in the bottom bar instead of the learner results page.
+		// The bottom bar stays at six items: results live in the desktop menu only,
+		// and instructors get their desk instead of the learner pages.
 		.filter(
 			([, , , key]) =>
-				key !== (boot.teacher_tools ? "results" : "teacher")
+				key !== "results" && (boot.teacher_tools || key !== "teacher")
 		)
 		.map(([iconName, href, label, key]) => {
 			const active = section === key;

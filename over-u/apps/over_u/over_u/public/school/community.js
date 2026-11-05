@@ -12,6 +12,12 @@ export const when = (value) => {
 				minute: "2-digit",
 		  });
 };
+export const day = (iso) => {
+	const date = new Date(`${iso}T00:00:00`);
+	return Number.isNaN(date.getTime())
+		? ""
+		: date.toLocaleDateString(locale, { day: "numeric", month: "long" });
+};
 export const plain = (text) => e(text).replace(/\n/g, "<br>");
 const pts = (value) => t("ui_201", value);
 
