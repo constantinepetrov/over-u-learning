@@ -148,10 +148,12 @@ export function teacherDeskView(desk) {
 		"ui_353"
 	)}</strong>${icon(
 		"arrow"
-	)}</a><a class="desk-course" data-nav href="/school/teacher/groups"><strong>${t("ui_369"
+	)}</a><a class="desk-course" data-nav href="/school/teacher/groups"><strong>${t(
+		"ui_369"
 	)}</strong>${icon(
 		"arrow"
-	)}</a><a class="desk-course" data-nav href="/school/teacher/points"><strong>${t("ui_385"
+	)}</a><a class="desk-course" data-nav href="/school/teacher/points"><strong>${t(
+		"ui_385"
 	)}</strong>${icon("arrow")}</a></div></section>`;
 }
 
@@ -311,14 +313,17 @@ function profileBlock(profile) {
 				.filter((f) => block[f])
 				.map(
 					(f) =>
-						`<li><strong>${PROFILE_LABEL[f]()}</strong><p class="desk-quote">${plain(
+						`<li><strong>${PROFILE_LABEL[
+							f
+						]()}</strong><p class="desk-quote">${plain(
 							block[f]
 						)}</p></li>`
 				)
 		)
 		.join("");
 	return rows
-		? `<section class="desk-block"><div class="desk-head"><h2>${t("ui_356"
+		? `<section class="desk-block"><div class="desk-head"><h2>${t(
+				"ui_356"
 		  )}</h2></div><ul class="card-list">${rows}</ul></section>`
 		: "";
 }

@@ -221,8 +221,9 @@ export function ratingView(data, period) {
 				.join("")}</ul></section>`
 		: "";
 	const prizes = data.prizes
-		? `<section class="rating-block"><h2>${t("ui_410"
-		  )}</h2><p>${plain(data.prizes)}</p></section>`
+		? `<section class="rating-block"><h2>${t("ui_410")}</h2><p>${plain(
+				data.prizes
+		  )}</p></section>`
 		: "";
 	const recent = `<section class="rating-block"><h2>${t("ui_197")}</h2>${
 		data.recent.length

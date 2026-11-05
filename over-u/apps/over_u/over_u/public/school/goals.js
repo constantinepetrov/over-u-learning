@@ -394,7 +394,8 @@ function buddyProfile(profile) {
 		)
 		.join("");
 	return rows
-		? `<section class="goal-summary"><div><h2>${t("ui_366"
+		? `<section class="goal-summary"><div><h2>${t(
+				"ui_366"
 		  )}</h2><ul class="card-list">${rows}</ul></div></section>`
 		: "";
 }
@@ -405,7 +406,9 @@ export function helpProfileView(data) {
 			`<fieldset class="goal-steps">${fields
 				.map(
 					(f) =>
-						`<label>${FIELD_LABEL[f]()}<textarea name="${block}__${f}" rows="3" maxlength="1500">${e(
+						`<label>${FIELD_LABEL[
+							f
+						]()}<textarea name="${block}__${f}" rows="3" maxlength="1500">${e(
 							data.profile[block][f]
 						)}</textarea></label>`
 				)
@@ -417,6 +420,7 @@ export function helpProfileView(data) {
 	).join("");
 	return `${heading(t("ui_356"), t("ui_357"))}${tabs(
 		"profile"
-	)}<form class="goal-form" data-profile-form>${blocks}<div class="feed-error" role="alert"></div><button type="submit" class="button primary">${t("ui_365"
+	)}<form class="goal-form" data-profile-form>${blocks}<div class="feed-error" role="alert"></div><button type="submit" class="button primary">${t(
+		"ui_365"
 	)}</button></form>`;
 }

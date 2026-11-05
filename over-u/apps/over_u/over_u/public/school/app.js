@@ -359,8 +359,7 @@ root.addEventListener("click", async (event) => {
 		return;
 	}
 	if (action === "studio-move" || action === "studio-publish") {
-		if (action === "studio-publish" && !window.confirm(t("ui_419")))
-			return;
+		if (action === "studio-publish" && !window.confirm(t("ui_419"))) return;
 		const path = location.pathname;
 		busy = true;
 		control.disabled = true;
@@ -410,10 +409,13 @@ root.addEventListener("click", async (event) => {
 		}
 		return;
 	}
-	if (["super-moderate", "mm-going", "mm-delete", "group-delete"].includes(action)) {
+	if (
+		["super-moderate", "mm-going", "mm-delete", "group-delete"].includes(
+			action
+		)
+	) {
 		if (action === "mm-delete" && !window.confirm(t("ui_351"))) return;
-		if (action === "group-delete" && !window.confirm(t("ui_380")))
-			return;
+		if (action === "group-delete" && !window.confirm(t("ui_380"))) return;
 		const path = location.pathname;
 		busy = true;
 		control.disabled = true;
