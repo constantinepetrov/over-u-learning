@@ -8,6 +8,7 @@ Run once, safe to repeat:  bench --site <site> execute over_u.modules.ensure_ske
 """
 
 import frappe
+from frappe import _
 
 COURSE_TITLE = "LIFELONG ENERGY (Энерголетие)"
 MODULES = 12
@@ -22,7 +23,7 @@ def _course(title):
 
 def ensure_skeleton(title=COURSE_TITLE, instructor=None):
 	if frappe.session.user != "Administrator":
-		frappe.throw("Run as Administrator.", frappe.PermissionError)
+		frappe.throw(_("Run as Administrator."), frappe.PermissionError)
 	course = _course(title)
 	if not course:
 		values = {
@@ -52,7 +53,6 @@ def ensure_skeleton(title=COURSE_TITLE, instructor=None):
 		course.append("chapters", {"chapter": chapter.name})
 		course.save()
 		created.append(module)
-	frappe.db.commit()
 	return {"course": course.name, "created": created, "published": bool(course.published)}
 
 
