@@ -35,6 +35,13 @@ const admin = new Set([
 	"my_profile",
 	"save_profile",
 ]);
+const studio = new Set([
+	"studio_course",
+	"save_module",
+	"save_lesson",
+	"move_item",
+	"set_published",
+]);
 const goals = new Set([
 	"my_goals",
 	"save_goal",
@@ -72,14 +79,17 @@ async function request(method, args = {}) {
 		!discussion.has(method) &&
 		!goals.has(method) &&
 		!practice.has(method) &&
-		!admin.has(method)
+		!admin.has(method) &&
+		!studio.has(method)
 	)
 		throw new SchoolError(t("ui_136"), 400);
 	let response;
 	try {
 		response = await fetch(
 			`/api/method/over_u.${
-				method === "my_profile" || method === "save_profile"
+				studio.has(method)
+					? "studio_api"
+					: method === "my_profile" || method === "save_profile"
 					? "profile_api"
 					: admin.has(method)
 					? "admin_api"
@@ -162,6 +172,12 @@ export const api = {
 		request("mark_attendance", { mastermind, members }),
 	deleteMastermind: (mastermind) =>
 		request("delete_mastermind", { mastermind }),
+	studioCourse: (course) => request("studio_course", { course }),
+	saveModule: (values) => request("save_module", values),
+	saveLesson: (values) => request("save_lesson", values),
+	moveItem: (values) => request("move_item", values),
+	setPublished: (course, published) =>
+		request("set_published", { course, published }),
 	teacherGroups: () => request("teacher_groups"),
 	saveGroup: (values) => request("save_group", values),
 	deleteGroup: (group) => request("delete_group", { group }),

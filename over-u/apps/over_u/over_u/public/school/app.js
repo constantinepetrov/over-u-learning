@@ -1,3 +1,4 @@
+import { studioView } from "./studio.js";
 import { teacherGroupsView, teacherPointsView } from "./admin.js";
 import { openGuide, dismissWelcome } from "./guide.js";
 import { t } from "./i18n.js";
@@ -98,6 +99,8 @@ function parseRoute() {
 			};
 		if (parts.length === 3)
 			return { view: "teacher-course", course: parts[2], tab: "content" };
+		if (parts.length === 4 && parts[3] === "edit")
+			return { view: "teacher-edit", course: parts[2] };
 		if (
 			parts.length === 4 &&
 			["students", "discussions"].includes(parts[3])
@@ -169,6 +172,8 @@ function showData(focus = false) {
 			? teacherAssignmentView(data)
 			: route.view === "teacher-course"
 			? teacherCourseView(data, route.tab)
+			: route.view === "teacher-edit"
+			? studioView(data)
 			: route.view === "teacher-lesson"
 			? teacherLessonView(data, drafts)
 			: route.view === "teacher-student"
@@ -240,6 +245,8 @@ async function loadRoute({ refresh = false } = {}) {
 				? await api.teacherAssignment(route.submission)
 				: route.view === "teacher-course"
 				? await api.teacherCourse(route.course)
+				: route.view === "teacher-edit"
+				? await api.studioCourse(route.course)
 				: route.view === "teacher-lesson"
 				? await api.teacherLesson(route.course, route.number)
 				: route.view === "teacher-student"
@@ -339,6 +346,38 @@ root.addEventListener("click", async (event) => {
 							Number(control.dataset.done)
 					  )
 					: await api.deleteGoal(control.dataset.goal);
+			if (path === location.pathname) {
+				data = updated;
+				showData();
+			}
+		} catch (error) {
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (control.isConnected) control.disabled = false;
+		}
+		return;
+	}
+	if (action === "studio-move" || action === "studio-publish") {
+		if (action === "studio-publish" && !window.confirm(t("ui_419")))
+			return;
+		const path = location.pathname;
+		busy = true;
+		control.disabled = true;
+		try {
+			const course = route.course;
+			const updated =
+				action === "studio-move"
+					? await api.moveItem({
+							course,
+							kind: control.dataset.kind,
+							item: control.dataset.id,
+							direction: control.dataset.dir,
+					  })
+					: await api.setPublished(
+							control.dataset.course,
+							Number(control.dataset.publish)
+					  );
 			if (path === location.pathname) {
 				data = updated;
 				showData();
@@ -626,7 +665,7 @@ root.addEventListener("submit", async (event) => {
 	const form = event.target;
 	if (
 		form.matches(
-			"[data-super-form], [data-mm-form], [data-attend-form], [data-group-form], [data-rule-form], [data-board-form], [data-bonus-form], [data-profile-form]"
+			"[data-super-form], [data-mm-form], [data-attend-form], [data-group-form], [data-rule-form], [data-board-form], [data-bonus-form], [data-profile-form], [data-studio-lesson], [data-studio-module]"
 		)
 	) {
 		event.preventDefault();
@@ -641,6 +680,21 @@ root.addEventListener("submit", async (event) => {
 			let updated;
 			if (form.matches("[data-super-form]"))
 				updated = await api.postSuper(values.get("text"));
+			else if (form.matches("[data-studio-module]"))
+				updated = await api.saveModule({
+					course: form.dataset.course,
+					chapter: form.dataset.id || "",
+					title: values.get("title"),
+				});
+			else if (form.matches("[data-studio-lesson]"))
+				updated = await api.saveLesson({
+					course: form.dataset.course,
+					chapter: form.dataset.chapter,
+					lesson: form.dataset.id || "",
+					title: values.get("title"),
+					text: values.get("text"),
+					homework: values.get("homework") || "",
+				});
 			else if (form.matches("[data-group-form]"))
 				updated = await api.saveGroup({
 					group: form.dataset.id || "",

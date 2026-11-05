@@ -193,6 +193,7 @@ const tabs = (data, tab) =>
 		["content", t("ui_241"), ""],
 		["students", t("ui_242"), data.counters.students],
 		["discussions", t("ui_243"), data.counters.questions],
+		["edit", t("ui_412"), 0],
 	]
 		.map(
 			([key, label, count]) =>
