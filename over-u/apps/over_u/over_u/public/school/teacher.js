@@ -14,11 +14,11 @@ const status = (value) =>
 	({ "Not Graded": t("ui_255"), Pass: t("ui_256"), Fail: t("ui_257") }[
 		value
 	] || e(value));
-const heading = (eyebrow, title, lead = "") =>
+export const heading = (eyebrow, title, lead = "") =>
 	`<div class="page-heading"><span class="eyebrow">${eyebrow}</span><h1>${e(
 		title
 	)}</h1>${lead ? `<p>${lead}</p>` : ""}</div>`;
-const crumbs = (items) =>
+export const crumbs = (items) =>
 	`<div class="breadcrumbs">${items
 		.map(([href, label]) =>
 			href ? link(href, e(label)) : `<span>${e(label)}</span>`
@@ -146,6 +146,12 @@ export function teacherDeskView(desk) {
 			""
 		)}<a class="desk-course" data-nav href="/school/teacher/masterminds"><strong>${t(
 		"ui_353"
+	)}</strong>${icon(
+		"arrow"
+	)}</a><a class="desk-course" data-nav href="/school/teacher/groups"><strong>${t("ui_369"
+	)}</strong>${icon(
+		"arrow"
+	)}</a><a class="desk-course" data-nav href="/school/teacher/points"><strong>${t("ui_385"
 	)}</strong>${icon("arrow")}</a></div></section>`;
 }
 
@@ -288,6 +294,34 @@ export function teacherLessonView(data, drafts) {
 	)}`;
 }
 
+const PROFILE_LABEL = {
+	about: () => t("ui_358"),
+	offer: () => t("ui_359"),
+	strengths: () => t("ui_360"),
+	help_needed: () => t("ui_361"),
+	help_how: () => t("ui_362"),
+	expertise: () => t("ui_363"),
+};
+
+function profileBlock(profile) {
+	const rows = Object.values(profile || {})
+		.flatMap((block) =>
+			Object.keys(PROFILE_LABEL)
+				.filter((f) => block[f])
+				.map(
+					(f) =>
+						`<li><strong>${PROFILE_LABEL[f]()}</strong><p class="desk-quote">${plain(
+							block[f]
+						)}</p></li>`
+				)
+		)
+		.join("");
+	return rows
+		? `<section class="desk-block"><div class="desk-head"><h2>${t("ui_356"
+		  )}</h2></div><ul class="card-list">${rows}</ul></section>`
+		: "";
+}
+
 export function teacherStudentView(card) {
 	const rows = (items, render) =>
 		items.length
@@ -338,7 +372,7 @@ export function teacherStudentView(card) {
 				.filter(Boolean)
 				.map((x) => `<p class="desk-quote">${plain(x)}</p>`)
 				.join("")}</li>`
-	)}</section>${
+	)}</section>${profileBlock(card.profile)}${
 		card.groups.length
 			? `<section class="desk-block"><div class="desk-head"><h2>${t(
 					"ui_250"

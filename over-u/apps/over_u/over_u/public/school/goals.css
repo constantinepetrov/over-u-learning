@@ -21,7 +21,7 @@
 .goal-edit summary{cursor:pointer;color:var(--green);font-weight:600}
 .goal-form{display:grid;gap:12px;margin-top:12px;max-width:720px}
 .goal-form label{display:grid;gap:6px;font-weight:600}
-.goal-form input[type=text],.goal-form input[type=date],.goal-form textarea,.goal-form select{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);color:var(--ink);font:inherit;font-weight:400}
+.goal-form input[type=text],.goal-form input[type=date],.goal-form input[type=number],.goal-form input[type=datetime-local],.goal-form textarea,.goal-form select{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);color:var(--ink);font:inherit;font-weight:400}
 .goal-steps{border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .goal-steps legend{font-weight:600;padding:0 6px}
 .step-rows{display:grid;gap:8px;margin-bottom:8px}

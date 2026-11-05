@@ -23,6 +23,18 @@ const practice = new Set([
 	"mark_attendance",
 	"delete_mastermind",
 ]);
+const admin = new Set([
+	"teacher_groups",
+	"save_group",
+	"delete_group",
+	"points_settings",
+	"preview_rule",
+	"save_rule",
+	"save_board",
+	"give_bonus",
+	"my_profile",
+	"save_profile",
+]);
 const goals = new Set([
 	"my_goals",
 	"save_goal",
@@ -59,14 +71,19 @@ async function request(method, args = {}) {
 		!community.has(method) &&
 		!discussion.has(method) &&
 		!goals.has(method) &&
-		!practice.has(method)
+		!practice.has(method) &&
+		!admin.has(method)
 	)
 		throw new SchoolError(t("ui_136"), 400);
 	let response;
 	try {
 		response = await fetch(
 			`/api/method/over_u.${
-				practice.has(method)
+				method === "my_profile" || method === "save_profile"
+					? "profile_api"
+					: admin.has(method)
+					? "admin_api"
+					: practice.has(method)
 					? "practice_api"
 					: goals.has(method)
 					? "goals_api"
@@ -145,6 +162,17 @@ export const api = {
 		request("mark_attendance", { mastermind, members }),
 	deleteMastermind: (mastermind) =>
 		request("delete_mastermind", { mastermind }),
+	teacherGroups: () => request("teacher_groups"),
+	saveGroup: (values) => request("save_group", values),
+	deleteGroup: (group) => request("delete_group", { group }),
+	pointsSettings: () => request("points_settings"),
+	previewRule: (event, points_value, enabled) =>
+		request("preview_rule", { event, points_value, enabled }),
+	saveRule: (values) => request("save_rule", values),
+	saveBoard: (values) => request("save_board", values),
+	giveBonus: (values) => request("give_bonus", values),
+	myProfile: () => request("my_profile"),
+	saveProfile: (blocks) => request("save_profile", { blocks }),
 	myGoals: () => request("my_goals"),
 	saveGoal: (goal) => request("save_goal", goal),
 	setStep: (goal, index, done) => request("set_step", { goal, index, done }),

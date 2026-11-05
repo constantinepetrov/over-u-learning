@@ -1,3 +1,4 @@
+import { teacherGroupsView, teacherPointsView } from "./admin.js";
 import { openGuide, dismissWelcome } from "./guide.js";
 import { t } from "./i18n.js";
 import { api } from "./api.js";
@@ -30,6 +31,7 @@ import {
 	newStepRow,
 	superView,
 	mastermindsView,
+	helpProfileView,
 } from "./goals.js";
 const root = document.getElementById("school");
 const announce = (message) => {
@@ -80,7 +82,9 @@ function parseRoute() {
 	if (
 		parts[0] === "goals" &&
 		parts.length === 2 &&
-		["report", "buddy", "masterminds", "super"].includes(parts[1])
+		["report", "buddy", "profile", "masterminds", "super"].includes(
+			parts[1]
+		)
 	)
 		return { view: "goals-" + parts[1] };
 	if (parts.length === 1 && parts[0] === "teacher")
@@ -113,6 +117,12 @@ function parseRoute() {
 		parts[1] === "masterminds"
 	)
 		return { view: "teacher-masters" };
+	if (
+		parts.length === 2 &&
+		parts[0] === "teacher" &&
+		["groups", "points"].includes(parts[1])
+	)
+		return { view: "teacher-" + parts[1] };
 	if (
 		parts.length === 3 &&
 		parts[0] === "teacher" &&
@@ -173,6 +183,12 @@ function showData(focus = false) {
 			? mastermindsView(data)
 			: route.view === "goals-super"
 			? superView(data)
+			: route.view === "goals-profile"
+			? helpProfileView(data)
+			: route.view === "teacher-groups"
+			? teacherGroupsView(data)
+			: route.view === "teacher-points"
+			? teacherPointsView(data)
 			: route.view === "teacher-masters"
 			? teacherMastermindsView(data)
 			: route.view === "teacher-super"
@@ -236,6 +252,12 @@ async function loadRoute({ refresh = false } = {}) {
 				? await api.masterminds()
 				: route.view === "goals-super"
 				? await api.superFeed()
+				: route.view === "goals-profile"
+				? await api.myProfile()
+				: route.view === "teacher-groups"
+				? await api.teacherGroups()
+				: route.view === "teacher-points"
+				? await api.pointsSettings()
 				: route.view === "teacher-masters"
 				? await api.teacherMasterminds()
 				: route.view === "teacher-super"
@@ -329,8 +351,30 @@ root.addEventListener("click", async (event) => {
 		}
 		return;
 	}
-	if (["super-moderate", "mm-going", "mm-delete"].includes(action)) {
+	if (action === "rule-preview") {
+		const form = control.closest("form");
+		const out = form.querySelector(".preview-out");
+		busy = true;
+		control.disabled = true;
+		try {
+			const r = await api.previewRule(
+				form.dataset.event,
+				Number(form.elements.points.value || 0),
+				form.elements.enabled.checked ? 1 : 0
+			);
+			out.textContent = t("ui_394", r.events, r.delta);
+		} catch (error) {
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (control.isConnected) control.disabled = false;
+		}
+		return;
+	}
+	if (["super-moderate", "mm-going", "mm-delete", "group-delete"].includes(action)) {
 		if (action === "mm-delete" && !window.confirm(t("ui_351"))) return;
+		if (action === "group-delete" && !window.confirm(t("ui_380")))
+			return;
 		const path = location.pathname;
 		busy = true;
 		control.disabled = true;
@@ -346,6 +390,8 @@ root.addEventListener("click", async (event) => {
 							control.dataset.id,
 							Number(control.dataset.going)
 					  )
+					: action === "group-delete"
+					? await api.deleteGroup(control.dataset.id)
 					: await api.deleteMastermind(control.dataset.id);
 			if (path === location.pathname) {
 				data = updated;
@@ -578,7 +624,11 @@ root.addEventListener("submit", async (event) => {
 });
 root.addEventListener("submit", async (event) => {
 	const form = event.target;
-	if (form.matches("[data-super-form], [data-mm-form], [data-attend-form]")) {
+	if (
+		form.matches(
+			"[data-super-form], [data-mm-form], [data-attend-form], [data-group-form], [data-rule-form], [data-board-form], [data-bonus-form], [data-profile-form]"
+		)
+	) {
 		event.preventDefault();
 		if (busy || !form.reportValidity()) return;
 		const path = location.pathname;
@@ -591,7 +641,49 @@ root.addEventListener("submit", async (event) => {
 			let updated;
 			if (form.matches("[data-super-form]"))
 				updated = await api.postSuper(values.get("text"));
-			else if (form.matches("[data-attend-form]"))
+			else if (form.matches("[data-group-form]"))
+				updated = await api.saveGroup({
+					group: form.dataset.id || "",
+					course: form.dataset.course,
+					kind: values.get("kind"),
+					title: values.get("title"),
+					members: values.getAll("member"),
+				});
+			else if (form.matches("[data-rule-form]"))
+				updated = await api.saveRule({
+					event: form.dataset.event,
+					points_value: Number(values.get("points")),
+					enabled: values.get("enabled") ? 1 : 0,
+					daily_limit: Number(values.get("daily_limit") || 0),
+				});
+			else if (form.matches("[data-board-form]"))
+				updated = await api.saveBoard({
+					enabled: values.get("enabled") ? 1 : 0,
+					visibility: values.get("visibility"),
+					limit: Number(values.get("limit")),
+					prizes: values.get("prizes") || "",
+				});
+			else if (form.matches("[data-bonus-form]")) {
+				const chosen = form.elements.member.selectedOptions[0];
+				updated = await api.giveBonus({
+					member: values.get("member"),
+					course: chosen.dataset.course,
+					value: Number(values.get("value")),
+					reason: values.get("reason"),
+				});
+			} else if (form.matches("[data-profile-form]")) {
+				const blocks = {};
+				for (const [key, value] of values.entries()) {
+					const [block, field] = key.split("__");
+					blocks[block] = blocks[block] || { shared: false };
+					if (field === "shared") blocks[block].shared = true;
+					else blocks[block][field] = value;
+				}
+				["about", "offer", "strengths", "help", "expertise"].forEach(
+					(b) => (blocks[b] = blocks[b] || { shared: false })
+				);
+				updated = await api.saveProfile(blocks);
+			} else if (form.matches("[data-attend-form]"))
 				updated = await api.markAttendance(
 					form.dataset.id,
 					values.getAll("member")

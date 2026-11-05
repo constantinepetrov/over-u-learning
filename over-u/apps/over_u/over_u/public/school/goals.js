@@ -12,6 +12,7 @@ const tabs = (tab) =>
 		["", t("ui_264"), "goals"],
 		["report", t("ui_265"), "report"],
 		["buddy", t("ui_266"), "buddy"],
+		["profile", t("ui_355"), "profile"],
 		["masterminds", t("ui_317"), "masterminds"],
 		["super", t("ui_318"), "super"],
 	]
@@ -260,7 +261,9 @@ export function buddyView(data) {
 							.join("")}</div>`
 					: `<p class="help">${t("ui_312")}</p>`
 		  }${b.hidden ? `<p class="help">${t("ui_311", b.hidden)}</p>` : ""}`;
-	return `${heading(t("ui_307"), t("ui_263"))}${tabs("buddy")}${body}`;
+	return `${heading(t("ui_307"), t("ui_263"))}${tabs("buddy")}${body}${
+		b ? buddyProfile(b.profile) : ""
+	}`;
 }
 
 export function superPosts(data) {
@@ -359,4 +362,61 @@ export function mastermindsView(data) {
 			? block(t("ui_328"), data.upcoming) + block(t("ui_329"), data.past)
 			: `<p class="help">${t("ui_330")}</p>`
 	}`;
+}
+
+const PROFILE = [
+	["about", ["about"]],
+	["offer", ["offer"]],
+	["strengths", ["strengths"]],
+	["help", ["help_needed", "help_how"]],
+	["expertise", ["expertise"]],
+];
+const FIELD_LABEL = {
+	about: () => t("ui_358"),
+	offer: () => t("ui_359"),
+	strengths: () => t("ui_360"),
+	help_needed: () => t("ui_361"),
+	help_how: () => t("ui_362"),
+	expertise: () => t("ui_363"),
+};
+
+function buddyProfile(profile) {
+	const rows = PROFILE.filter(([block]) => profile && profile[block])
+		.flatMap(([block, fields]) =>
+			fields
+				.filter((f) => profile[block][f])
+				.map(
+					(f) =>
+						`<li><strong>${FIELD_LABEL[f]()}</strong><p>${e(
+							profile[block][f]
+						)}</p></li>`
+				)
+		)
+		.join("");
+	return rows
+		? `<section class="goal-summary"><div><h2>${t("ui_366"
+		  )}</h2><ul class="card-list">${rows}</ul></div></section>`
+		: "";
+}
+
+export function helpProfileView(data) {
+	const blocks = PROFILE.map(
+		([block, fields]) =>
+			`<fieldset class="goal-steps">${fields
+				.map(
+					(f) =>
+						`<label>${FIELD_LABEL[f]()}<textarea name="${block}__${f}" rows="3" maxlength="1500">${e(
+							data.profile[block][f]
+						)}</textarea></label>`
+				)
+				.join(
+					""
+				)}<label class="feed-private"><input type="checkbox" name="${block}__shared"${
+				data.profile[block].shared ? " checked" : ""
+			}> ${t("ui_364")}</label></fieldset>`
+	).join("");
+	return `${heading(t("ui_356"), t("ui_357"))}${tabs(
+		"profile"
+	)}<form class="goal-form" data-profile-form>${blocks}<div class="feed-error" role="alert"></div><button type="submit" class="button primary">${t("ui_365"
+	)}</button></form>`;
 }
