@@ -20,8 +20,17 @@ import {
 	teacherCourseView,
 	teacherLessonView,
 	teacherStudentView,
+	teacherMastermindsView,
+	teacherSuperView,
 } from "./teacher.js";
-import { goalsView, reportView, buddyView, newStepRow } from "./goals.js";
+import {
+	goalsView,
+	reportView,
+	buddyView,
+	newStepRow,
+	superView,
+	mastermindsView,
+} from "./goals.js";
 const root = document.getElementById("school");
 const announce = (message) => {
 	document.getElementById("announcements").textContent = message;
@@ -71,7 +80,7 @@ function parseRoute() {
 	if (
 		parts[0] === "goals" &&
 		parts.length === 2 &&
-		["report", "buddy"].includes(parts[1])
+		["report", "buddy", "masterminds", "super"].includes(parts[1])
 	)
 		return { view: "goals-" + parts[1] };
 	if (parts.length === 1 && parts[0] === "teacher")
@@ -98,6 +107,19 @@ function parseRoute() {
 		parts[2]
 	)
 		return { view: "teacher-student", student: parts[2] };
+	if (
+		parts.length === 2 &&
+		parts[0] === "teacher" &&
+		parts[1] === "masterminds"
+	)
+		return { view: "teacher-masters" };
+	if (
+		parts.length === 3 &&
+		parts[0] === "teacher" &&
+		parts[1] === "super" &&
+		parts[2]
+	)
+		return { view: "teacher-super", course: parts[2] };
 	if (parts.length === 2 && parts[0] === "teacher" && parts[1])
 		return { view: "teacher-detail", submission: parts[1] };
 	throw new Error(t("ui_127"));
@@ -147,6 +169,14 @@ function showData(focus = false) {
 			? reportView(data)
 			: route.view === "goals-buddy"
 			? buddyView(data)
+			: route.view === "goals-masterminds"
+			? mastermindsView(data)
+			: route.view === "goals-super"
+			? superView(data)
+			: route.view === "teacher-masters"
+			? teacherMastermindsView(data)
+			: route.view === "teacher-super"
+			? teacherSuperView(data)
 			: views[route.view](home);
 	paint(content, focus);
 	const title =
@@ -156,6 +186,10 @@ function showData(focus = false) {
 			? data.title
 			: route.view === "teacher-detail"
 			? data.assignment
+			: route.view === "teacher-masters"
+			? t("ui_326")
+			: route.view === "teacher-super"
+			? t("ui_319")
 			: route.view.startsWith("goals")
 			? t("ui_262")
 			: ["teacher-course", "teacher-lesson", "teacher-student"].includes(
@@ -198,6 +232,14 @@ async function loadRoute({ refresh = false } = {}) {
 				? await api.myGoals()
 				: route.view === "goals-report"
 				? await api.myReport()
+				: route.view === "goals-masterminds"
+				? await api.masterminds()
+				: route.view === "goals-super"
+				? await api.superFeed()
+				: route.view === "teacher-masters"
+				? await api.teacherMasterminds()
+				: route.view === "teacher-super"
+				? await api.superFeed(route.course)
 				: route.view === "rating"
 				? nextHome.courses[0]
 					? await api.leaderboard(nextHome.courses[0].id, period)
@@ -275,6 +317,36 @@ root.addEventListener("click", async (event) => {
 							Number(control.dataset.done)
 					  )
 					: await api.deleteGoal(control.dataset.goal);
+			if (path === location.pathname) {
+				data = updated;
+				showData();
+			}
+		} catch (error) {
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (control.isConnected) control.disabled = false;
+		}
+		return;
+	}
+	if (["super-moderate", "mm-going", "mm-delete"].includes(action)) {
+		if (action === "mm-delete" && !window.confirm(t("ui_351"))) return;
+		const path = location.pathname;
+		busy = true;
+		control.disabled = true;
+		try {
+			const updated =
+				action === "super-moderate"
+					? await api.moderateSuper(
+							control.dataset.id,
+							control.dataset.mod
+					  )
+					: action === "mm-going"
+					? await api.setGoing(
+							control.dataset.id,
+							Number(control.dataset.going)
+					  )
+					: await api.deleteMastermind(control.dataset.id);
 			if (path === location.pathname) {
 				data = updated;
 				showData();
@@ -506,6 +578,52 @@ root.addEventListener("submit", async (event) => {
 });
 root.addEventListener("submit", async (event) => {
 	const form = event.target;
+	if (form.matches("[data-super-form], [data-mm-form], [data-attend-form]")) {
+		event.preventDefault();
+		if (busy || !form.reportValidity()) return;
+		const path = location.pathname;
+		const submit = form.querySelector("button[type=submit]");
+		const box = form.querySelector(".feed-error");
+		const values = new FormData(form);
+		busy = true;
+		submit.disabled = true;
+		try {
+			let updated;
+			if (form.matches("[data-super-form]"))
+				updated = await api.postSuper(values.get("text"));
+			else if (form.matches("[data-attend-form]"))
+				updated = await api.markAttendance(
+					form.dataset.id,
+					values.getAll("member")
+				);
+			else
+				updated = await api.saveMastermind({
+					mastermind: form.dataset.id || "",
+					course: form.dataset.id
+						? form.elements.course.value
+						: values.get("course"),
+					title: values.get("title"),
+					starts_at: String(values.get("starts_at")).replace(
+						"T",
+						" "
+					),
+					link: values.get("link") || "",
+					topics: values.get("topics") || "",
+					outcome: values.get("outcome") || "",
+				});
+			if (path === location.pathname) {
+				data = updated;
+				showData();
+			}
+		} catch (error) {
+			if (box) box.textContent = error.message;
+			announce(error.message);
+		} finally {
+			busy = false;
+			if (submit.isConnected) submit.disabled = false;
+		}
+		return;
+	}
 	if (form.matches("[data-goal-form], [data-report-form]")) {
 		event.preventDefault();
 		if (busy || !form.reportValidity()) return;

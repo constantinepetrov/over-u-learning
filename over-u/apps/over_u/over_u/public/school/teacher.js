@@ -2,6 +2,7 @@ import { t } from "./i18n.js";
 import { escape as e, icon, link, richText } from "./components.js";
 import { when, plain, day } from "./community.js";
 import { discussionView } from "./discussion.js";
+import { superPosts } from "./goals.js";
 
 const studentHref = (email) =>
 	"/school/teacher/students/" + encodeURIComponent(email);
@@ -141,7 +142,11 @@ export function teacherDeskView(desk) {
 					courseHref(x.id)
 				)}"><strong>${e(x.title)}</strong>${icon("arrow")}</a>`
 		)
-		.join("")}</div></section>`;
+		.join(
+			""
+		)}<a class="desk-course" data-nav href="/school/teacher/masterminds"><strong>${t(
+		"ui_353"
+	)}</strong>${icon("arrow")}</a></div></section>`;
 }
 
 export function teacherAssignmentView(item) {
@@ -382,4 +387,150 @@ export function teacherStudentView(card) {
 					: ""
 			}<p class="desk-quote">${plain(c.text)}</p></li>`
 	)}</section>`;
+}
+
+const local = (v) => (v || "").replace(" ", "T").slice(0, 16);
+
+function meetingForm(data, m) {
+	const courses = data.courses
+		.map(
+			(c) =>
+				`<option value="${e(c.id)}"${
+					m && m.course === c.id ? " selected" : ""
+				}>${e(c.title)}</option>`
+		)
+		.join("");
+	return `<form class="goal-form" data-mm-form data-id="${e(
+		m ? m.id : ""
+	)}"><label>${t("ui_340")}<select name="course"${
+		m ? " disabled" : ""
+	}>${courses}</select></label><label>${t(
+		"ui_341"
+	)}<input type="text" name="title" maxlength="140" required value="${e(
+		m ? m.title : ""
+	)}"></label><label>${t(
+		"ui_342"
+	)}<input type="datetime-local" name="starts_at" required value="${e(
+		m ? local(m.starts_at) : ""
+	)}"></label><p class="help">${t("ui_331", e(data.tz))}</p><label>${t(
+		"ui_343"
+	)}<input type="text" name="link" maxlength="300" value="${e(
+		m ? m.link : ""
+	)}" placeholder="https://"></label><label>${t(
+		"ui_344"
+	)}<textarea name="topics" rows="4">${e(
+		m ? m.topics.join("\n") : ""
+	)}</textarea></label><label>${t(
+		"ui_345"
+	)}<textarea name="outcome" rows="3" maxlength="5000">${e(
+		m ? m.outcome : ""
+	)}</textarea></label><div class="feed-error" role="alert"></div><button type="submit" class="button primary">${t(
+		"ui_346"
+	)}</button></form>`;
+}
+
+function attendance(data, m) {
+	const people = data.participants[m.course] || [];
+	const marked = new Set(
+		m.people.filter((p) => p.attended).map((p) => p.member)
+	);
+	const going = new Set(m.people.filter((p) => p.going).map((p) => p.member));
+	return people.length
+		? `<form class="goal-form" data-attend-form data-id="${e(
+				m.id
+		  )}"><fieldset class="goal-steps"><legend>${t(
+				"ui_347"
+		  )}</legend>${people
+				.map(
+					(p) =>
+						`<label class="feed-private"><input type="checkbox" name="member" value="${e(
+							p.member
+						)}"${marked.has(p.member) ? " checked" : ""}> ${e(
+							p.name
+						)}${
+							going.has(p.member)
+								? ` <span class="feed-tag priv">${t(
+										"ui_336"
+								  )}</span>`
+								: ""
+						}</label>`
+				)
+				.join(
+					""
+				)}</fieldset><div class="feed-error" role="alert"></div><button type="submit" class="button secondary">${t(
+				"ui_348"
+		  )}</button></form>`
+		: `<p class="help">${t("ui_349")}</p>`;
+}
+
+function meetingRow(data, m) {
+	return `<article class="goal-card meeting"><header><span class="feed-tag pin">${when(
+		m.starts_at
+	)}</span><span class="feed-tag priv">${t("ui_337", m.going_count)}</span>${
+		m.past
+			? `<span class="feed-tag staff">${t(
+					"ui_352",
+					m.people.filter((p) => p.attended).length
+			  )}</span>`
+			: ""
+	}</header><h3>${e(m.title)}</h3><details class="goal-edit"><summary>${t(
+		"ui_276"
+	)}</summary>${meetingForm(data, m)}${attendance(
+		data,
+		m
+	)}<button type="button" class="link-button danger" data-action="mm-delete" data-id="${e(
+		m.id
+	)}">${t("ui_350")}</button></details></article>`;
+}
+
+export function teacherMastermindsView(data) {
+	const list = (items) => items.map((m) => meetingRow(data, m)).join("");
+	return `${crumbs([
+		["/school/teacher", t("ui_151")],
+		[null, t("ui_326")],
+	])}${heading(
+		t("ui_354"),
+		t("ui_326")
+	)}<div class="desk-courses">${data.courses
+		.map(
+			(c) =>
+				`<a class="desk-course" data-nav href="/school/teacher/super/${encodeURIComponent(
+					c.id
+				)}"><strong>${t("ui_319")} · ${e(c.title)}</strong>${icon(
+					"arrow"
+				)}</a>`
+		)
+		.join(
+			""
+		)}</div><section class="desk-block"><div class="desk-head"><h2>${t(
+		"ui_339"
+	)}</h2></div>${meetingForm(data, null)}</section>${
+		data.upcoming.length
+			? `<section class="desk-block"><div class="desk-head"><h2>${t(
+					"ui_328"
+			  )}</h2></div><div class="goal-list">${list(
+					data.upcoming
+			  )}</div></section>`
+			: ""
+	}${
+		data.past.length
+			? `<section class="desk-block"><div class="desk-head"><h2>${t(
+					"ui_329"
+			  )}</h2></div><div class="goal-list">${list(
+					data.past
+			  )}</div></section>`
+			: ""
+	}${
+		data.upcoming.length || data.past.length
+			? ""
+			: `<p class="help">${t("ui_330")}</p>`
+	}`;
+}
+
+export function teacherSuperView(data) {
+	return `${crumbs([
+		["/school/teacher", t("ui_151")],
+		["/school/teacher/masterminds", t("ui_326")],
+		[null, t("ui_319")],
+	])}${heading(t("ui_354"), t("ui_319"))}${superPosts(data)}`;
 }

@@ -19,7 +19,11 @@ DEFAULT_RULES = (
 )
 # Rules the author has not priced yet: seeded switched off with zero points, so nothing is
 # paid until the author sets the scale in Desk.
-PENDING_RULES = (("daily_report", "Ежедневный отчёт", 1),)
+PENDING_RULES = (
+	("daily_report", "Ежедневный отчёт", 1),
+	("super_post", "Сообщение в «СУПЕР»", 3),
+	("mastermind_attended", "Участие в мастермайнде", 0),
+)
 STAFF_ROLES = {"Course Creator", "Moderator", "Batch Evaluator", "System Manager"}
 
 

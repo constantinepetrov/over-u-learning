@@ -1,6 +1,6 @@
 import { t } from "./i18n.js";
 import { escape as e, icon, link } from "./components.js";
-import { plain, day } from "./community.js";
+import { plain, day, when } from "./community.js";
 
 const pct = (n) => t("ui_316", n);
 const bar = (n, label) =>
@@ -12,6 +12,8 @@ const tabs = (tab) =>
 		["", t("ui_264"), "goals"],
 		["report", t("ui_265"), "report"],
 		["buddy", t("ui_266"), "buddy"],
+		["masterminds", t("ui_317"), "masterminds"],
+		["super", t("ui_318"), "super"],
 	]
 		.map(
 			([path, label, key]) =>
@@ -259,4 +261,102 @@ export function buddyView(data) {
 					: `<p class="help">${t("ui_312")}</p>`
 		  }${b.hidden ? `<p class="help">${t("ui_311", b.hidden)}</p>` : ""}`;
 	return `${heading(t("ui_307"), t("ui_263"))}${tabs("buddy")}${body}`;
+}
+
+export function superPosts(data) {
+	const post = (p) =>
+		`<article class="feed-card${p.mine ? " is-mine" : ""}${
+			p.hidden ? " is-hidden" : ""
+		}"><span class="feed-avatar" aria-hidden="true">${e(
+			p.initial
+		)}</span><div class="feed-body"><header><strong>${e(
+			p.author
+		)}</strong><time>${when(p.when)}</time>${
+			p.hidden ? `<span class="feed-tag off">${t("ui_176")}</span>` : ""
+		}</header><p class="feed-text">${plain(p.text)}</p><footer>${
+			data.can_moderate
+				? `<button type="button" class="link-button" data-action="super-moderate" data-id="${e(
+						p.id
+				  )}" data-mod="${p.hidden ? "unhide" : "hide"}">${
+						p.hidden ? t("ui_180") : t("ui_179")
+				  }</button>`
+				: ""
+		}${
+			p.can_delete
+				? `<button type="button" class="link-button" data-action="super-moderate" data-id="${e(
+						p.id
+				  )}" data-mod="delete">${t("ui_181")}</button>`
+				: ""
+		}</footer></div></article>`;
+	return `<div class="feed-list super-list">${
+		data.posts.length
+			? data.posts.map(post).join("")
+			: `<p class="feed-empty">${t("ui_323")}</p>`
+	}</div>`;
+}
+
+export function superView(data) {
+	const rule =
+		data.rule && data.rule.enabled && data.rule.points
+			? t("ui_324", data.rule.points)
+			: t("ui_325");
+	return `${heading(t("ui_319"), t("ui_320"))}${tabs(
+		"super"
+	)}<form class="goal-form" data-super-form><label>${t(
+		"ui_321"
+	)}<textarea name="text" rows="2" maxlength="300" required></textarea></label><p class="help">${rule}</p><div class="feed-error" role="alert"></div><button type="submit" class="button primary">${t(
+		"ui_322"
+	)}</button></form>${superPosts(data)}`;
+}
+
+function meetingCard(m, own = true) {
+	const topics = m.topics.length
+		? `<h4>${t("ui_332")}</h4><ul class="topic-list">${m.topics
+				.map((x) => `<li>${e(x)}</li>`)
+				.join("")}</ul>`
+		: "";
+	const action = m.past
+		? m.attended
+			? `<span class="feed-tag staff">${t("ui_338")}</span>`
+			: ""
+		: `<button type="button" class="button ${
+				m.going ? "primary" : "secondary"
+		  }" data-action="mm-going" data-id="${e(m.id)}" data-going="${
+				m.going ? 0 : 1
+		  }" aria-pressed="${m.going}">${
+				m.going ? t("ui_336") : t("ui_335")
+		  }</button>`;
+	return `<article class="goal-card meeting"><header><span class="feed-tag pin">${when(
+		m.starts_at
+	)}</span>${
+		m.going_count && !m.past
+			? `<span class="feed-tag priv">${t("ui_337", m.going_count)}</span>`
+			: ""
+	}</header><h3>${e(m.title)}</h3>${topics}${
+		m.link
+			? `<p><a class="button quiet" href="${e(
+					m.link
+			  )}" target="_blank" rel="noopener noreferrer">${t(
+					"ui_333"
+			  )}</a></p>`
+			: ""
+	}${
+		m.outcome ? `<h4>${t("ui_334")}</h4><p>${plain(m.outcome)}</p>` : ""
+	}<div class="meeting-actions">${action}</div></article>`;
+}
+
+export function mastermindsView(data) {
+	const block = (title, items) =>
+		items.length
+			? `<section class="goal-new"><h2>${title}</h2><div class="goal-list">${items
+					.map((m) => meetingCard(m))
+					.join("")}</div></section>`
+			: "";
+	return `${heading(t("ui_326"), t("ui_327"))}${tabs(
+		"masterminds"
+	)}<p class="help">${t("ui_331", e(data.tz))}</p>${
+		data.upcoming.length || data.past.length
+			? block(t("ui_328"), data.upcoming) + block(t("ui_329"), data.past)
+			: `<p class="help">${t("ui_330")}</p>`
+	}`;
 }

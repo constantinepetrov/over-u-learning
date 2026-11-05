@@ -12,6 +12,17 @@ const methods = new Set([
 	"teacher_assignment",
 	"review_assignment",
 ]);
+const practice = new Set([
+	"super_feed",
+	"post_super",
+	"moderate_super",
+	"masterminds",
+	"set_going",
+	"teacher_masterminds",
+	"save_mastermind",
+	"mark_attendance",
+	"delete_mastermind",
+]);
 const goals = new Set([
 	"my_goals",
 	"save_goal",
@@ -47,14 +58,17 @@ async function request(method, args = {}) {
 		!methods.has(method) &&
 		!community.has(method) &&
 		!discussion.has(method) &&
-		!goals.has(method)
+		!goals.has(method) &&
+		!practice.has(method)
 	)
 		throw new SchoolError(t("ui_136"), 400);
 	let response;
 	try {
 		response = await fetch(
 			`/api/method/over_u.${
-				goals.has(method)
+				practice.has(method)
+					? "practice_api"
+					: goals.has(method)
 					? "goals_api"
 					: discussion.has(method)
 					? "discussion_api"
@@ -118,6 +132,19 @@ export const api = {
 	teacherLesson: (course, number) =>
 		request("teacher_lesson", { course, number }),
 	teacherStudent: (student) => request("teacher_student", { student }),
+	superFeed: (course = "") => request("super_feed", { course }),
+	postSuper: (text) => request("post_super", { text }),
+	moderateSuper: (post, action) =>
+		request("moderate_super", { post, action }),
+	masterminds: () => request("masterminds"),
+	setGoing: (mastermind, going) =>
+		request("set_going", { mastermind, going }),
+	teacherMasterminds: () => request("teacher_masterminds"),
+	saveMastermind: (values) => request("save_mastermind", values),
+	markAttendance: (mastermind, members) =>
+		request("mark_attendance", { mastermind, members }),
+	deleteMastermind: (mastermind) =>
+		request("delete_mastermind", { mastermind }),
 	myGoals: () => request("my_goals"),
 	saveGoal: (goal) => request("save_goal", goal),
 	setStep: (goal, index, done) => request("set_step", { goal, index, done }),
