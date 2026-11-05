@@ -250,6 +250,7 @@ def leaderboard(course, member, period="all"):
 		"enabled": True,
 		"period": period,
 		"everyone": everyone,
+		"prizes": setting("prizes", "") or "",
 		"me": {"points": mine["points"], "rank": mine["rank"], "of": len(rows), "total": total_for(member)},
 		"top": top,
 		"groups": sorted(groups, key=lambda g: (g["kind"], g["rank"])),

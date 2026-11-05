@@ -14,6 +14,7 @@ from frappe import _
 
 from lms.lms import utils as lms
 from over_u import goals_api, points
+from over_u.profile_api import profile_of
 from over_u.student_api import (
 	KINDS,
 	REVIEW_STATUSES,
@@ -507,4 +508,5 @@ def teacher_student(student: str):
 		"submissions": submissions,
 		"comments": comments,
 		"groups": groups,
+		"profile": profile_of(student),
 	}

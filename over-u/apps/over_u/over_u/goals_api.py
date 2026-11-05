@@ -12,6 +12,7 @@ from frappe import _
 from frappe.utils import getdate, today
 
 from over_u import points
+from over_u.profile_api import profile_of
 from over_u.student_api import _member
 
 KINDS = {"Основная": 2, "Дополнительная": 1}

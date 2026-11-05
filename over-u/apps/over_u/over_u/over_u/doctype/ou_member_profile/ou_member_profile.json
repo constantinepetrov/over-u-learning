@@ -1,0 +1,130 @@
+{
+ "actions": [],
+ "creation": "2026-11-05 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "member",
+  "about",
+  "share_about",
+  "offer",
+  "share_offer",
+  "strengths",
+  "share_strengths",
+  "help_needed",
+  "help_how",
+  "share_help",
+  "expertise",
+  "share_expertise"
+ ],
+ "fields": [
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "label": "Участник",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "about",
+   "fieldtype": "Small Text",
+   "label": "О себе"
+  },
+  {
+   "fieldname": "share_about",
+   "fieldtype": "Check",
+   "label": "Показывать бадди"
+  },
+  {
+   "fieldname": "offer",
+   "fieldtype": "Small Text",
+   "label": "Что могу дать другим"
+  },
+  {
+   "fieldname": "share_offer",
+   "fieldtype": "Check",
+   "label": "Показывать бадди"
+  },
+  {
+   "fieldname": "strengths",
+   "fieldtype": "Small Text",
+   "label": "В чём силён(на)"
+  },
+  {
+   "fieldname": "share_strengths",
+   "fieldtype": "Check",
+   "label": "Показывать бадди"
+  },
+  {
+   "fieldname": "help_needed",
+   "fieldtype": "Small Text",
+   "label": "Какая помощь нужна"
+  },
+  {
+   "fieldname": "help_how",
+   "fieldtype": "Small Text",
+   "label": "Как удобнее получать помощь"
+  },
+  {
+   "fieldname": "share_help",
+   "fieldtype": "Check",
+   "label": "Показывать бадди"
+  },
+  {
+   "fieldname": "expertise",
+   "fieldtype": "Small Text",
+   "label": "Экспертность для мастермайнда"
+  },
+  {
+   "fieldname": "share_expertise",
+   "fieldtype": "Check",
+   "label": "Показывать бадди"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-05 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OVER U",
+ "name": "OU Member Profile",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Course Creator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Moderator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:member",
+ "naming_rule": "By fieldname",
+ "title_field": "member"
+}

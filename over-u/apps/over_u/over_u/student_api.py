@@ -140,6 +140,8 @@ def _snapshot(course):
 					item["assignment"] = _submission(ids[0]) if item["kind"] == "assignment" else None
 					item["quiz_result"] = _quiz_result(ids[0]) if item["kind"] == "quiz" else None
 			lessons.append(item)
+		if not lessons:
+			continue  # a module without lessons is a frame the author has not filled in yet
 		chapters.append({"title": chapter.title, "number": chapter.idx, "lessons": lessons})
 	flat = [row for chapter in chapters for row in chapter["lessons"]]
 	completed = sum(row["complete"] for row in flat)

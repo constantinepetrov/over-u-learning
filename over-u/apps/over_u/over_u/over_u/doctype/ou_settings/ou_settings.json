@@ -7,7 +7,8 @@
   "feed_enabled",
   "leaderboard_enabled",
   "leaderboard_visibility",
-  "leaderboard_limit"
+  "leaderboard_limit",
+  "prizes"
  ],
  "fields": [
   {
@@ -34,6 +35,11 @@
    "fieldtype": "Int",
    "label": "Сколько мест показывать в табло",
    "default": "10"
+  },
+  {
+   "fieldname": "prizes",
+   "fieldtype": "Small Text",
+   "label": "Призы (текст для участников)"
   }
  ],
  "index_web_pages_for_search": 0,
