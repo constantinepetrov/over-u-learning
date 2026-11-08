@@ -46,8 +46,8 @@ def ensure_skeleton(title=None, instructor=None):
 			"enforce_lesson_completion": 1,
 			"over_u_require_assignment_pass": 1,
 		}
-		if instructor:
-			values["instructors"] = [{"instructor": instructor}]
+		# LMS requires at least one instructor; the author is added in Desk later.
+		values["instructors"] = [{"instructor": instructor or "Administrator"}]
 		course = frappe.get_doc(values).insert()
 	have = {
 		module_number(frappe.db.get_value("Course Chapter", row.chapter, "title"))

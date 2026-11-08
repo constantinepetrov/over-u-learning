@@ -89,6 +89,7 @@ def _buddy(me):
 			"goals": shared,
 			"percent": overall(shared),
 			"hidden": frappe.db.count("OU Goal", {"member": partner, "shared": 0}),
+			"profile": profile_of(partner, only_shared=True),
 		}
 	return None
 
