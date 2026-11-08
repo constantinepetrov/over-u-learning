@@ -31,6 +31,10 @@ class TestContent(BaseTestUtils):
 		self.paths.append(handle.name)
 		return handle.name
 
+	def _texts(self, content):
+		"""Frappe re-serialises JSON with escapes, so compare the decoded block texts."""
+		return " ".join((b.get("data") or {}).get("text", "") for b in json.loads(content)["blocks"])
+
 	def _chapter(self, number):
 		for row in frappe.get_doc("LMS Course", self.course).chapters:
 			if modules.module_number(frappe.db.get_value("Course Chapter", row.chapter, "title")) == number:
@@ -95,8 +99,8 @@ class TestContent(BaseTestUtils):
 			frappe.db.get_value("Course Chapter", doc.chapters[0].chapter, "title"), "Как устроен курс"
 		)
 		lesson = frappe.db.get_value("Course Lesson", {"title": "Цели 2+1", "course": self.course}, "content")
-		self.assertIn("&lt;b&gt;", lesson)
-		self.assertIn("• Первая", lesson)
+		self.assertIn("&lt;b&gt;", self._texts(lesson))
+		self.assertIn("• Первая", self._texts(lesson))
 		self.assertTrue(
 			frappe.db.exists(
 				"Comment",
@@ -154,8 +158,10 @@ class TestContent(BaseTestUtils):
 		report = content_loader.load(pack, apply=1, course=TITLE)
 		self.assertEqual(len(report["skipped"]), 1)
 		self.assertEqual(len(report["filled"]), 1)
-		self.assertIn("Авторский текст", frappe.db.get_value("Course Lesson", written.name, "content"))
-		self.assertIn("Новый текст", frappe.db.get_value("Course Lesson", blank.name, "content"))
+		self.assertIn(
+			"Авторский текст", self._texts(frappe.db.get_value("Course Lesson", written.name, "content"))
+		)
+		self.assertIn("Новый текст", self._texts(frappe.db.get_value("Course Lesson", blank.name, "content")))
 
 	def test_only_administrator_can_load(self):
 		frappe.set_user(
