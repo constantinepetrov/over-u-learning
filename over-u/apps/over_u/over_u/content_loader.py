@@ -97,6 +97,7 @@ def _chapter(course, spec, apply, report, renames):
 	chapter = frappe.get_doc({"doctype": "Course Chapter", "title": title, "course": course.name}).insert(
 		ignore_permissions=True
 	)
+	course.reload()
 	order = [row.chapter for row in course.get("chapters") or []]
 	# Lesson numbers are part of learners' links, so a new chapter goes first only while no
 	# learner can see the course; a published course gets it at the end.
