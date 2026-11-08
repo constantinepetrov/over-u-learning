@@ -172,7 +172,10 @@ class TestContent(BaseTestUtils):
 			{
 				"renames": {"Модуль 1. Квантовый код": "Предстарт"},
 				"chapters": [
-					{"title": "Предстарт", "lessons": [{"title": "Темы", "blocks": [{"type": "paragraph", "text": "Текст"}]}]}
+					{
+						"title": "Предстарт",
+						"lessons": [{"title": "Темы", "blocks": [{"type": "paragraph", "text": "Текст"}]}],
+					}
 				],
 			}
 		)
