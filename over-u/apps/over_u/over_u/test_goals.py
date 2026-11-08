@@ -40,7 +40,7 @@ class TestGoals(BaseTestUtils):
 	def tearDown(self):
 		frappe.set_user("Administrator")
 		self.pair.delete()
-		for doctype in ("OU Goal", "OU Daily Report", "OU Points Entry"):
+		for doctype in ("OU Goal Log", "OU Goal", "OU Daily Report", "OU Points Entry"):
 			frappe.db.delete(doctype, {"member": ["in", [self.alice, self.bob, self.stranger]]})
 		super().tearDown()
 

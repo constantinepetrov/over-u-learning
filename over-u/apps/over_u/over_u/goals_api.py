@@ -7,8 +7,6 @@ Points for a daily report come from the editable rule "daily_report" (seeded swi
 off with zero points until the author sets the scale) and are paid once per day.
 """
 
-import json
-
 import frappe
 from frappe import _
 from frappe.utils import getdate, today
@@ -173,6 +171,7 @@ def save_goal(
 		taken = frappe.db.count("OU Goal", {"member": me, "kind": kind, "name": ["!=", doc.name]})
 		if taken >= KINDS[kind]:
 			frappe.throw(_("This kind of goal is already full."))
+		_log_changes(doc, values, clean)
 		doc.update(values)
 		doc.set("steps", clean)
 		# nosemgrep: lms-unjustified-ignore-permissions - the goal belongs to the verified session user; learners have no DocPerm on the doctype
@@ -198,29 +197,34 @@ HISTORY_LABELS = {
 
 @frappe.whitelist()
 def goal_history(goal: str):
-	"""Who changed the goal and what, newest first. Only the author sees it."""
-	me = _member()
-	doc = _own(goal, me)
+	"""What the author changed in the goal and when, newest first. Only the author sees it."""
+	doc = _own(goal, _member())
 	rows = frappe.get_all(
-		"Version",
-		{"ref_doctype": "OU Goal", "docname": doc.name},
-		["creation", "data"],
+		"OU Goal Log",
+		{"goal": doc.name},
+		["creation", "summary"],
 		order_by="creation desc",
 		limit_page_length=30,
 	)
-	history = []
-	for row in rows:
-		try:
-			data = json.loads(row.data or "{}")
-		except ValueError:
-			continue
-		changes = [HISTORY_LABELS[c[0]] for c in data.get("changed") or [] if c[0] in HISTORY_LABELS]
-		plan = sum(len(data.get(key) or []) for key in ("added", "removed", "row_changed"))
-		if plan:
-			changes.append("План")
-		if changes:
-			history.append({"when": str(row.creation), "changes": changes})
-	return {"history": history}
+	return {"history": [{"when": str(r.creation), "changes": r.summary.split(", ")} for r in rows]}
+
+
+def _log_changes(doc, values, clean):
+	"""Record which parts of the goal were edited (a title change, a new plan, a new date...)."""
+	changed = [
+		label
+		for field, label in HISTORY_LABELS.items()
+		if str(doc.get(field) or "") != str(values.get(field) or "")
+	]
+	before = [(s.title, str(s.due or ""), int(s.done or 0)) for s in doc.steps]
+	after = [(s["title"], str(s["due"] or ""), int(s["done"])) for s in clean]
+	if [x[:2] for x in before] != [x[:2] for x in after]:
+		changed.append("План")
+	if changed:
+		# nosemgrep: lms-unjustified-ignore-permissions - the log belongs to the verified session user; learners have no DocPerm on the doctype
+		frappe.get_doc(
+			{"doctype": "OU Goal Log", "goal": doc.name, "member": doc.member, "summary": ", ".join(changed)}
+		).insert(ignore_permissions=True)
 
 
 @frappe.whitelist(methods=["POST"])
