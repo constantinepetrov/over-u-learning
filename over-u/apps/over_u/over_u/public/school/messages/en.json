@@ -417,5 +417,11 @@
   "ui_434": "This lesson has a quiz, video or file. Edit it in the standard editor.",
   "ui_435": "Open in the standard editor",
   "ui_436": "Has homework",
-  "ui_437": "No modules yet."
+  "ui_437": "No modules yet.",
+  "ui_438": "Support",
+  "ui_439": "Supported",
+  "ui_440": "Supported by: {0}",
+  "ui_441": "Report",
+  "ui_442": "Report sent",
+  "ui_443": "Reports: {0}"
 }

@@ -16,6 +16,7 @@ const practice = new Set([
 	"super_feed",
 	"post_super",
 	"moderate_super",
+	"mark_super",
 	"masterminds",
 	"set_going",
 	"teacher_masterminds",
@@ -163,6 +164,7 @@ export const api = {
 	postSuper: (text) => request("post_super", { text }),
 	moderateSuper: (post, action) =>
 		request("moderate_super", { post, action }),
+	markSuper: (post, kind, on) => request("mark_super", { post, kind, on }),
 	masterminds: () => request("masterminds"),
 	setGoing: (mastermind, going) =>
 		request("set_going", { mastermind, going }),

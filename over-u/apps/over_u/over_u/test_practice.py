@@ -26,6 +26,7 @@ class TestPractice(BaseTestUtils):
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
+		frappe.db.delete("OU Super Mark", {"post": ["like", "%"]})
 		frappe.db.delete("OU Super Post", {"course": self.course})
 		frappe.db.delete("OU Mastermind", {"course": self.course})
 		for event in ("super_post", "mastermind_attended"):
@@ -129,3 +130,29 @@ class TestPractice(BaseTestUtils):
 		self.assertEqual(points.total_for(self.alice), before)
 		practice.delete_mastermind(meeting["id"])
 		self.assertFalse(frappe.db.exists("OU Mastermind", meeting["id"]))
+
+	def test_super_support_and_complaints(self):
+		post = practice.post_super("Сегодня получилось!")["posts"][0]["id"]
+		with self.assertRaises(frappe.ValidationError):
+			practice.mark_super(post, "Поддержка")  # not your own message
+		frappe.set_user(self.bob)
+		with self.assertRaises(frappe.ValidationError):
+			practice.mark_super(post, "Лайк")
+		item = practice.mark_super(post, "Поддержка")["posts"][0]
+		self.assertEqual((item["cheers"], item["cheered"]), (1, True))
+		item = practice.mark_super(post, "Поддержка")["posts"][0]  # repeating does not double-count
+		self.assertEqual(item["cheers"], 1)
+		item = practice.mark_super(post, "Жалоба")["posts"][0]
+		self.assertTrue(item["reported"])
+		self.assertEqual(item["reports"], 0)  # participants never see the complaint count
+		frappe.set_user(TEACHER)
+		self.assertEqual(practice.super_feed(self.course)["posts"][0]["reports"], 1)
+		frappe.set_user(self.bob)
+		item = practice.mark_super(post, "Поддержка", 0)["posts"][0]
+		self.assertEqual(item["cheers"], 0)
+		frappe.set_user(self.stranger)
+		with self.assertRaises(frappe.PermissionError):
+			practice.mark_super(post, "Поддержка")
+		frappe.set_user(TEACHER)
+		practice.moderate_super(post, "delete")
+		self.assertFalse(frappe.db.exists("OU Super Mark", {"post": post}))

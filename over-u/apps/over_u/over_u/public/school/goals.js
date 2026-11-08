@@ -277,6 +277,30 @@ export function superPosts(data) {
 		)}</strong><time>${when(p.when)}</time>${
 			p.hidden ? `<span class="feed-tag off">${t("ui_176")}</span>` : ""
 		}</header><p class="feed-text">${plain(p.text)}</p><footer>${
+			p.cheers
+				? `<span class="feed-tag priv">${t("ui_440", p.cheers)}</span>`
+				: ""
+		}${
+			p.reports
+				? `<span class="feed-tag off">${t("ui_443", p.reports)}</span>`
+				: ""
+		}${
+			p.mine
+				? ""
+				: `<button type="button" class="link-button" data-action="super-mark" data-id="${e(
+						p.id
+				  )}" data-kind="Поддержка" data-on="${
+						p.cheered ? 0 : 1
+				  }" aria-pressed="${p.cheered}">${
+						p.cheered ? t("ui_439") : t("ui_438")
+				  }</button><button type="button" class="link-button" data-action="super-mark" data-id="${e(
+						p.id
+				  )}" data-kind="Жалоба" data-on="${
+						p.reported ? 0 : 1
+				  }" aria-pressed="${p.reported}">${
+						p.reported ? t("ui_442") : t("ui_441")
+				  }</button>`
+		}${
 			data.can_moderate
 				? `<button type="button" class="link-button" data-action="super-moderate" data-id="${e(
 						p.id

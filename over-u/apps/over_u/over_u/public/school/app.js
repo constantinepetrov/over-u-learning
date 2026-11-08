@@ -410,9 +410,13 @@ root.addEventListener("click", async (event) => {
 		return;
 	}
 	if (
-		["super-moderate", "mm-going", "mm-delete", "group-delete"].includes(
-			action
-		)
+		[
+			"super-moderate",
+			"super-mark",
+			"mm-going",
+			"mm-delete",
+			"group-delete",
+		].includes(action)
 	) {
 		if (action === "mm-delete" && !window.confirm(t("ui_351"))) return;
 		if (action === "group-delete" && !window.confirm(t("ui_380"))) return;
@@ -421,7 +425,13 @@ root.addEventListener("click", async (event) => {
 		control.disabled = true;
 		try {
 			const updated =
-				action === "super-moderate"
+				action === "super-mark"
+					? await api.markSuper(
+							control.dataset.id,
+							control.dataset.kind,
+							Number(control.dataset.on)
+					  )
+					: action === "super-moderate"
 					? await api.moderateSuper(
 							control.dataset.id,
 							control.dataset.mod

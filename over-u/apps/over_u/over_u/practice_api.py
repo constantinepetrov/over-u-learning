@@ -51,8 +51,21 @@ def _super(course):
 		order_by="creation desc",
 		limit_page_length=100,
 	)
+	marks = (
+		frappe.get_all(
+			"OU Super Mark",
+			{"post": ["in", [r.name for r in rows]]},
+			["post", "member", "kind"],
+			limit_page_length=0,
+		)
+		if rows
+		else []
+	)
 	posts = []
 	for row in rows:
+		own = [m for m in marks if m.post == row.name]
+		cheers = [m for m in own if m.kind == "Поддержка"]
+		reports = [m for m in own if m.kind == "Жалоба"]
 		name = points.short_name(row.member)
 		posts.append(
 			{
@@ -64,6 +77,10 @@ def _super(course):
 				"text": row.text or "",
 				"hidden": bool(row.hidden),
 				"can_delete": bool(moderator or row.member == me),
+				"cheers": len(cheers),
+				"cheered": any(m.member == me for m in cheers),
+				"reported": any(m.member == me for m in reports),
+				"reports": len(reports) if moderator else 0,
 			}
 		)
 	return {
@@ -126,6 +143,42 @@ def moderate_super(post: str, action: str):
 		if not moderator:
 			frappe.throw(_("Only instructors can moderate the feed."), frappe.PermissionError)
 		frappe.db.set_value("OU Super Post", row.name, "hidden", 1 if action == "hide" else 0)
+	return _super(row.course)
+
+
+@frappe.whitelist(methods=["POST"])
+def mark_super(post: str, kind: str, on: int = 1):
+	"""Support («Поддержка») or complain («Жалоба») about a message; a second call with on=0 takes it back.
+
+	Marks never give points, so they cannot be farmed. Nobody marks their own message.
+	"""
+	me = _member()
+	if kind not in ("Поддержка", "Жалоба"):
+		frappe.throw(_("Unknown action."))
+	row = (
+		frappe.db.get_value("OU Super Post", post, ["name", "course", "member", "hidden"], as_dict=True)
+		if isinstance(post, str)
+		else None
+	)
+	if not row:
+		frappe.throw(_("Message not found."), frappe.DoesNotExistError)
+	if not _can_moderate(row.course, me):
+		_access(row.course)
+		if row.hidden:
+			frappe.throw(_("Message not found."), frappe.DoesNotExistError)
+	if row.member == me:
+		frappe.throw(_("You cannot mark your own message."))
+	key = f"{row.name}:{me}:{kind}"
+	if int(on):
+		try:
+			# nosemgrep: lms-unjustified-ignore-permissions - the mark belongs to the verified session user after an enrolment check; learners have no DocPerm on the doctype
+			frappe.get_doc(
+				{"doctype": "OU Super Mark", "post": row.name, "member": me, "kind": kind, "key": key}
+			).insert(ignore_permissions=True)
+		except frappe.DuplicateEntryError:
+			pass  # the same mark twice is the same mark
+	else:
+		frappe.db.delete("OU Super Mark", {"key": key})
 	return _super(row.course)
 
 
