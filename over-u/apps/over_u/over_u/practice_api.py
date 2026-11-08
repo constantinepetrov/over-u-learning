@@ -137,6 +137,7 @@ def moderate_super(post: str, action: str):
 		if not (moderator or row.member == me):
 			frappe.throw(_("You cannot delete this message."), frappe.PermissionError)
 		points.revoke(f"sp:{row.name}")
+		frappe.db.delete("OU Super Mark", {"post": row.name})
 		# nosemgrep: lms-unjustified-ignore-permissions - the caller is the author or an instructor of this course
 		frappe.delete_doc("OU Super Post", row.name, ignore_permissions=True, force=True)
 	else:
