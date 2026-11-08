@@ -46,6 +46,7 @@ const studio = new Set([
 const goals = new Set([
 	"my_goals",
 	"save_goal",
+	"goal_history",
 	"set_step",
 	"delete_goal",
 	"my_report",
@@ -191,6 +192,7 @@ export const api = {
 	giveBonus: (values) => request("give_bonus", values),
 	myProfile: () => request("my_profile"),
 	saveProfile: (blocks) => request("save_profile", { blocks }),
+	goalHistory: (goal) => request("goal_history", { goal }),
 	myGoals: () => request("my_goals"),
 	saveGoal: (goal) => request("save_goal", goal),
 	setStep: (goal, index, done) => request("set_step", { goal, index, done }),

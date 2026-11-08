@@ -33,6 +33,7 @@ import {
 	superView,
 	mastermindsView,
 	helpProfileView,
+	historyList,
 } from "./goals.js";
 const root = document.getElementById("school");
 const announce = (message) => {
@@ -386,6 +387,16 @@ root.addEventListener("click", async (event) => {
 		} finally {
 			busy = false;
 			if (control.isConnected) control.disabled = false;
+		}
+		return;
+	}
+	if (action === "goal-history") {
+		const list = control.parentElement.querySelector(".goal-history");
+		try {
+			const r = await api.goalHistory(control.dataset.goal);
+			list.innerHTML = historyList(r.history);
+		} catch (error) {
+			announce(error.message);
 		}
 		return;
 	}

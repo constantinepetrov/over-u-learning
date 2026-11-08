@@ -131,7 +131,26 @@ function goalCard(goal, kinds) {
 		kinds
 	)}<button type="button" class="link-button danger" data-action="goal-delete" data-goal="${e(
 		goal.id
-	)}">${t("ui_277")}</button></details></article>`;
+	)}">${t(
+		"ui_277"
+	)}</button></details><button type="button" class="link-button" data-action="goal-history" data-goal="${e(
+		goal.id
+	)}">${t(
+		"ui_444"
+	)}</button><ul class="goal-history card-list" aria-live="polite"></ul></article>`;
+}
+
+export function historyList(items) {
+	return items.length
+		? items
+				.map(
+					(h) =>
+						`<li><span class="help">${when(
+							h.when
+						)}</span> ${h.changes.map(e).join(", ")}</li>`
+				)
+				.join("")
+		: `<li class="help">${t("ui_445")}</li>`;
 }
 
 export function goalsView(data) {

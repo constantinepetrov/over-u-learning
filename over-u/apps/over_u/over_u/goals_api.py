@@ -7,6 +7,8 @@ Points for a daily report come from the editable rule "daily_report" (seeded swi
 off with zero points until the author sets the scale) and are paid once per day.
 """
 
+import json
+
 import frappe
 from frappe import _
 from frappe.utils import getdate, today
@@ -183,6 +185,42 @@ def save_goal(
 			ignore_permissions=True
 		)
 	return my_goals()
+
+
+HISTORY_LABELS = {
+	"title": "Название",
+	"details": "Описание",
+	"target_date": "Срок",
+	"shared": "Показ бадди",
+	"kind": "Тип цели",
+}
+
+
+@frappe.whitelist()
+def goal_history(goal: str):
+	"""Who changed the goal and what, newest first. Only the author sees it."""
+	me = _member()
+	doc = _own(goal, me)
+	rows = frappe.get_all(
+		"Version",
+		{"ref_doctype": "OU Goal", "docname": doc.name},
+		["creation", "data"],
+		order_by="creation desc",
+		limit_page_length=30,
+	)
+	history = []
+	for row in rows:
+		try:
+			data = json.loads(row.data or "{}")
+		except ValueError:
+			continue
+		changes = [HISTORY_LABELS[c[0]] for c in data.get("changed") or [] if c[0] in HISTORY_LABELS]
+		plan = sum(len(data.get(key) or []) for key in ("added", "removed", "row_changed"))
+		if plan:
+			changes.append("План")
+		if changes:
+			history.append({"when": str(row.creation), "changes": changes})
+	return {"history": history}
 
 
 @frappe.whitelist(methods=["POST"])

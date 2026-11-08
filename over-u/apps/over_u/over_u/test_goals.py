@@ -123,3 +123,14 @@ class TestGoals(BaseTestUtils):
 		frappe.set_user(self.stranger)
 		with self.assertRaises(frappe.PermissionError):
 			disc.teacher_student(self.alice)
+
+	def test_goal_history_records_changes_for_the_author_only(self):
+		goal = goals.save_goal("Основная", "Первая версия", STEPS)["goals"][0]["id"]
+		goals.save_goal("Основная", "Вторая версия", STEPS + [{"title": "Новый шаг"}], goal=goal)
+		history = goals.goal_history(goal)["history"]
+		self.assertTrue(history)
+		self.assertIn("Название", history[0]["changes"])
+		self.assertIn("План", history[0]["changes"])
+		frappe.set_user(self.bob)
+		with self.assertRaises(frappe.DoesNotExistError):
+			goals.goal_history(goal)
