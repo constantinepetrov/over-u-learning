@@ -178,6 +178,7 @@ def _lesson(course, chapter, spec, apply, report):
 def load(pack, apply=0, course=None):
 	if frappe.session.user != "Administrator":
 		frappe.throw(_("Run as Administrator."), frappe.PermissionError)
+	# nosemgrep: frappe-security-file-traversal - administrator-only command line import; the path is typed by the operator, never taken from a request
 	with open(pack, encoding="utf-8") as handle:
 		data = json.load(handle)
 	doc = modules.find_course(course)
