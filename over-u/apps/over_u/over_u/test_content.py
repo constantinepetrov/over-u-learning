@@ -121,7 +121,8 @@ class TestContent(BaseTestUtils):
 				"course": self.course,
 				"chapter": chapter.name,
 				"content": json.dumps(
-					{"blocks": [{"type": "paragraph", "data": {"text": "Авторский текст"}}]}
+					{"blocks": [{"type": "paragraph", "data": {"text": "Авторский текст"}}]},
+					ensure_ascii=False,
 				),
 			}
 		).insert()
