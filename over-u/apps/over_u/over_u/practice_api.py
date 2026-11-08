@@ -175,7 +175,7 @@ def mark_super(post: str, kind: str, on: int = 1):
 			frappe.get_doc(
 				{"doctype": "OU Super Mark", "post": row.name, "member": me, "kind": kind, "key": key}
 			).insert(ignore_permissions=True)
-		except frappe.DuplicateEntryError:
+		except (frappe.DuplicateEntryError, frappe.UniqueValidationError):
 			pass  # the same mark twice is the same mark
 	else:
 		frappe.db.delete("OU Super Mark", {"key": key})
