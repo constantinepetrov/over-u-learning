@@ -59,17 +59,36 @@ def _is_empty(content):
 	return not blocks or (all(b.get("type") == "paragraph" for b in blocks) and text in PLACEHOLDERS)
 
 
-def _chapter(course, spec, apply, report):
+def _shown(row, renames):
+	"""A chapter's title as it will be once the planned renames are applied (also in a dry run)."""
+	title = frappe.db.get_value("Course Chapter", row.chapter, "title")
+	return renames.get(title, title)
+
+
+def _rename(course, renames, apply, report):
+	taken = {frappe.db.get_value("Course Chapter", r.chapter, "title") for r in course.get("chapters") or []}
+	for old, new in renames.items():
+		if old not in taken:
+			continue
+		if new in taken:
+			report["problems"].append(f"cannot rename '{old}': '{new}' already exists")
+			continue
+		report["renamed"].append(f"{old} -> {new}")
+		if apply:
+			frappe.db.set_value("Course Chapter", {"course": course.name, "title": old}, "title", new)
+
+
+def _chapter(course, spec, apply, report, renames):
 	if "module" in spec:
 		for row in course.get("chapters") or []:
-			title = frappe.db.get_value("Course Chapter", row.chapter, "title")
+			title = _shown(row, renames)
 			if modules.module_number(title) == int(spec["module"]):
 				return frappe.get_doc("Course Chapter", row.chapter)
 		report["problems"].append(f"module {spec['module']} is missing: run ensure_skeleton first")
 		return None
 	title = spec["title"]
 	for row in course.get("chapters") or []:
-		if frappe.db.get_value("Course Chapter", row.chapter, "title") == title:
+		if _shown(row, renames) == title:
 			return frappe.get_doc("Course Chapter", row.chapter)
 	report["chapters_created"].append(title)
 	if not apply:
@@ -168,6 +187,7 @@ def load(pack, apply=0, course=None):
 		"course": doc.name,
 		"published": bool(doc.published),
 		"apply": bool(int(apply)),
+		"renamed": [],
 		"chapters_created": [],
 		"assignments_created": [],
 		"created": [],
@@ -175,8 +195,13 @@ def load(pack, apply=0, course=None):
 		"skipped": [],
 		"problems": [],
 	}
+	renames = data.get("renames") or {}
+	_rename(doc, renames, bool(int(apply)), report)
+	doc.reload()
+	if int(apply):
+		renames = {}  # already applied to the database
 	for spec in data.get("chapters", []):
-		chapter = _chapter(doc, spec, bool(int(apply)), report)
+		chapter = _chapter(doc, spec, bool(int(apply)), report, renames)
 		for lesson in spec.get("lessons", []):
 			_lesson(
 				doc,

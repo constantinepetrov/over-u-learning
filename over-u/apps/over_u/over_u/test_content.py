@@ -164,3 +164,25 @@ class TestContent(BaseTestUtils):
 		)
 		with self.assertRaises(frappe.PermissionError):
 			content_loader.load("/nonexistent.json")
+
+	def test_renames_map_old_chapters_to_the_authors_scheme(self):
+		chapter = self._chapter(1)
+		frappe.db.set_value("Course Chapter", chapter, "title", "Модуль 1. Квантовый код")
+		pack = self._pack(
+			{
+				"renames": {"Модуль 1. Квантовый код": "Предстарт"},
+				"chapters": [
+					{"title": "Предстарт", "lessons": [{"title": "Темы", "blocks": [{"type": "paragraph", "text": "Текст"}]}]}
+				],
+			}
+		)
+		dry = content_loader.load(pack, course=TITLE)
+		self.assertEqual(dry["renamed"], ["Модуль 1. Квантовый код -> Предстарт"])
+		self.assertEqual(dry["chapters_created"], [])
+		self.assertEqual(frappe.db.get_value("Course Chapter", chapter, "title"), "Модуль 1. Квантовый код")
+		done = content_loader.load(pack, apply=1, course=TITLE)
+		self.assertEqual(frappe.db.get_value("Course Chapter", chapter, "title"), "Предстарт")
+		self.assertEqual(done["chapters_created"], [])
+		self.assertEqual(len(done["created"]), 1)
+		again = content_loader.load(pack, apply=1, course=TITLE)
+		self.assertEqual(again["renamed"], [])
