@@ -15,6 +15,10 @@ function lessonForm(course, module, lesson) {
 	)}<textarea name="text" rows="10" maxlength="30000" required>${e(
 		l.text || ""
 	)}</textarea></label><p class="help">${t("ui_427")}</p><label>${t(
+		"ui_446"
+	)}<input type="url" name="video" maxlength="500" placeholder="https://" value="${e(
+		l.video || ""
+	)}"></label><p class="help">${t("ui_447")}</p><label>${t(
 		"ui_428"
 	)}<textarea name="homework" rows="4" maxlength="5000">${e(
 		l.task || ""

@@ -717,6 +717,7 @@ root.addEventListener("submit", async (event) => {
 					title: values.get("title"),
 					text: values.get("text"),
 					homework: values.get("homework") || "",
+					video: values.get("video") || "",
 				});
 			else if (form.matches("[data-group-form]"))
 				updated = await api.saveGroup({

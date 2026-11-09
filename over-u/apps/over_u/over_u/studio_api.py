@@ -15,6 +15,8 @@ from frappe import _
 from over_u import modules
 from over_u.discussion_api import _staff_course
 from over_u.student_api import _member, review_courses
+from over_u.video_api import FIELD as VIDEO_FIELD
+from over_u.video_api import clean as clean_video
 
 MAX_TITLE = 140
 MAX_TEXT = 30000
@@ -96,6 +98,7 @@ def _course_data(course):
 			if lessons[-1]["editable"]:
 				name, task = _homework(lesson)
 				lessons[-1]["text"] = _to_text(_blocks(lesson))
+				lessons[-1]["video"] = lesson.get(VIDEO_FIELD) or ""
 				lessons[-1]["task"] = html.unescape(frappe.utils.strip_html(task)) if name else ""
 		rows.append({"id": chapter.name, "number": ref.idx, "title": chapter.title, "lessons": lessons})
 	status = modules.status(course)
@@ -133,6 +136,7 @@ def studio_lesson(course: str, lesson: str):
 		"chapter": doc.chapter,
 		"editable": _simple(doc),
 		"text": _to_text(_blocks(doc)) if _simple(doc) else "",
+		"video": doc.get(VIDEO_FIELD) or "",
 		"homework": html.unescape(frappe.utils.strip_html(task)) if name else "",
 	}
 
@@ -183,9 +187,12 @@ def save_module(course: str, title: str, chapter: str = ""):
 
 
 @frappe.whitelist(methods=["POST"])
-def save_lesson(course: str, chapter: str, title: str, text: str, homework: str = "", lesson: str = ""):
+def save_lesson(
+	course: str, chapter: str, title: str, text: str, homework: str = "", lesson: str = "", video: str = ""
+):
 	_staff_course(course)
 	title = _title(title)
+	video = clean_video(video)
 	if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT:
 		frappe.throw(_("Write the lesson text."))
 	if not isinstance(homework, str) or len(homework) > MAX_TASK:
@@ -226,7 +233,7 @@ def save_lesson(course: str, chapter: str, title: str, text: str, homework: str 
 		# The task stays (submissions may exist); the instructor clears it only in the original editor.
 		blocks.append({"type": "assignment", "data": {"assignment": name}})
 	if doc:
-		doc.update({"title": title, "content": _content(blocks)})
+		doc.update({"title": title, "content": _content(blocks), VIDEO_FIELD: video})
 		# nosemgrep: lms-unjustified-ignore-permissions - the caller is an instructor of this course
 		doc.save(ignore_permissions=True)
 	else:
@@ -238,6 +245,7 @@ def save_lesson(course: str, chapter: str, title: str, text: str, homework: str 
 				"course": course,
 				"chapter": module.name,
 				"content": _content(blocks),
+				VIDEO_FIELD: video,
 			}
 		).insert(ignore_permissions=True)
 		module.append("lessons", {"lesson": new.name})

@@ -8,6 +8,16 @@ def configure():
 	seed_rules()
 	create_custom_fields(
 		{
+			"Course Lesson": [
+				{
+					"fieldname": "over_u_video_url",
+					"label": "OVER U: Video link",
+					"fieldtype": "Data",
+					"length": 500,
+					"insert_after": "title",
+					"description": "Yandex Disk, RuTube, VK Video or YouTube link shown at the top of the lesson.",
+				}
+			],
 			"LMS Course": [
 				{
 					"fieldname": "over_u_require_assignment_pass",
@@ -17,7 +27,7 @@ def configure():
 					"insert_after": "enforce_lesson_completion",
 					"description": "Complete assignment lessons only after teacher review with Pass.",
 				}
-			]
+			],
 		}
 	)
 

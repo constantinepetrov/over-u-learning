@@ -58,6 +58,30 @@ class TestStudio(BaseTestUtils):
 		studio.save_lesson(self.course, chapter, "Первый урок v2", "Новый текст", "", lesson["id"])
 		self.assertTrue(studio.studio_lesson(self.course, lesson["id"])["homework"])
 
+	def test_lesson_video_by_link(self):
+		from over_u import video_api
+
+		frappe.set_user(TEACHER)
+		chapter = studio.save_module(self.course, "Модуль с видео")["modules"][-1]["id"]
+		link = "https://rutube.ru/video/0123456789abcdef0123456789abcdef/"
+		data = studio.save_lesson(self.course, chapter, "Урок с видео", "Текст", "", "", link)
+		lesson = data["modules"][-1]["lessons"][0]
+		self.assertEqual(lesson["video"], link)
+		block = video_api.lesson_block(self.course, "1-1", lesson["id"])
+		self.assertEqual(block["type"], "embed")
+		self.assertTrue(block["src"].startswith("https://rutube.ru/play/embed/"))
+		with self.assertRaises(frappe.ValidationError):
+			studio.save_lesson(
+				self.course, chapter, "Урок с видео", "Текст", "", lesson["id"], "https://example.com/a.mp4"
+			)
+		yandex = "https://disk.yandex.ru/i/XZW01pZKSkJmFA"
+		studio.save_lesson(self.course, chapter, "Урок с видео", "Текст", "", lesson["id"], yandex)
+		block = video_api.lesson_block(self.course, "1-1", lesson["id"])
+		self.assertEqual(block["type"], "video")
+		self.assertIn("over_u.video_api.stream", block["url"])
+		studio.save_lesson(self.course, chapter, "Урок с видео", "Текст", "", lesson["id"], "")
+		self.assertIsNone(video_api.lesson_block(self.course, "1-1", lesson["id"]))
+
 	def test_lessons_with_quiz_are_not_editable_here(self):
 		frappe.set_user(TEACHER)
 		data = studio.studio_course(self.course)

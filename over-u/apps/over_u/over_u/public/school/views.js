@@ -351,7 +351,25 @@ function contentBlocks(blocks) {
 			if (b.type === "video")
 				return `<div class="video-wrap"><video controls preload="metadata" playsinline src="${e(
 					b.url
-				)}" aria-label="${t("ui_056")}"></video></div>`;
+				)}" aria-label="${t("ui_056")}"></video></div>${
+					b.link
+						? `<p class="help"><a href="${e(
+								b.link
+						  )}" target="_blank" rel="noopener noreferrer">${t(
+								"ui_448"
+						  )}</a></p>`
+						: ""
+				}`;
+			if (b.type === "embed")
+				return `<div class="video-wrap video-frame"><iframe src="${e(
+					b.src
+				)}" title="${t(
+					"ui_449"
+				)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe></div><p class="help"><a href="${e(
+					b.link
+				)}" target="_blank" rel="noopener noreferrer">${t(
+					"ui_448"
+				)}</a></p>`;
 			if (b.type === "material")
 				return `<div class="materials"><h2>${t(
 					"ui_057"

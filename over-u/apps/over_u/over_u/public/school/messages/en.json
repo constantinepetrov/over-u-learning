@@ -425,5 +425,9 @@
   "ui_442": "Report sent",
   "ui_443": "Reports: {0}",
   "ui_444": "Change history",
-  "ui_445": "No changes yet."
+  "ui_445": "No changes yet.",
+  "ui_446": "Video link (optional)",
+  "ui_447": "Yandex Disk, RuTube, VK Video or YouTube. The video stays where it is; the school only shows the player. The video must be open to anyone with the link.",
+  "ui_448": "Not playing? Open the video by its link",
+  "ui_449": "Lesson video"
 }

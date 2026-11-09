@@ -401,6 +401,11 @@ def lesson(course: str, number: str):
 			else _("Complete the previous lesson first.")
 		)
 		return response
+	from over_u.video_api import lesson_block
+
+	video = lesson_block(course, number, doc.get("name"))
+	if video:
+		response["blocks"].append(video)
 	for block in _blocks(doc):
 		data = block.get("data") or {}
 		kind = block.get("type")
