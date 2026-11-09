@@ -798,3 +798,17 @@ Missing Fields,Не заполнены обязательные поля
 Framework,Платформа
 ID,Идентификатор
 Use strong passwords.,Придумайте надёжный пароль: не короче 8 символов, лучше с буквами и цифрами.
+{0} is listed twice.,{0} указан дважды.
+{0} is already in the group {1}.,{0} уже состоит в группе «{1}».
+Only instructors can award bonus points.,Начислять бонусные баллы могут только преподаватели.
+Enter the points and the reason.,Укажите баллы и причину.
+Message not found.,Сообщение не найдено.
+The answer feed is switched off.,Лента ответов выключена.
+Submit your own answer to see and discuss the answers of others.,"Отправьте свой ответ, чтобы видеть ответы других и обсуждать их."
+"Write a message between 1 and 2,000 characters.",Напишите сообщение от 1 до 2000 символов.
+Too many messages. Please try again a little later.,Слишком много сообщений. Попробуйте чуть позже.
+Choose one of the available reactions.,Выберите одну из доступных реакций.
+You cannot rate your own message.,Нельзя оценивать собственное сообщение.
+Unknown action.,Неизвестное действие.
+You cannot delete this message.,Вы не можете удалить это сообщение.
+Only instructors can moderate the feed.,Лентой могут управлять только преподаватели.

@@ -1,0 +1,119 @@
+{
+ "actions": [],
+ "creation": "2026-11-02 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course",
+  "lesson",
+  "member",
+  "staff",
+  "reply_to",
+  "text",
+  "private",
+  "pinned",
+  "hidden"
+ ],
+ "fields": [
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Курс",
+   "options": "LMS Course",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "lesson",
+   "fieldtype": "Data",
+   "label": "Номер урока",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Например 3-1: глава 3, урок 1"
+  },
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "label": "Автор",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "staff",
+   "fieldtype": "Check",
+   "label": "Написал преподаватель",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reply_to",
+   "fieldtype": "Link",
+   "label": "В ответ на",
+   "options": "OU Lesson Comment"
+  },
+  {
+   "fieldname": "text",
+   "fieldtype": "Long Text",
+   "label": "Текст",
+   "reqd": 1
+  },
+  {
+   "fieldname": "private",
+   "fieldtype": "Check",
+   "label": "Только ученику и преподавателю"
+  },
+  {
+   "fieldname": "pinned",
+   "fieldtype": "Check",
+   "label": "Закреплено"
+  },
+  {
+   "fieldname": "hidden",
+   "fieldtype": "Check",
+   "label": "Скрыто от учеников"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "OVER U",
+ "name": "OU Lesson Comment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Course Creator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "Moderator",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "hash",
+ "naming_rule": "Random"
+}

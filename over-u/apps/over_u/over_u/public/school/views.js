@@ -1,5 +1,7 @@
 import { boot, t } from "./i18n.js";
 import { welcomeCard, chatBanner } from "./guide.js";
+import { feedView, ratingView } from "./community.js";
+import { discussionView } from "./discussion.js";
 import {
 	escape as e,
 	icon,
@@ -20,7 +22,11 @@ export function shell(content, home, section = "home") {
 		...(boot.teacher_tools
 			? [["task", "/school/teacher", t("ui_151"), "teacher"]]
 			: []),
+		...(boot.teacher_tools
+			? []
+			: [["check", "/school/goals", t("ui_261"), "goals"]]),
 		["results", "/school/results", t("ui_004"), "results"],
+		["trophy", "/school/rating", t("ui_186"), "rating"],
 		["user", "/school/profile", t("ui_005"), "profile"],
 	];
 	const name = home?.user?.name || t("ui_006");
@@ -40,7 +46,12 @@ export function shell(content, home, section = "home") {
 		? '<a class="ou-nav-item" href="/lms" title="Открыть редактор Frappe Learning">Студия курсов</a>'
 		: "";
 	const mobileNav = tabs
-		.filter(([, , , key]) => key !== "teacher")
+		// The bottom bar stays at six items: results live in the desktop menu only,
+		// and instructors get their desk instead of the learner pages.
+		.filter(
+			([, , , key]) =>
+				key !== "results" && (boot.teacher_tools || key !== "teacher")
+		)
 		.map(([iconName, href, label, key]) => {
 			const active = section === key;
 			return link(
@@ -65,9 +76,15 @@ export function shell(content, home, section = "home") {
       <nav class="ou-header-nav" aria-label="${t(
 			"ui_009"
 		)}">${navLinks}${authorLink}</nav>
-      <div class="ou-header-account"><button type="button" class="ou-help" data-action="guide" aria-label="Как это работает" title="Как это работает">?</button><span class="ou-profile-name">${e(
-			name
-		)}<small>${
+      <div class="ou-header-account">${
+			home?.points != null
+				? `<a class="ou-points" href="/school/rating" data-nav title="${t(
+						"ui_205"
+				  )}">${t("ui_204", home.points)}</a>`
+				: ""
+		}<button type="button" class="ou-help" data-action="guide" aria-label="Как это работает" title="Как это работает">?</button><span class="ou-profile-name">${e(
+		name
+	)}<small>${
 		boot.author_tools ? "Автор / преподаватель" : t("ui_011")
 	}</small></span>
         ${link(
@@ -334,7 +351,25 @@ function contentBlocks(blocks) {
 			if (b.type === "video")
 				return `<div class="video-wrap"><video controls preload="metadata" playsinline src="${e(
 					b.url
-				)}" aria-label="${t("ui_056")}"></video></div>`;
+				)}" aria-label="${t("ui_056")}"></video></div>${
+					b.link
+						? `<p class="help"><a href="${e(
+								b.link
+						  )}" target="_blank" rel="noopener noreferrer">${t(
+								"ui_448"
+						  )}</a></p>`
+						: ""
+				}`;
+			if (b.type === "embed")
+				return `<div class="video-wrap video-frame"><iframe src="${e(
+					b.src
+				)}" title="${t(
+					"ui_449"
+				)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe></div><p class="help"><a href="${e(
+					b.link
+				)}" target="_blank" rel="noopener noreferrer">${t(
+					"ui_448"
+				)}</a></p>`;
 			if (b.type === "material")
 				return `<div class="materials"><h2>${t(
 					"ui_057"
@@ -490,17 +525,7 @@ function homeworkView(data, drafts) {
 			: ""
 	}</section>`;
 }
-function discussionLink(data) {
-	if (data.locked) return "";
-	// The stock lesson page carries the course discussion (questions and answers).
-	const stock = location.pathname
-		.replace("/school/courses/", "/lms/courses/")
-		.replace("/lessons/", "/learn/");
-	return `<section class="lesson-help" aria-label="Вопросы к уроку"><div><h2>Есть вопрос по уроку?</h2><p>Задайте его в обсуждении: преподаватель и другие ученики смогут ответить.</p></div><a class="button secondary" href="${e(
-		stock
-	)}">Вопросы и обсуждение</a></section>`;
-}
-export function lessonView(data, drafts) {
+export function lessonView(data, drafts, feed, disc) {
 	const c = data.course,
 		l = data.lesson;
 	let article;
@@ -521,8 +546,8 @@ export function lessonView(data, drafts) {
 			data.blocks
 		)}${data.unsupported_content ? fallback(data) : ""}${
 			data.quiz ? quizView(data, drafts) : ""
-		}${
-			data.assignment ? homeworkView(data, drafts) : ""
+		}${data.assignment ? homeworkView(data, drafts) : ""}${
+			data.assignment ? feedView(feed, drafts) : ""
 		}</div><div class="lesson-footer">${
 			l.complete
 				? `<span class="completed-mark">${icon("check")}${t(
@@ -556,9 +581,9 @@ export function lessonView(data, drafts) {
 		l.chapter_title
 	)} · ${kinds[l.kind]}</span><h1>${e(
 		l.title.replace(/^\d+\.\d+\s*/, "")
-	)}</h1></div>${article}${discussionLink(
-		data
-	)}</div><aside class="learn-outline"><div class="outline-heading"><h2>${e(
+	)}</h1></div>${article}${
+		data.locked ? "" : discussionView(disc, drafts)
+	}</div><aside class="learn-outline"><div class="outline-heading"><h2>${e(
 		c.title.replace(/^OVER U\s*[—–-]\s*/, "")
 	)}</h2>${progress(c)}</div>${outline(c, true, l.number)}</aside></div>`;
 }
@@ -636,74 +661,6 @@ export function profileView(home) {
 		"ui_149"
 	)}</button><div id="logout-feedback" role="alert"></div></div></section><section class="profile-panel"><div><h2>Пароль и подсказки</h2><p class="help">Забыли пароль или хотите его сменить? Это можно сделать самостоятельно.</p><div class="profile-actions"><a class="button secondary" href="/update-password">Сменить пароль</a><button class="button secondary" type="button" data-action="guide">Как это работает</button></div></div></section>`;
 }
-export function teacherAssignmentsView(rows) {
-	return `<div class="page-heading"><span class="eyebrow">${t(
-		"ui_151"
-	)}</span><h1>${t("ui_152")}</h1><p>${t("ui_153")}</p></div>${
-		rows.length
-			? `<div class="teacher-queue">${rows
-					.map(
-						(row) =>
-							`<article class="assignment-row teacher-queue-row"><div><span class="eyebrow">${
-								row.status === "Not Graded"
-									? t("ui_032")
-									: e(row.status)
-							}</span><h2>${e(row.assignment)}</h2><p>${e(
-								row.member
-							)} · ${e(row.course)}</p><span class="help">${e(
-								row.lesson
-							)}</span></div>${link(
-								row.href,
-								`${t("ui_154")}${icon("arrow")}`,
-								"button secondary"
-							)}</article>`
-					)
-					.join("")}</div>`
-			: `<section class="empty"><h2>${t("ui_155")}</h2><p>${t(
-					"ui_156"
-			  )}</p></section>`
-	}`;
-}
-export function teacherAssignmentView(item) {
-	return `<div class="breadcrumbs">${link(
-		"/school/teacher",
-		t("ui_151")
-	)} ${icon("chevron")} <span>${t(
-		"ui_157"
-	)}</span></div><div class="page-heading"><span class="eyebrow">${e(
-		item.course
-	)}</span><h1>${e(item.assignment)}</h1><p>${e(item.lesson)} · ${e(
-		item.member
-	)}</p></div><section class="teacher-review"><div class="review-content"><span class="eyebrow">${t(
-		"ui_158"
-	)}</span><div class="review-answer">${
-		item.answer || `<p>${t("ui_159")}</p>`
-	}</div></div><details class="review-prompt"><summary>${t(
-		"ui_160"
-	)}</summary><div>${
-		item.question || ""
-	}</div></details><form id="teacher-review-form"><input type="hidden" name="submission" value="${e(
-		item.name
-	)}"><label for="review-status">${t(
-		"ui_161"
-	)}</label><select id="review-status" name="status" required><option value="">${t(
-		"ui_162"
-	)}</option><option value="Pass">${t(
-		"ui_163"
-	)}</option><option value="Fail">${t(
-		"ui_164"
-	)}</option></select><label for="review-comment">${t(
-		"ui_165"
-	)}</label><textarea id="review-comment" name="comments" maxlength="10000">${richText(
-		item.comments
-	)}</textarea><div id="form-feedback" role="alert"></div><div class="review-actions"><button type="submit" class="button primary">${t(
-		"ui_166"
-	)}</button>${link(
-		"/school/teacher",
-		t("ui_167"),
-		"button secondary"
-	)}</div></form></section>`;
-}
 export const loadingView = () => t("ui_112");
 export function errorView(error) {
 	return `<section class="empty" role="alert"><h1>${t("ui_114")}</h1><p>${e(
@@ -712,3 +669,5 @@ export function errorView(error) {
 		error.status === 401 ? t("ui_113") : button(t("ui_064"), "retry")
 	}</section>`;
 }
+
+export const ratingPage = (data, period) => ratingView(data, period);
